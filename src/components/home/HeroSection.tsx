@@ -13,25 +13,29 @@ const WEEKDAYS = [
 export default function HeroSection() {
   const [dayType, setDayType] = useState<string>('\u5B66\u4E60\u65E5')
   const [streak, setStreak] = useState(0)
+  const [dateStr, setDateStr] = useState('')
 
-  const now = new Date()
-  const weekday = WEEKDAYS[now.getDay()]
-  const year = now.getFullYear()
-  const month = now.getMonth() + 1
-  const day = now.getDate()
-  const dateStr = `${weekday} \u00B7 ${year}\u5E74${month}\u6708${day}\u65E5`
+  useEffect(() => {
+    const now = new Date()
+    const weekday = WEEKDAYS[now.getDay()]
+    setDateStr(`${weekday} \u00B7 ${now.getFullYear()}\u5E74${now.getMonth() + 1}\u6708${now.getDate()}\u65E5`)
+  }, [])
 
   useEffect(() => {
     async function load() {
-      const today = new Date().toISOString().split('T')[0]
-      const [record, streakCount] = await Promise.all([
-        getDailyRecord(today),
-        getStreak(),
-      ])
-      if (record?.day_type === 'rest_day') {
-        setDayType('\u4F11\u606F\u65E5')
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const [record, streakCount] = await Promise.all([
+          getDailyRecord(today),
+          getStreak(),
+        ])
+        if (record?.day_type === 'rest_day') {
+          setDayType('\u4F11\u606F\u65E5')
+        }
+        setStreak(streakCount)
+      } catch {
+        // Silently handle error, keep defaults
       }
-      setStreak(streakCount)
     }
     load()
   }, [])

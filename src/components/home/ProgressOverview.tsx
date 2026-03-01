@@ -23,34 +23,38 @@ export default function ProgressOverview() {
 
   useEffect(() => {
     async function load() {
-      const today = new Date().toISOString().split('T')[0]
-      const [record, sessions, returnCount] = await Promise.all([
-        getDailyRecord(today),
-        getTodayFocusSessions(),
-        getTodayReturnCount(),
-      ])
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const [record, sessions, returnCount] = await Promise.all([
+          getDailyRecord(today),
+          getTodayFocusSessions(),
+          getTodayReturnCount(),
+        ])
 
-      // Calculate from focus sessions if daily record doesn't have the data
-      let focusInClass = record?.focus_in_class ?? 0
-      let focusOutClass = record?.focus_out_class ?? 0
-      let entertainment = record?.entertainment ?? 0
+        // Calculate from focus sessions if daily record doesn't have the data
+        let focusInClass = record?.focus_in_class ?? 0
+        let focusOutClass = record?.focus_out_class ?? 0
+        let entertainment = record?.entertainment ?? 0
 
-      // If we have sessions but no record data, aggregate from sessions
-      if (!record && sessions.length > 0) {
-        for (const s of sessions) {
-          if (s.category === 'in_class') focusInClass += s.duration
-          else if (s.category === 'out_class') focusOutClass += s.duration
-          else if (s.category === 'entertainment') entertainment += s.duration
+        // If we have sessions but no record data, aggregate from sessions
+        if (!record && sessions.length > 0) {
+          for (const s of sessions) {
+            if (s.category === 'in_class') focusInClass += s.duration
+            else if (s.category === 'out_class') focusOutClass += s.duration
+            else if (s.category === 'entertainment') entertainment += s.duration
+          }
         }
-      }
 
-      setData({
-        focusInClass,
-        focusOutClass,
-        entertainment,
-        ibetterCount: record?.ibetter_count ?? 0,
-        returnCount: returnCount,
-      })
+        setData({
+          focusInClass,
+          focusOutClass,
+          entertainment,
+          ibetterCount: record?.ibetter_count ?? 0,
+          returnCount: returnCount,
+        })
+      } catch {
+        // Silently handle error, keep defaults
+      }
     }
     load()
   }, [])

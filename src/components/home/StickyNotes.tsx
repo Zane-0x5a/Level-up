@@ -81,21 +81,7 @@ export default function StickyNotes() {
             <button
               onClick={() => handleDelete(note.id)}
               aria-label={'\u5220\u9664\u4FBF\u7B7E'}
-              style={{
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: 'var(--color-text-3)',
-                fontSize: 14,
-                lineHeight: 1,
-                padding: '2px 4px',
-                borderRadius: 4,
-                transition: 'color 0.2s',
-                flexShrink: 0,
-                marginTop: 2,
-              }}
-              onMouseEnter={e => { (e.target as HTMLElement).style.color = 'var(--color-coral)' }}
-              onMouseLeave={e => { (e.target as HTMLElement).style.color = 'var(--color-text-3)' }}
+              className="note-delete"
             >
               {'\u00D7'}
             </button>
@@ -103,23 +89,13 @@ export default function StickyNotes() {
         ))}
 
         {notes.length === 0 && !showInput && (
-          <div style={{
-            textAlign: 'center',
-            padding: '16px 0',
-            fontSize: 13,
-            color: 'var(--color-text-3)',
-          }}>
+          <div className="note-empty">
             {'\u8FD8\u6CA1\u6709\u4FBF\u7B7E'}
           </div>
         )}
 
         {showInput && (
-          <div style={{
-            display: 'flex',
-            gap: 8,
-            marginTop: notes.length > 0 ? 12 : 0,
-            alignItems: 'center',
-          }}>
+          <div className="note-input-row" style={{ marginTop: notes.length > 0 ? 12 : 0, alignItems: 'center' }}>
             <input
               ref={inputRef}
               type="text"
@@ -137,21 +113,7 @@ export default function StickyNotes() {
             <button
               onClick={handleAdd}
               disabled={isSubmitting || !text.trim()}
-              style={{
-                background: 'var(--color-coral)',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 'var(--radius-xs)',
-                padding: '8px 16px',
-                fontSize: 12,
-                fontWeight: 600,
-                fontFamily: 'var(--font-body)',
-                cursor: isSubmitting || !text.trim() ? 'not-allowed' : 'pointer',
-                opacity: isSubmitting || !text.trim() ? 0.5 : 1,
-                transition: 'all 0.2s',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-              }}
+              className="note-submit"
             >
               {'\u6DFB\u52A0'}
             </button>

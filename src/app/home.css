@@ -181,6 +181,29 @@
   background: var(--color-honey);
   box-shadow: 0 0 6px var(--color-honey-glow);
 }
+.note-delete {
+  background: none;
+  border: none;
+  color: var(--color-text-3);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  opacity: 0;
+}
+.note-item:hover .note-delete {
+  opacity: 1;
+}
+.note-delete:hover {
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
 .note-add {
   margin-top: 10px;
   font-size: 12px;
@@ -188,9 +211,43 @@
   color: var(--color-text-3);
   cursor: pointer;
   transition: color 0.2s;
+  background: none;
+  border: none;
+  padding: 0;
 }
 .note-add:hover {
   color: var(--color-coral);
+}
+.note-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.note-submit {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 100px;
+  background: var(--color-coral);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.note-submit:hover {
+  background: #c05540;
+}
+.note-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.note-empty {
+  text-align: center;
+  padding: 16px 0;
+  font-size: 13px;
+  color: var(--color-text-3);
 }
 
 /* Section spacing */
