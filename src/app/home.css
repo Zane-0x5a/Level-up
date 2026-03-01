@@ -1,11 +1,48 @@
 /* ═══════════════════════════════════════
-   HOME PAGE — Hero, Countdown, Overview, Notes
+   HOME PAGE — 2×2 Grid Layout
+   Row 1: Hero + Countdown Carousel
+   Row 2: Overview + Sticky Notes
    ═══════════════════════════════════════ */
 
-/* Hero — welcoming, centered warmth */
+/* Layout container */
+.home-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0 40px;
+}
+
+/* Row 1: Hero + Countdown — equal halves */
+.home-row1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.grid-hero {
+  display: flex;
+  align-items: center;
+}
+
+.grid-countdown {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Row 2: Overview + Notes — 3fr 2fr */
+.home-row2 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+}
+
+/* ═══════════════════════════════════════
+   Hero — left-aligned, vertically centered
+   ═══════════════════════════════════════ */
 .hero {
   padding: 28px 0 32px;
-  text-align: center;
+  text-align: left;
 }
 .hero-date {
   font-family: var(--font-mono);
@@ -50,16 +87,92 @@
   animation: pulse 2.5s ease-in-out infinite;
 }
 
-/* Countdown — 3-column grid */
-.cd-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+/* ═══════════════════════════════════════
+   Countdown Carousel — single card with navigation
+   ═══════════════════════════════════════ */
+.cd-carousel-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
+
+.cd-carousel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cd-add-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 45, 66, 0.08);
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cd-add-btn:hover {
+  border-color: var(--color-coral);
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
+
+/* The viewport that clips overflow */
+.cd-carousel-viewport {
+  position: relative;
+  overflow: hidden;
+  flex: 1;
+}
+
+/* Carousel card container — single card shown */
 .cd-card {
   text-align: center;
-  padding: 30px 24px;
+  padding: 30px 24px 20px;
+  position: relative;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Delete button on countdown card */
+.cd-delete {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  padding: 0;
+}
+.cd-card:hover .cd-delete {
+  opacity: 1;
+}
+.cd-delete:hover {
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
+
 .cd-icon {
   font-size: 22px;
   margin-bottom: 14px;
@@ -76,7 +189,7 @@
 .cd-pill.honey { background: var(--color-honey-soft); }
 .cd-number {
   font-family: var(--font-display);
-  font-size: 52px;
+  font-size: 56px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: -2px;
@@ -93,7 +206,7 @@
 }
 .cd-label {
   font-family: var(--font-display);
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   color: var(--color-text);
   margin-bottom: 3px;
@@ -104,12 +217,245 @@
   color: var(--color-text-3);
 }
 
-/* Overview + Notes two-column */
-.home-grid {
-  display: grid;
-  grid-template-columns: 3fr 2fr;
+/* Navigation row (arrows + dots) */
+.cd-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 16px;
+  margin-top: 16px;
+  padding-bottom: 4px;
 }
+
+.cd-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 45, 66, 0.06);
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cd-arrow:hover {
+  border-color: rgba(43, 45, 66, 0.12);
+  color: var(--color-text-2);
+  background: var(--color-bg-sub);
+}
+
+.cd-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(43, 45, 66, 0.10);
+  transition: all 0.3s;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.cd-dot.active {
+  background: var(--color-coral);
+  box-shadow: 0 0 6px var(--color-coral-glow);
+  width: 7px;
+  height: 7px;
+}
+
+/* ═══════════════════════════════════════
+   Carousel Spring Transition Animation
+   ═══════════════════════════════════════ */
+
+/* Slide content wrapper for animation */
+.cd-slide {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Spring-in from left */
+@keyframes cdSlideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-60px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Spring-in from right */
+@keyframes cdSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(60px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Spring-out to left */
+@keyframes cdSlideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-60px);
+    filter: blur(4px);
+  }
+}
+
+/* Spring-out to right */
+@keyframes cdSlideOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(60px);
+    filter: blur(4px);
+  }
+}
+
+.cd-slide-enter-left {
+  animation: cdSlideInLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cd-slide-enter-right {
+  animation: cdSlideInRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cd-slide-exit-left {
+  animation: cdSlideOutLeft 0.25s ease-out both;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.cd-slide-exit-right {
+  animation: cdSlideOutRight 0.25s ease-out both;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Number blur-to-sharp on enter */
+@keyframes cdNumberReveal {
+  0% {
+    filter: blur(6px);
+    opacity: 0.3;
+  }
+  60% {
+    filter: blur(1px);
+    opacity: 0.9;
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+.cd-number-anim {
+  animation: cdNumberReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.08s;
+}
+
+/* ═══════════════════════════════════════
+   Countdown Add Form (inline)
+   ═══════════════════════════════════════ */
+.cd-add-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px;
+  width: 100%;
+}
+
+.cd-add-form .cd-form-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.cd-add-form .field-input {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+
+.cd-add-form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════
+   Empty State
+   ═══════════════════════════════════════ */
+.cd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  min-height: 180px;
+}
+
+.cd-empty-icon {
+  font-size: 28px;
+  opacity: 0.3;
+}
+
+.cd-empty-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+
+.cd-empty-add {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.cd-empty-add:hover {
+  color: var(--color-coral);
+}
+
+/* ═══════════════════════════════════════
+   Row 2: Overview + Notes
+   ═══════════════════════════════════════ */
+/* (Row 2 grid is handled by .home-row2) */
 
 /* Metrics row */
 .metrics-row {

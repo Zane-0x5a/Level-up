@@ -41,7 +41,7 @@ export default function HeroSection() {
   }, [])
 
   return (
-    <div className="hero anim">
+    <div className="hero">
       <div className="hero-date">{dateStr}</div>
       <div className="hero-greeting">
         {'\u4FDD\u6301\u70ED\u7231\uFF0C'}<em>{'\u5954\u8D74\u5C71\u6D77'}</em>

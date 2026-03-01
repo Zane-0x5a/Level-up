@@ -10,9 +10,10 @@ type Props = {
   label: string
   targetDate: string
   index: number
+  animate?: boolean
 }
 
-export default function CountdownCard({ label, targetDate, index }: Props) {
+export default function CountdownCard({ label, targetDate, index, animate }: Props) {
   const days = Math.max(0, differenceInDays(parseISO(targetDate), new Date()))
   const color = GLOW_CYCLE[index % 3]
   const emoji = EMOJI_CYCLE[index % 3]
@@ -20,14 +21,14 @@ export default function CountdownCard({ label, targetDate, index }: Props) {
   const paddedDays = String(days).padStart(3, '0')
 
   return (
-    <div className={`float-card glow-${color} cd-card`}>
+    <>
       <span className="cd-icon">{emoji}</span>
       <div className={`cd-pill ${color}`}>
-        <div className="cd-number">{paddedDays}</div>
+        <div className={`cd-number ${animate ? 'cd-number-anim' : ''}`}>{paddedDays}</div>
       </div>
       <div className="cd-unit">{'\u5929'}</div>
       <div className="cd-label">{label}</div>
       <div className="cd-target">{formattedDate}</div>
-    </div>
+    </>
   )
 }
