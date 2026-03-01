@@ -8,6 +8,7 @@ import FocusTimePieChart from '@/components/analysis/FocusTimePieChart'
 import FocusTimeTrendChart from '@/components/analysis/FocusTimeTrendChart'
 import IBetterTrendChart from '@/components/analysis/IBetterTrendChart'
 import ReturnCountChart from '@/components/analysis/ReturnCountChart'
+import NotesDrawer from '@/components/analysis/NotesDrawer'
 
 type DailyRecord = {
   date: string
@@ -63,6 +64,8 @@ export default function AnalysisPage() {
         <IBetterTrendChart records={filtered} />
         <ReturnCountChart records={filtered} />
       </div>
+
+      <NotesDrawer records={filtered} />
     </main>
   )
 }
