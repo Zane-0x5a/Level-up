@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/TopNav";
 
 export const metadata: Metadata = {
-  title: "Level Up - 个人成长管理",
-  description: "沉浸式个人成长数据中枢",
+  title: "Level Up",
+  description: "个人成长数据中枢 — 专注、记录、反思",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#dbeafe",
+  themeColor: "#faf8f5",
 };
 
 export default function RootLayout({
@@ -23,26 +23,23 @@ export default function RootLayout({
     <html lang="zh" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap"
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Sora:wght@300..800&family=Lexend:wght@300..700&family=DM+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="antialiased min-h-full pb-24">
-        {/* Living Landscape 背景 */}
-        <div className="bg-scene" />
-        <div className="blob blob-1" />
-        <div className="blob blob-2" />
-        <div className="blob blob-3" />
-        <div className="blob blob-4" />
+      <body className="antialiased min-h-full">
+        <TopNav />
 
-        {/* 页面内容 */}
-        <div className="relative z-10">
+        {/* Page content */}
+        <div className="relative z-10" style={{ paddingTop: 82 }}>
           {children}
         </div>
-
-        <BottomNav />
       </body>
     </html>
   );
