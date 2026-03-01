@@ -4,42 +4,53 @@ import { useEffect, useState } from 'react'
 
 type Props = {
   onComplete: () => void
+  origin: { x: number; y: number } | null
 }
 
-export default function SpaceTransition({ onComplete }: Props) {
-  const [phase, setPhase] = useState<'opening' | 'fading'>('opening')
+export default function SpaceTransition({ onComplete, origin }: Props) {
+  const [phase, setPhase] = useState<'gather' | 'unfold' | 'arrive'>('gather')
 
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase('fading'), 500)
-    const t2 = setTimeout(() => onComplete(), 1100)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // Phase 2 "Unfold": start circle expansion (after a brief frame for paint)
+    const t1 = requestAnimationFrame(() => {
+      setPhase('unfold')
+    })
+
+    // Phase 3 "Arrive": fade out overlay and complete
+    const t2 = setTimeout(() => {
+      setPhase('arrive')
+    }, 650)
+
+    // Complete transition
+    const t3 = setTimeout(() => {
+      onComplete()
+    }, 850)
+
+    return () => {
+      cancelAnimationFrame(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
   }, [onComplete])
 
-  return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center">
-      {/* Dark overlay that fades in */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(circle at center, transparent 0%, rgba(10,10,30,0.95) 100%)',
-          opacity: phase === 'opening' ? 0 : 1,
-          transition: 'opacity 0.6s var(--ease-spring)',
-        }}
-      />
+  // Convert origin pixel coords to viewport percentages
+  const cx = origin ? `${origin.x}px` : '50%'
+  const cy = origin ? `${origin.y}px` : '50%'
 
-      {/* Door/portal opening effect */}
+  const circleClass = [
+    'transition-circle',
+    phase === 'unfold' || phase === 'arrive' ? 'expanding' : '',
+    phase === 'arrive' ? 'fading' : '',
+  ].filter(Boolean).join(' ')
+
+  return (
+    <div className="focus-transition">
       <div
+        className={circleClass}
         style={{
-          position: 'relative',
-          zIndex: 1,
-          width: phase === 'fading' ? '200vmax' : 0,
-          height: phase === 'fading' ? '200vmax' : 0,
-          borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
-          boxShadow: '0 0 80px rgba(59,130,246,0.3), 0 0 160px rgba(59,130,246,0.1)',
-          transition: 'all 1s var(--ease-spring)',
-        }}
+          '--cx': cx,
+          '--cy': cy,
+        } as React.CSSProperties}
       />
     </div>
   )

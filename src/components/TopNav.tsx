@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useNav } from '@/contexts/NavContext'
 
 const links = [
   { href: '/', label: '首页' },
@@ -10,11 +11,12 @@ const links = [
   { href: '/settings', label: '设置' },
 ]
 
-export default function TopNav({ hidden = false }: { hidden?: boolean }) {
+export default function TopNav() {
   const pathname = usePathname()
+  const { navHidden } = useNav()
 
   return (
-    <nav className={`top-nav${hidden ? ' hidden' : ''}`}>
+    <nav className={`top-nav${navHidden ? ' hidden' : ''}`}>
       <div className="nav-brand">Level <span>Up</span></div>
       <div className="nav-links">
         {links.map(({ href, label }) => {

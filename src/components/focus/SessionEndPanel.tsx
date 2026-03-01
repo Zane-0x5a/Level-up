@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
 import { addFocusSession } from '@/lib/api/focus-sessions'
 
 type Props = {
@@ -10,99 +9,89 @@ type Props = {
 }
 
 const categories = [
-  { value: 'in_class', label: '课内投入', color: 'var(--color-accent)' },
-  { value: 'out_class', label: '课外投入', color: 'var(--color-success)' },
-  { value: 'entertainment', label: '娱乐消费', color: 'var(--color-amber)' },
+  { value: '课内学习', label: '课内学习' },
+  { value: '课外学习', label: '课外学习' },
+  { value: '娱乐消费', label: '娱乐消费' },
 ]
 
 export default function SessionEndPanel({ onComplete, onSkip }: Props) {
-  const [category, setCategory] = useState('in_class')
+  const [category, setCategory] = useState('课内学习')
   const [duration, setDuration] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = async () => {
     const hrs = parseFloat(duration)
-    if (!hrs || hrs <= 0) return
+    if (!hrs || hrs <= 0) {
+      setError('请输入有效的时长')
+      return
+    }
+    setError('')
     setSubmitting(true)
     try {
       await addFocusSession(category, hrs)
       onComplete()
-    } finally {
+    } catch (err) {
+      setError('保存失败，请重试')
       setSubmitting(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-6"
-      style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)' }}
-    >
-      <div className="glass-1 p-6 w-full max-w-sm space-y-5 animate-in"
-        style={{ background: 'rgba(255,255,255,0.85)' }}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-            记录本次专注
-          </h3>
-          <button onClick={onSkip} className="p-1" aria-label="跳过">
-            <X size={18} style={{ color: 'var(--color-text-3)' }} />
-          </button>
-        </div>
+    <div className="session-end-backdrop">
+      <div className="session-end-card float-card glow-coral">
+        <div className="session-end-title">记录本次专注</div>
 
-        {/* Category selector */}
-        <div className="space-y-2">
-          <p className="text-sm" style={{ color: 'var(--color-text-2)' }}>专注类型</p>
-          <div className="flex gap-2">
-            {categories.map(c => (
-              <button
-                key={c.value}
-                onClick={() => setCategory(c.value)}
-                className="flex-1 py-2 text-sm font-medium transition-all duration-300"
-                style={{
-                  borderRadius: 'var(--radius-pill)',
-                  background: category === c.value ? c.color : 'var(--color-glass-3)',
-                  color: category === c.value ? '#fff' : 'var(--color-text-2)',
-                }}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
+        {/* Category pills */}
+        <div className="session-end-label">专注类型</div>
+        <div className="session-end-pills">
+          {categories.map(c => (
+            <button
+              key={c.value}
+              className={`pill${category === c.value ? ' active' : ''}`}
+              onClick={() => setCategory(c.value)}
+            >
+              {c.label}
+            </button>
+          ))}
         </div>
 
         {/* Duration input */}
-        <div className="space-y-2">
-          <p className="text-sm" style={{ color: 'var(--color-text-2)' }}>时长（小时）</p>
+        <div className="session-end-duration">
+          <div className="session-end-label">时长（小时）</div>
           <input
             type="number"
             step="0.5"
             min="0"
             placeholder="例如 1.5"
             value={duration}
-            onChange={e => setDuration(e.target.value)}
-            className="w-full px-4 py-3 text-sm outline-none"
-            style={{
-              background: 'var(--color-glass-input)',
-              borderRadius: 'var(--radius-glass-xs)',
-              color: 'var(--color-text)',
+            onChange={e => {
+              setDuration(e.target.value)
+              setError('')
             }}
+            className="field-input"
           />
         </div>
 
-        {/* Submit */}
-        <button
-          onClick={handleSubmit}
-          disabled={submitting || !duration}
-          className="w-full py-3 text-sm font-medium text-white disabled:opacity-50"
-          style={{
-            background: 'var(--color-accent)',
-            borderRadius: 'var(--radius-glass-sm)',
-            boxShadow: 'var(--shadow-accent)',
-            transition: 'all 0.4s var(--ease-spring)',
-          }}
-        >
-          {submitting ? '保存中...' : '确认记录'}
-        </button>
+        {/* Actions */}
+        <div className="session-end-actions">
+          <button
+            className="btn-warm"
+            onClick={handleSubmit}
+            disabled={submitting || !duration}
+          >
+            {submitting ? '保存中...' : '确认记录'}
+          </button>
+          <button
+            className="btn-outline"
+            onClick={onSkip}
+          >
+            跳过
+          </button>
+        </div>
+
+        {/* Error feedback */}
+        {error && <div className="session-end-error">{error}</div>}
       </div>
     </div>
   )

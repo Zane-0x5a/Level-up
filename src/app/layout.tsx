@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { NavProvider } from "@/contexts/NavContext";
 import TopNav from "@/components/TopNav";
 
 export const metadata: Metadata = {
@@ -34,12 +35,14 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased min-h-full">
-        <TopNav />
+        <NavProvider>
+          <TopNav />
 
-        {/* Page content */}
-        <div className="relative z-10" style={{ paddingTop: 82 }}>
-          {children}
-        </div>
+          {/* Page content */}
+          <div className="relative z-10" style={{ paddingTop: 82 }}>
+            {children}
+          </div>
+        </NavProvider>
       </body>
     </html>
   );
