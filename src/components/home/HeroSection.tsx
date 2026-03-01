@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { getDailyRecord } from '@/lib/api/daily-records'
+import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getStreak } from '@/lib/api/stats'
 
 const WEEKDAYS = [
@@ -24,25 +24,31 @@ function splitGreeting(text: string): [string, string] {
 }
 
 export default function HeroSection() {
-  const [dayType, setDayType] = useState<string>('\u5B66\u4E60\u65E5')
+  const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [streak, setStreak] = useState(0)
   const [dateStr, setDateStr] = useState('')
-  const [greeting] = useState<string>(() => {
-    if (typeof window === 'undefined') return DEFAULT_GREETINGS[0]
+  const [todayStr, setTodayStr] = useState('')
+  const [greeting, setGreeting] = useState(DEFAULT_GREETINGS[0])
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem('hero_greetings')
       const list: string[] = stored ? JSON.parse(stored) : DEFAULT_GREETINGS
       const pool = list.length > 0 ? list : DEFAULT_GREETINGS
-      return pool[Math.floor(Math.random() * pool.length)]
+      const picked = pool[Math.floor(Math.random() * pool.length)]
+      if (picked !== DEFAULT_GREETINGS[0]) {
+        setGreeting(picked)
+      }
     } catch {
-      return DEFAULT_GREETINGS[0]
+      // keep default
     }
-  })
+  }, [])
 
   useEffect(() => {
     const now = new Date()
     const weekday = WEEKDAYS[now.getDay()]
     setDateStr(`${weekday} \u00B7 ${now.getFullYear()}\u5E74${now.getMonth() + 1}\u6708${now.getDate()}\u65E5`)
+    setTodayStr(now.toISOString().split('T')[0])
   }, [])
 
   useEffect(() => {
@@ -54,7 +60,7 @@ export default function HeroSection() {
           getStreak(),
         ])
         if (record?.day_type === 'rest_day') {
-          setDayType('\u4F11\u606F\u65E5')
+          setDayType('rest_day')
         }
         setStreak(streakCount)
       } catch {
@@ -64,6 +70,19 @@ export default function HeroSection() {
     load()
   }, [])
 
+  const handleToggleDayType = async () => {
+    const newType = dayType === 'study_day' ? 'rest_day' : 'study_day'
+    const prevType = dayType
+    setDayType(newType)
+    try {
+      await upsertDailyRecord({ date: todayStr, day_type: newType })
+    } catch {
+      setDayType(prevType)
+    }
+  }
+
+  const dayTypeLabel = dayType === 'study_day' ? '\u4E0A\u5B66\u65E5' : '\u5047\u671F'
+
   const [prefix, emphasized] = splitGreeting(greeting)
 
   return (
@@ -72,10 +91,13 @@ export default function HeroSection() {
       <div className="hero-greeting">
         {prefix}<em>{emphasized}</em>
       </div>
-      <div className="hero-tag">
+      <button
+        className={`hero-tag${dayType === 'rest_day' ? ' holiday' : ''}`}
+        onClick={handleToggleDayType}
+      >
         <span className="dot" />
-        {dayType} {'\u00B7'} {'\u7B2C'} {streak} {'\u5929'}
-      </div>
+        {dayTypeLabel} {'\u00B7'} {'\u7B2C'} {streak} {'\u5929'}
+      </button>
     </div>
   )
 }
