@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 type Props = {
   onReturn: () => void
@@ -10,13 +10,23 @@ type Props = {
 
 export default function ReturnButton({ onReturn, returnCount, showToast }: Props) {
   const [animating, setAnimating] = useState(false)
+  const animatingRef = useRef(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+
+  useEffect(() => {
+    return () => { clearTimeout(timerRef.current) }
+  }, [])
 
   const handleClick = useCallback(() => {
-    if (animating) return
+    if (animatingRef.current) return
+    animatingRef.current = true
     setAnimating(true)
     onReturn()
-    setTimeout(() => setAnimating(false), 400)
-  }, [onReturn, animating])
+    timerRef.current = setTimeout(() => {
+      animatingRef.current = false
+      setAnimating(false)
+    }, 400)
+  }, [onReturn])
 
   return (
     <div className="return-orb-wrapper">

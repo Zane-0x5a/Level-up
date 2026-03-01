@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getFocusImages } from '@/lib/api/focus-images'
 import { incrementReturnCount, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getStickyNotes } from '@/lib/api/sticky-notes'
@@ -12,12 +12,11 @@ type Props = {
 }
 
 export default function FocusImmersiveState({ onExit }: Props) {
-  // Pick sticky note ONCE on mount — do NOT re-randomize on re-renders
-  const [stickyNote] = useState<string | null>(() => null)
   const [stickyNoteLoaded, setStickyNoteLoaded] = useState<string | null>(null)
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [returnCount, setReturnCount] = useState(0)
   const [showToast, setShowToast] = useState(false)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const load = useCallback(async () => {
     try {
@@ -45,8 +44,9 @@ export default function FocusImmersiveState({ onExit }: Props) {
 
   useEffect(() => { load() }, [load])
 
-  // Use the loaded note only if the component-level one wasn't set
-  const displayNote = stickyNote ?? stickyNoteLoaded
+  useEffect(() => {
+    return () => { clearTimeout(toastTimerRef.current) }
+  }, [])
 
   const handleReturn = useCallback(async () => {
     try {
@@ -54,7 +54,7 @@ export default function FocusImmersiveState({ onExit }: Props) {
       await incrementReturnCount(today)
       setReturnCount(c => c + 1)
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 1500)
+      toastTimerRef.current = setTimeout(() => setShowToast(false), 1500)
     } catch {
       // Silently handle
     }
@@ -98,8 +98,8 @@ export default function FocusImmersiveState({ onExit }: Props) {
       </div>
 
       {/* Sticky note */}
-      {displayNote && (
-        <p className="immersive-sticky">{displayNote}</p>
+      {stickyNoteLoaded && (
+        <p className="immersive-sticky">{stickyNoteLoaded}</p>
       )}
 
       {/* Audio player */}
