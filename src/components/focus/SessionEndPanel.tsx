@@ -8,14 +8,14 @@ type Props = {
   onSkip: () => void
 }
 
-const categories = [
-  { value: '课内学习', label: '课内学习' },
-  { value: '课外学习', label: '课外学习' },
-  { value: '娱乐消费', label: '娱乐消费' },
+const CATEGORIES = [
+  { value: 'in_class', label: '课内学习' },
+  { value: 'out_class', label: '课外学习' },
+  { value: 'entertainment', label: '娱乐消费' },
 ]
 
 export default function SessionEndPanel({ onComplete, onSkip }: Props) {
-  const [category, setCategory] = useState('课内学习')
+  const [category, setCategory] = useState('in_class')
   const [duration, setDuration] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
@@ -45,7 +45,7 @@ export default function SessionEndPanel({ onComplete, onSkip }: Props) {
         {/* Category pills */}
         <div className="session-end-label">专注类型</div>
         <div className="session-end-pills">
-          {categories.map(c => (
+          {CATEGORIES.map(c => (
             <button
               key={c.value}
               className={`pill${category === c.value ? ' active' : ''}`}
