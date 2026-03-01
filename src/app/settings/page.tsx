@@ -8,6 +8,8 @@ import './settings.css'
 type FocusImage = { id: string; file_path: string }
 type AudioClip = { id: string; label: string; file_path: string }
 
+const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
+
 export default function SettingsPage() {
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
@@ -20,8 +22,19 @@ export default function SettingsPage() {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
+  // Hero greetings state
+  const [greetings, setGreetings] = useState<string[]>([])
+  const [newGreeting, setNewGreeting] = useState('')
+
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
+    // Load greetings from localStorage
+    try {
+      const stored = localStorage.getItem('hero_greetings')
+      setGreetings(stored ? JSON.parse(stored) : DEFAULT_GREETINGS)
+    } catch {
+      setGreetings(DEFAULT_GREETINGS)
+    }
   }, [])
 
   const loadMedia = useCallback(async () => {
@@ -41,6 +54,28 @@ export default function SettingsPage() {
     localStorage.setItem('flomo_api_url', flomoUrl.trim())
     setFlomoSaved(true)
     setTimeout(() => setFlomoSaved(false), 2000)
+  }
+
+  const addGreeting = () => {
+    const text = newGreeting.trim()
+    if (!text) return
+    const updated = [...greetings, text]
+    setGreetings(updated)
+    localStorage.setItem('hero_greetings', JSON.stringify(updated))
+    setNewGreeting('')
+  }
+
+  const removeGreeting = (index: number) => {
+    const updated = greetings.filter((_, i) => i !== index)
+    setGreetings(updated)
+    localStorage.setItem('hero_greetings', JSON.stringify(updated))
+  }
+
+  const handleGreetingKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addGreeting()
+    }
   }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,8 +141,52 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Section 1: Flomo API */}
+      {/* Section 0: Hero Greetings */}
       <section className="settings-section anim d1">
+        <div className="float-card glow-honey">
+          <div className="sec-head">
+            <span className="sec-dot honey" />
+            <span className="sec-name">主页问候语</span>
+          </div>
+          <div className="greeting-list">
+            {greetings.map((g, i) => (
+              <div key={i} className="greeting-item">
+                <span className="greeting-text">{g}</span>
+                <button
+                  onClick={() => removeGreeting(i)}
+                  className="greeting-delete"
+                  aria-label="删除问候语"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            {greetings.length === 0 && (
+              <p className="settings-empty">没有自定义问候语，将使用默认问候</p>
+            )}
+          </div>
+          <div className="greeting-add-row">
+            <input
+              type="text"
+              placeholder="输入新的问候语..."
+              value={newGreeting}
+              onChange={e => setNewGreeting(e.target.value)}
+              onKeyDown={handleGreetingKeyDown}
+              className="field-input"
+            />
+            <button
+              onClick={addGreeting}
+              className="btn-warm"
+              disabled={!newGreeting.trim()}
+            >
+              添加
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Section 1: Flomo API */}
+      <section className="settings-section anim d2">
         <div className="float-card glow-neutral">
           <div className="sec-head">
             <span className="sec-dot sky" />
@@ -129,7 +208,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Section 2: Focus Background Images */}
-      <section className="settings-section anim d2">
+      <section className="settings-section anim d3">
         <div className="float-card glow-coral">
           <div className="sec-head">
             <span className="sec-dot coral" />
@@ -168,7 +247,7 @@ export default function SettingsPage() {
       </section>
 
       {/* Section 3: Audio Clips */}
-      <section className="settings-section anim d3">
+      <section className="settings-section anim d4">
         <div className="float-card glow-sage">
           <div className="sec-head">
             <span className="sec-dot sage" />

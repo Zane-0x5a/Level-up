@@ -10,10 +10,34 @@ const WEEKDAYS = [
   '\u661F\u671F\u516D',
 ]
 
+const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
+
+/**
+ * Split a greeting into [prefix, emphasized] parts.
+ * The last clause (after the last Chinese comma) gets the gradient <em> treatment.
+ * If there is no comma, the entire string is emphasized.
+ */
+function splitGreeting(text: string): [string, string] {
+  const lastComma = text.lastIndexOf('，')
+  if (lastComma === -1) return ['', text]
+  return [text.slice(0, lastComma + 1), text.slice(lastComma + 1)]
+}
+
 export default function HeroSection() {
   const [dayType, setDayType] = useState<string>('\u5B66\u4E60\u65E5')
   const [streak, setStreak] = useState(0)
   const [dateStr, setDateStr] = useState('')
+  const [greeting] = useState<string>(() => {
+    if (typeof window === 'undefined') return DEFAULT_GREETINGS[0]
+    try {
+      const stored = localStorage.getItem('hero_greetings')
+      const list: string[] = stored ? JSON.parse(stored) : DEFAULT_GREETINGS
+      const pool = list.length > 0 ? list : DEFAULT_GREETINGS
+      return pool[Math.floor(Math.random() * pool.length)]
+    } catch {
+      return DEFAULT_GREETINGS[0]
+    }
+  })
 
   useEffect(() => {
     const now = new Date()
@@ -40,11 +64,13 @@ export default function HeroSection() {
     load()
   }, [])
 
+  const [prefix, emphasized] = splitGreeting(greeting)
+
   return (
     <div className="hero">
       <div className="hero-date">{dateStr}</div>
       <div className="hero-greeting">
-        {'\u4FDD\u6301\u70ED\u7231\uFF0C'}<em>{'\u5954\u8D74\u5C71\u6D77'}</em>
+        {prefix}<em>{emphasized}</em>
       </div>
       <div className="hero-tag">
         <span className="dot" />
