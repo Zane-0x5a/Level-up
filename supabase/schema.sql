@@ -46,3 +46,13 @@ CREATE TABLE focus_images (
   user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
   file_path TEXT NOT NULL
 );
+
+-- 专注会话（每次专注结束后即时录入）
+CREATE TABLE focus_sessions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
+  date DATE NOT NULL DEFAULT CURRENT_DATE,
+  category TEXT NOT NULL CHECK (category IN ('in_class', 'out_class', 'entertainment')),
+  duration FLOAT NOT NULL,  -- 单位：小时
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
