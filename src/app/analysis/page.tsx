@@ -102,7 +102,7 @@ export default function AnalysisPage() {
 
       {/* Section 1: Daily Entry Form */}
       <section className="analysis-section anim d1">
-        <DailyEntryForm />
+        <DailyEntryForm onSave={load} />
       </section>
 
       {/* Section 2: Charts */}
@@ -144,7 +144,7 @@ export default function AnalysisPage() {
           </div>
           <div className="float-card glow-sage metric-card">
             <div className="metric-number">{metrics.totalReturns}</div>
-            <div className="metric-name">本周总回归次数</div>
+            <div className="metric-name">总回归次数</div>
             <span className={`trend-badge ${metrics.totalReturns > 0 ? 'up' : 'neutral'}`}>
               {metrics.totalReturns > 0 ? '↑ 活跃' : '— 待记录'}
             </span>

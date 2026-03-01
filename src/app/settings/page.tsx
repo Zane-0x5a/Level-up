@@ -14,7 +14,9 @@ export default function SettingsPage() {
   const [images, setImages] = useState<FocusImage[]>([])
   const [clips, setClips] = useState<AudioClip[]>([])
   const [audioLabel, setAudioLabel] = useState('')
-  const [uploading, setUploading] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
@@ -28,7 +30,8 @@ export default function SettingsPage() {
       setImages(imgs)
       setClips(auds)
     } catch {
-      // ignore
+      setError('加载媒体失败，请刷新重试')
+      setTimeout(() => setError(null), 3000)
     }
   }, [])
 
@@ -43,14 +46,15 @@ export default function SettingsPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    setUploading(true)
+    setUploadingImage(true)
     try {
       await uploadFocusImage(file)
       await loadMedia()
     } catch {
-      // ignore
+      setError('图片上传失败，请重试')
+      setTimeout(() => setError(null), 3000)
     } finally {
-      setUploading(false)
+      setUploadingImage(false)
       if (imageInputRef.current) imageInputRef.current.value = ''
     }
   }
@@ -58,15 +62,16 @@ export default function SettingsPage() {
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file || !audioLabel.trim()) return
-    setUploading(true)
+    setUploadingAudio(true)
     try {
       await uploadAudioClip(file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch {
-      // ignore
+      setError('音频上传失败，请重试')
+      setTimeout(() => setError(null), 3000)
     } finally {
-      setUploading(false)
+      setUploadingAudio(false)
       if (audioInputRef.current) audioInputRef.current.value = ''
     }
   }
@@ -76,7 +81,8 @@ export default function SettingsPage() {
       await deleteFocusImage(id)
       await loadMedia()
     } catch {
-      // ignore
+      setError('删除图片失败，请重试')
+      setTimeout(() => setError(null), 3000)
     }
   }
 
@@ -85,13 +91,20 @@ export default function SettingsPage() {
       await deleteAudioClip(id)
       await loadMedia()
     } catch {
-      // ignore
+      setError('删除音频失败，请重试')
+      setTimeout(() => setError(null), 3000)
     }
   }
 
   return (
     <main className="settings-page">
       <h1 className="settings-title anim">设置</h1>
+
+      {error && (
+        <div className="settings-error anim" style={{ color: '#e55', background: 'rgba(229,85,85,0.08)', border: '1px solid rgba(229,85,85,0.2)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 14 }}>
+          {error}
+        </div>
+      )}
 
       {/* Section 1: Flomo API */}
       <section className="settings-section anim d1">
@@ -144,7 +157,7 @@ export default function SettingsPage() {
                 accept="image/*"
                 style={{ display: 'none' }}
                 onChange={handleImageUpload}
-                disabled={uploading}
+                disabled={uploadingImage}
               />
             </label>
           </div>
@@ -172,8 +185,8 @@ export default function SettingsPage() {
               className="field-input"
             />
             <label
-              className={`btn-outline audio-file-label ${(!audioLabel.trim() || uploading) ? '' : ''}`}
-              style={{ opacity: (!audioLabel.trim() || uploading) ? 0.5 : 1, pointerEvents: (!audioLabel.trim() || uploading) ? 'none' : 'auto' }}
+              className="btn-outline audio-file-label"
+              style={{ opacity: (!audioLabel.trim() || uploadingAudio) ? 0.5 : 1, pointerEvents: (!audioLabel.trim() || uploadingAudio) ? 'none' : 'auto' }}
             >
               选择音频文件
               <input
@@ -181,7 +194,7 @@ export default function SettingsPage() {
                 type="file"
                 accept="audio/*"
                 onChange={handleAudioUpload}
-                disabled={uploading || !audioLabel.trim()}
+                disabled={uploadingAudio || !audioLabel.trim()}
               />
             </label>
           </div>

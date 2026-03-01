@@ -5,7 +5,7 @@ import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
 import { sendToFlomo } from '@/lib/flomo'
 
-export default function DailyEntryForm() {
+export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
@@ -59,6 +59,7 @@ export default function DailyEntryForm() {
     setStatus(null)
     try {
       await upsertDailyRecord({ date, day_type: dayType, ibetter_count: ibetter, note })
+      onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
     } catch {
