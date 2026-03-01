@@ -311,6 +311,63 @@ body::before {
 }
 
 /* ═══════════════════════════════════════
+   TOP NAV
+   ═══════════════════════════════════════ */
+.top-nav {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 8px 10px 8px 24px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border: 1px solid rgba(43,45,66,0.05);
+  border-radius: 100px;
+  box-shadow: 0 4px 24px rgba(43,45,66,0.06);
+  transition: top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.top-nav.hidden {
+  top: -80px;
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.nav-brand span {
+  color: var(--color-coral);
+}
+.nav-links {
+  display: flex;
+  gap: 3px;
+}
+.nav-link {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  text-decoration: none;
+  padding: 7px 18px;
+  border-radius: 100px;
+  transition: all 0.25s;
+}
+.nav-link:hover {
+  color: var(--color-text-2);
+  background: rgba(43,45,66,0.03);
+}
+.nav-link.active {
+  color: #fff;
+  background: var(--color-coral);
+  box-shadow: 0 2px 12px var(--color-coral-glow);
+}
+
+/* ═══════════════════════════════════════
    SCROLLBAR
    ═══════════════════════════════════════ */
 ::-webkit-scrollbar { width: 5px; }
