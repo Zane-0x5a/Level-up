@@ -1,13 +1,20 @@
+import './home.css'
+import HeroSection from '@/components/home/HeroSection'
 import CountdownSection from '@/components/home/CountdownSection'
-import StickyNotes from '@/components/home/StickyNotes'
 import ProgressOverview from '@/components/home/ProgressOverview'
+import StickyNotes from '@/components/home/StickyNotes'
 
 export default function HomePage() {
   return (
-    <main className="p-4 pt-6 space-y-5 max-w-md mx-auto">
-      <ProgressOverview />
+    <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px' }}>
+      <HeroSection />
       <CountdownSection />
-      <StickyNotes />
+      <section className="section anim d2">
+        <div className="home-grid">
+          <ProgressOverview />
+          <StickyNotes />
+        </div>
+      </section>
     </main>
   )
 }
