@@ -13,6 +13,8 @@ const links = [
 export default function BottomNav() {
   const pathname = usePathname()
 
+  if (pathname === '/focus') return null
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       <div className="glass-2" style={{ borderRadius: 0 }}>
