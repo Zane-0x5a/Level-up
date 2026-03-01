@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Send } from 'lucide-react'
 import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
 import { sendToFlomo } from '@/lib/flomo'
@@ -9,34 +8,47 @@ import { sendToFlomo } from '@/lib/flomo'
 export default function DailyEntryForm() {
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
+  const [focusIn, setFocusIn] = useState(0)
+  const [focusOut, setFocusOut] = useState(0)
+  const [entertainment, setEntertainment] = useState(0)
   const [ibetter, setIbetter] = useState(0)
   const [note, setNote] = useState('')
-  const [focusSummary, setFocusSummary] = useState({ inClass: 0, outClass: 0, entertainment: 0 })
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   const loadRecord = useCallback(async () => {
-    const record = await getDailyRecord(date)
-    if (record) {
-      setDayType(record.day_type)
-      setIbetter(record.ibetter_count ?? 0)
-      setNote(record.note ?? '')
-    } else {
-      setDayType('study_day')
-      setIbetter(0)
-      setNote('')
+    try {
+      const record = await getDailyRecord(date)
+      if (record) {
+        setDayType(record.day_type)
+        setIbetter(record.ibetter_count ?? 0)
+        setNote(record.note ?? '')
+      } else {
+        setDayType('study_day')
+        setIbetter(0)
+        setNote('')
+      }
+    } catch {
+      // ignore load errors
     }
   }, [date])
 
   const loadFocus = useCallback(async () => {
-    const sessions = await getTodayFocusSessions()
-    const summary = { inClass: 0, outClass: 0, entertainment: 0 }
-    for (const s of sessions) {
-      if (s.category === 'in_class') summary.inClass += s.duration
-      else if (s.category === 'out_class') summary.outClass += s.duration
-      else summary.entertainment += s.duration
+    try {
+      const sessions = await getTodayFocusSessions()
+      let inC = 0, outC = 0, ent = 0
+      for (const s of sessions) {
+        if (s.category === 'in_class') inC += s.duration
+        else if (s.category === 'out_class') outC += s.duration
+        else ent += s.duration
+      }
+      setFocusIn(inC)
+      setFocusOut(outC)
+      setEntertainment(ent)
+    } catch {
+      // ignore
     }
-    setFocusSummary(summary)
   }, [])
 
   useEffect(() => { loadRecord() }, [loadRecord])
@@ -44,8 +56,13 @@ export default function DailyEntryForm() {
 
   const handleSave = async () => {
     setSaving(true)
+    setStatus(null)
     try {
       await upsertDailyRecord({ date, day_type: dayType, ibetter_count: ibetter, note })
+      setStatus({ type: 'success', msg: '已保存' })
+      setTimeout(() => setStatus(null), 2000)
+    } catch {
+      setStatus({ type: 'error', msg: '保存失败' })
     } finally {
       setSaving(false)
     }
@@ -54,124 +71,129 @@ export default function DailyEntryForm() {
   const handleFlomo = async () => {
     if (!note.trim()) return
     setSending(true)
+    setStatus(null)
     try {
-      const content = `#LevelUp ${date}\n日类型: ${dayType === 'study_day' ? '学习日' : '休假日'}\n${note}`
+      const content = `#LevelUp ${date}\n日类型: ${dayType === 'study_day' ? '学习日' : '休假日'}\n课内: ${focusIn.toFixed(1)}h | 课外: ${focusOut.toFixed(1)}h | 娱乐: ${entertainment.toFixed(1)}h\niBetter: ${ibetter}\n\n${note}`
       await sendToFlomo(content)
+      setStatus({ type: 'success', msg: '已发送到 flomo' })
+      setTimeout(() => setStatus(null), 2000)
     } catch {
-      alert('发送失败，请检查 flomo API 配置')
+      setStatus({ type: 'error', msg: '发送失败，请检查 flomo 配置' })
     } finally {
       setSending(false)
     }
   }
 
-  const totalFocus = focusSummary.inClass + focusSummary.outClass + focusSummary.entertainment
-
   return (
-    <div className="glass-1 p-5 space-y-4 animate-in">
-      <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>每日录入</h2>
-
-      {/* Date picker */}
-      <input
-        type="date"
-        value={date}
-        onChange={e => setDate(e.target.value)}
-        className="w-full px-3 py-2 text-sm outline-none"
-        style={{
-          background: 'var(--color-glass-input)',
-          borderRadius: 'var(--radius-glass-xs)',
-          color: 'var(--color-text)',
-        }}
-      />
-
-      {/* Day type toggle */}
-      <div className="flex gap-2">
-        {(['study_day', 'rest_day'] as const).map(t => (
-          <button
-            key={t}
-            onClick={() => setDayType(t)}
-            className="flex-1 py-2 text-sm font-medium transition-all duration-300"
-            style={{
-              borderRadius: 'var(--radius-pill)',
-              background: dayType === t ? 'var(--color-accent)' : 'var(--color-glass-3)',
-              color: dayType === t ? '#fff' : 'var(--color-text-2)',
-            }}
-          >
-            {t === 'study_day' ? '学习日' : '休假日'}
-          </button>
-        ))}
+    <div className="float-card glow-neutral">
+      {/* Section header */}
+      <div className="sec-head">
+        <span className="sec-dot sky" />
+        <span className="sec-name">每日记录</span>
       </div>
 
-      {/* iBetter count */}
-      <div className="space-y-1">
-        <label className="text-sm" style={{ color: 'var(--color-text-2)' }}>iBetter 打卡数</label>
+      {/* Date + Day type row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
         <input
-          type="number"
-          min={0}
-          value={ibetter}
-          onChange={e => setIbetter(parseInt(e.target.value) || 0)}
-          className="w-full px-3 py-2 text-sm outline-none"
-          style={{
-            background: 'var(--color-glass-input)',
-            borderRadius: 'var(--radius-glass-xs)',
-            color: 'var(--color-text)',
-          }}
+          type="date"
+          value={date}
+          onChange={e => setDate(e.target.value)}
+          className="field-input"
+          style={{ maxWidth: 180 }}
         />
+        <div className="entry-day-pills" style={{ marginBottom: 0 }}>
+          {(['study_day', 'rest_day'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setDayType(t)}
+              className={`pill${dayType === t ? ' active' : ''}`}
+            >
+              {t === 'study_day' ? '学习日' : '休假日'}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Focus summary (read-only) */}
-      {totalFocus > 0 && (
-        <div className="glass-3 p-3 space-y-1">
-          <p className="text-xs font-medium" style={{ color: 'var(--color-text-2)' }}>今日专注汇总</p>
-          <div className="flex gap-4 text-sm">
-            <span style={{ color: 'var(--color-accent)' }}>课内 {focusSummary.inClass.toFixed(1)}h</span>
-            <span style={{ color: 'var(--color-success)' }}>课外 {focusSummary.outClass.toFixed(1)}h</span>
-            <span style={{ color: 'var(--color-amber)' }}>娱乐 {focusSummary.entertainment.toFixed(1)}h</span>
-          </div>
+      {/* 4-column input grid */}
+      <div className="entry-input-grid">
+        <div className="entry-field">
+          <label className="entry-field-label">课内投入 (h)</label>
+          <input
+            type="number"
+            min={0}
+            step={0.1}
+            value={focusIn}
+            onChange={e => setFocusIn(parseFloat(e.target.value) || 0)}
+            className="field-input"
+            readOnly
+          />
         </div>
-      )}
+        <div className="entry-field">
+          <label className="entry-field-label">课外投入 (h)</label>
+          <input
+            type="number"
+            min={0}
+            step={0.1}
+            value={focusOut}
+            onChange={e => setFocusOut(parseFloat(e.target.value) || 0)}
+            className="field-input"
+            readOnly
+          />
+        </div>
+        <div className="entry-field">
+          <label className="entry-field-label">娱乐消费 (h)</label>
+          <input
+            type="number"
+            min={0}
+            step={0.1}
+            value={entertainment}
+            onChange={e => setEntertainment(parseFloat(e.target.value) || 0)}
+            className="field-input"
+            readOnly
+          />
+        </div>
+        <div className="entry-field">
+          <label className="entry-field-label">iBetter</label>
+          <input
+            type="number"
+            min={0}
+            value={ibetter}
+            onChange={e => setIbetter(parseInt(e.target.value) || 0)}
+            className="field-input"
+          />
+        </div>
+      </div>
 
-      {/* Note */}
+      {/* Summary textarea */}
       <textarea
         placeholder="今日总结..."
         value={note}
         onChange={e => setNote(e.target.value)}
         rows={3}
-        className="w-full px-3 py-2 text-sm outline-none resize-none"
-        style={{
-          background: 'var(--color-glass-input)',
-          borderRadius: 'var(--radius-glass-xs)',
-          color: 'var(--color-text)',
-        }}
+        className="field-textarea"
       />
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="entry-actions">
         <button
           onClick={handleSave}
           disabled={saving}
-          className="flex-1 py-2.5 text-sm font-medium text-white disabled:opacity-50"
-          style={{
-            background: 'var(--color-accent)',
-            borderRadius: 'var(--radius-glass-sm)',
-            transition: 'all 0.4s var(--ease-spring)',
-          }}
+          className="btn-warm"
+          style={{ opacity: saving ? 0.6 : 1 }}
         >
-          {saving ? '保存中...' : '保存'}
+          {saving ? '保存中...' : '保存记录'}
         </button>
         <button
           onClick={handleFlomo}
           disabled={sending || !note.trim()}
-          className="flex items-center justify-center gap-1.5 px-4 py-2.5 text-sm font-medium disabled:opacity-50"
-          style={{
-            background: 'var(--color-success)',
-            borderRadius: 'var(--radius-glass-sm)',
-            color: '#fff',
-            transition: 'all 0.4s var(--ease-spring)',
-          }}
+          className="btn-outline"
+          style={{ opacity: (sending || !note.trim()) ? 0.5 : 1 }}
         >
-          <Send size={14} />
-          {sending ? '发送中...' : 'flomo'}
+          {sending ? '发送中...' : '发送到 flomo →'}
         </button>
+        {status && (
+          <span className={`entry-status ${status.type}`}>{status.msg}</span>
+        )}
       </div>
     </div>
   )

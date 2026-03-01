@@ -13,17 +13,12 @@ const options = [
 
 export default function DayTypeFilter({ value, onChange }: Props) {
   return (
-    <div className="flex gap-2">
+    <div className="analysis-filters">
       {options.map(opt => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className="px-4 py-1.5 text-sm font-medium transition-all duration-300"
-          style={{
-            borderRadius: 'var(--radius-pill)',
-            background: value === opt.value ? 'var(--color-accent)' : 'var(--color-glass-3)',
-            color: value === opt.value ? '#fff' : 'var(--color-text-2)',
-          }}
+          className={`pill${value === opt.value ? ' active' : ''}`}
         >
           {opt.label}
         </button>
