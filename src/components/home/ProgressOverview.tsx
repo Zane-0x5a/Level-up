@@ -1,88 +1,100 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Flame, Clock, Zap, RotateCcw } from 'lucide-react'
-import { getStreak, getTotalFocusHours, getWeeklyFocusHours, getTotalReturnCount } from '@/lib/api/stats'
+import { getDailyRecord } from '@/lib/api/daily-records'
+import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 
-type StatItem = {
-  label: string
-  value: string
-  icon: React.ElementType
-  color: string
-  bg: string
+type DailyData = {
+  focusInClass: number
+  focusOutClass: number
+  entertainment: number
+  ibetterCount: number
+  returnCount: number
 }
 
 export default function ProgressOverview() {
-  const [stats, setStats] = useState<StatItem[]>([])
+  const [data, setData] = useState<DailyData>({
+    focusInClass: 0,
+    focusOutClass: 0,
+    entertainment: 0,
+    ibetterCount: 0,
+    returnCount: 0,
+  })
 
   useEffect(() => {
     async function load() {
-      const [streak, total, weekly, returns] = await Promise.all([
-        getStreak(),
-        getTotalFocusHours(),
-        getWeeklyFocusHours(),
-        getTotalReturnCount(),
-      ])
-      setStats([
-        {
-          label: '连续打卡',
-          value: `${streak} 天`,
-          icon: Flame,
-          color: 'var(--color-rose)',
-          bg: 'var(--color-rose-soft)',
-        },
-        {
-          label: '本周专注',
-          value: `${weekly.toFixed(1)} h`,
-          icon: Zap,
-          color: 'var(--color-accent)',
-          bg: 'var(--color-accent-soft)',
-        },
-        {
-          label: '累计专注',
-          value: `${total.toFixed(1)} h`,
-          icon: Clock,
-          color: 'var(--color-success)',
-          bg: 'var(--color-success-soft)',
-        },
-        {
-          label: '累计回归',
-          value: `${returns} 次`,
-          icon: RotateCcw,
-          color: 'var(--color-purple)',
-          bg: 'var(--color-purple-soft)',
-        },
-      ])
+      try {
+        const today = new Date().toISOString().split('T')[0]
+        const [record, sessions, returnCount] = await Promise.all([
+          getDailyRecord(today),
+          getTodayFocusSessions(),
+          getTodayReturnCount(),
+        ])
+
+        // Calculate from focus sessions if daily record doesn't have the data
+        let focusInClass = record?.focus_in_class ?? 0
+        let focusOutClass = record?.focus_out_class ?? 0
+        let entertainment = record?.entertainment ?? 0
+
+        // If we have sessions but no record data, aggregate from sessions
+        if (!record && sessions.length > 0) {
+          for (const s of sessions) {
+            if (s.category === 'in_class') focusInClass += s.duration
+            else if (s.category === 'out_class') focusOutClass += s.duration
+            else if (s.category === 'entertainment') entertainment += s.duration
+          }
+        }
+
+        setData({
+          focusInClass,
+          focusOutClass,
+          entertainment,
+          ibetterCount: record?.ibetter_count ?? 0,
+          returnCount: returnCount,
+        })
+      } catch {
+        // Silently handle error, keep defaults
+      }
     }
     load()
   }, [])
 
+  const metrics = [
+    { label: '\u8BFE\u5185\u6295\u5165', value: data.focusInClass, unit: 'h', highlighted: true },
+    { label: '\u8BFE\u5916\u6295\u5165', value: data.focusOutClass, unit: 'h', highlighted: false },
+    { label: '\u5A31\u4E50\u6D88\u8D39', value: data.entertainment, unit: 'h', highlighted: false },
+    { label: 'iBetter', value: data.ibetterCount, unit: '', highlighted: false },
+    { label: '\u56DE\u5F52\u6B21\u6570', value: data.returnCount, unit: '', highlighted: false },
+  ]
+
   return (
-    <section className="animate-in">
-      <div className="grid grid-cols-2 gap-3">
-        {stats.map((item, i) => (
-          <div
-            key={item.label}
-            className={`glass-3 p-4 animate-in delay-${i + 1}`}
-          >
-            <div
-              className="w-8 h-8 flex items-center justify-center mb-2"
-              style={{
-                borderRadius: 'var(--radius-glass-xs)',
-                background: item.bg,
-              }}
-            >
-              <item.icon size={16} style={{ color: item.color }} />
-            </div>
-            <p className="text-2xl font-bold" style={{ color: 'var(--color-text)' }}>
-              {item.value}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--color-text-3)' }}>
-              {item.label}
-            </p>
-          </div>
-        ))}
+    <div>
+      <div className="sec-head">
+        <div className="sec-dot sage" />
+        <div className="sec-name">{'\u4ECA\u65E5\u6982\u89C8'}</div>
       </div>
-    </section>
+      <div className="float-card glow-sage">
+        <div className="metrics-row">
+          {metrics.map((m, i) => (
+            <div key={i} className="metric">
+              {m.highlighted ? (
+                <div className="metric-hl sage">
+                  <div className="metric-val">
+                    {m.unit === 'h' ? m.value.toFixed(1) : m.value}
+                    {m.unit && <span className="u">{m.unit}</span>}
+                  </div>
+                </div>
+              ) : (
+                <div className="metric-val">
+                  {m.unit === 'h' ? m.value.toFixed(1) : m.value}
+                  {m.unit && <span className="u">{m.unit}</span>}
+                </div>
+              )}
+              <div className="metric-name">{m.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }

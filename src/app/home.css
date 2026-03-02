@@ -1,0 +1,818 @@
+/* ═══════════════════════════════════════
+   HOME PAGE — 2×2 Grid Layout
+   Row 1: Hero + Countdown Carousel
+   Row 2: Overview + Sticky Notes
+   ═══════════════════════════════════════ */
+
+/* Layout container — fills viewport, 2 rows split space evenly */
+.home-layout {
+  display: grid;
+  grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr);
+  gap: 24px;
+  padding: 20px 0 40px;
+  min-height: calc(100vh - 82px);
+}
+
+/* Row 1: Hero + Countdown — equal halves */
+.home-row1 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  align-items: stretch;
+}
+
+.grid-hero {
+  display: flex;
+  align-items: flex-start;
+}
+
+.grid-countdown {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Row 2: Overview + Notes — 3fr 2fr */
+.home-row2 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 20px;
+}
+/* Row 2 children: stretch cards to fill available height */
+.home-row2 > div {
+  display: flex;
+  flex-direction: column;
+}
+.home-row2 .float-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ═══════════════════════════════════════
+   Hero — left-aligned, vertically centered
+   ═══════════════════════════════════════ */
+.hero {
+  padding: 28px 0 32px;
+  text-align: left;
+}
+.hero-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  letter-spacing: 0.06em;
+  margin-bottom: 20px;
+}
+.hero-greeting {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 22px;
+  letter-spacing: -0.01em;
+}
+.hero-greeting em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--color-coral), var(--color-honey));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-sage);
+  background: var(--color-sage-soft);
+  padding: 8px 20px;
+  border-radius: 100px;
+  cursor: pointer;
+  border: none;
+  user-select: none;
+  transition: transform 0.15s ease;
+}
+.hero-tag:active {
+  transform: scale(0.93);
+}
+.hero-tag.holiday {
+  color: var(--color-honey);
+  background: var(--color-honey-soft);
+}
+.hero-tag.holiday .dot {
+  background: var(--color-honey);
+}
+.hero-tag .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-sage);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════
+   Countdown Carousel — single card with navigation
+   ═══════════════════════════════════════ */
+.cd-carousel-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cd-carousel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cd-add-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 45, 66, 0.08);
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cd-add-btn:hover {
+  border-color: var(--color-coral);
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
+
+/* Carousel card container — float-card is outermost, clips children not its own shadow */
+.cd-card {
+  padding: 0;
+  position: relative;
+  min-height: 140px;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Inner clip wrapper (for slide animation) */
+.cd-inner-clip {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Horizontal layout inside card */
+.cd-layout {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  padding: 0;
+  gap: 0;
+}
+
+.cd-left {
+  flex: 2;
+  display: flex;
+  align-items: stretch;
+}
+
+.cd-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 20px 24px;
+}
+
+/* Delete button on countdown card */
+.cd-delete {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  opacity: 0;
+  padding: 0;
+  z-index: 1;
+}
+.cd-card:hover .cd-delete {
+  opacity: 1;
+}
+.cd-delete:hover {
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
+
+.cd-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 32px;
+  border-radius: var(--radius) 0 0 var(--radius);
+  flex: 1;
+}
+.cd-pill.coral { background: var(--color-coral-soft); }
+.cd-pill.sage { background: var(--color-sage-soft); }
+.cd-pill.honey { background: var(--color-honey-soft); }
+.cd-number {
+  font-family: var(--font-display);
+  font-size: 88px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -4px;
+}
+.cd-pill.coral .cd-number { color: var(--color-coral); }
+.cd-pill.sage .cd-number { color: var(--color-sage); }
+.cd-pill.honey .cd-number { color: var(--color-honey); }
+.cd-unit {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  margin-top: 4px;
+}
+.cd-label {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-target {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-text-3);
+}
+
+/* Navigation row (arrows + dots) */
+.cd-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.cd-arrow {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(43, 45, 66, 0.06);
+  background: transparent;
+  color: var(--color-text-3);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.25s;
+  padding: 0;
+  flex-shrink: 0;
+}
+.cd-arrow:hover {
+  border-color: rgba(43, 45, 66, 0.12);
+  color: var(--color-text-2);
+  background: var(--color-bg-sub);
+}
+
+.cd-dots {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cd-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(43, 45, 66, 0.10);
+  transition: all 0.3s;
+  cursor: pointer;
+  border: none;
+  padding: 0;
+}
+.cd-dot.active {
+  background: var(--color-coral);
+  box-shadow: 0 0 6px var(--color-coral-glow);
+  width: 7px;
+  height: 7px;
+}
+
+/* ═══════════════════════════════════════
+   Carousel Spring Transition Animation
+   ═══════════════════════════════════════ */
+
+/* Slide content wrapper for animation */
+.cd-slide {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+/* Spring-in from left */
+@keyframes cdSlideInLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-60px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Spring-in from right */
+@keyframes cdSlideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(60px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+}
+
+/* Spring-out to left */
+@keyframes cdSlideOutLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-60px);
+    filter: blur(4px);
+  }
+}
+
+/* Spring-out to right */
+@keyframes cdSlideOutRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: blur(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(60px);
+    filter: blur(4px);
+  }
+}
+
+.cd-slide-enter-left {
+  animation: cdSlideInLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cd-slide-enter-right {
+  animation: cdSlideInRight 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+.cd-slide-exit-left {
+  animation: cdSlideOutLeft 0.25s ease-out both;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.cd-slide-exit-right {
+  animation: cdSlideOutRight 0.25s ease-out both;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+/* Number blur-to-sharp on enter */
+@keyframes cdNumberReveal {
+  0% {
+    filter: blur(6px);
+    opacity: 0.3;
+  }
+  60% {
+    filter: blur(1px);
+    opacity: 0.9;
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+  }
+}
+
+.cd-number-anim {
+  animation: cdNumberReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.08s;
+}
+
+/* ═══════════════════════════════════════
+   Add form inside fixed-height card
+   ═══════════════════════════════════════ */
+.cd-form-layout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px;
+  width: 100%;
+  height: 100%;
+}
+.cd-form-layout .field-input {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+.cd-form-layout .field-input[type="text"] {
+  flex: 1;
+}
+.cd-form-layout .field-input[type="date"] {
+  flex-shrink: 0;
+  width: 140px;
+}
+.cd-form-btns {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════
+   Empty State
+   ═══════════════════════════════════════ */
+.cd-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  width: 100%;
+  height: 100%;
+}
+
+.cd-empty-icon {
+  font-size: 28px;
+  opacity: 0.3;
+}
+
+.cd-empty-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+
+.cd-empty-add {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.cd-empty-add:hover {
+  color: var(--color-coral);
+}
+
+/* ═══════════════════════════════════════
+   Row 2: Overview + Notes
+   ═══════════════════════════════════════ */
+/* (Row 2 grid is handled by .home-row2) */
+
+/* Metrics row */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+  flex: 1;
+  align-content: center;
+}
+.metric {
+  text-align: center;
+  padding: 10px 6px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.metric:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 18%;
+  bottom: 18%;
+  width: 1px;
+  background: rgba(43,45,66,0.06);
+}
+.metric-val {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.metric-val .u {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-3);
+}
+.metric-hl {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: var(--radius-xs);
+  margin-bottom: 4px;
+}
+.metric-hl.sage { background: var(--color-sage-soft); }
+.metric-hl.sage .metric-val { color: var(--color-sage); }
+.metric-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-2);
+}
+
+/* Notes */
+.note-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(43,45,66,0.05);
+  font-size: 13px;
+  color: var(--color-text-2);
+  line-height: 1.5;
+}
+.note-item:last-of-type {
+  border-bottom: none;
+}
+.note-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+  background: var(--color-honey);
+  box-shadow: 0 0 6px var(--color-honey-glow);
+}
+.note-delete {
+  background: none;
+  border: none;
+  color: var(--color-text-3);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s;
+  opacity: 0;
+}
+.note-item:hover .note-delete {
+  opacity: 1;
+}
+.note-delete:hover {
+  color: var(--color-coral);
+  background: var(--color-coral-soft);
+}
+.note-add {
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  cursor: pointer;
+  transition: color 0.2s;
+  background: none;
+  border: none;
+  padding-bottom: 0;
+}
+.note-add:hover {
+  color: var(--color-coral);
+}
+.note-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.note-submit {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 100px;
+  background: var(--color-coral);
+  color: #fff;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.note-submit:hover {
+  background: #c05540;
+}
+.note-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.note-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+
+/* Section spacing */
+.section {
+  margin-bottom: 36px;
+}
+
+/* ═══════════════════════════════════════
+   HOME MAIN — replaces inline style on <main>
+   ═══════════════════════════════════════ */
+.home-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 48px;
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Tablet (≤ 900px)
+   ═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  /* Layout: 2x2 → single column */
+  .home-main {
+    padding: 0 24px;
+  }
+  .home-layout {
+    min-height: auto;
+    grid-template-rows: auto auto;
+  }
+  .home-row1 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  .home-row2 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  /* Hero: centered in single-column */
+  .grid-hero {
+    justify-content: center;
+  }
+  .hero {
+    padding: 20px 0 24px;
+    text-align: center;
+    width: 100%;
+  }
+  .hero-greeting {
+    font-size: 30px;
+    margin-bottom: 18px;
+  }
+
+  /* Countdown */
+  .cd-number {
+    font-size: 64px;
+    letter-spacing: -3px;
+  }
+  .cd-pill {
+    padding: 16px 24px;
+  }
+  .cd-right {
+    padding: 16px 20px;
+    align-items: center;
+    text-align: center;
+  }
+  .cd-nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Metrics */
+  .metric-val {
+    font-size: 24px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Mobile (≤ 640px)
+   ═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  /* Layout */
+  .home-main {
+    padding: 0 16px;
+  }
+  .home-layout {
+    gap: 16px;
+    padding: 12px 0 24px;
+  }
+
+  /* Hero: centered on mobile */
+  .hero {
+    padding: 20px 0 24px;
+    text-align: center;
+    width: 100%;
+  }
+  .hero-date {
+    font-size: 11px;
+    margin-bottom: 14px;
+  }
+  .hero-greeting {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+  .hero-tag {
+    padding: 7px 16px;
+    font-size: 11px;
+  }
+
+  /* Countdown: horizontal → vertical stack */
+  .cd-layout {
+    flex-direction: column;
+  }
+  .cd-left {
+    flex: none;
+  }
+  .cd-right {
+    flex: none;
+    padding: 10px 16px;
+    align-items: center;
+    text-align: center;
+  }
+  .cd-nav {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 4px;
+    padding-top: 0;
+  }
+  .cd-pill {
+    padding: 20px 16px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .cd-number {
+    font-size: 56px;
+    letter-spacing: -3px;
+  }
+  .cd-card {
+    min-height: auto;
+  }
+  .cd-form-layout {
+    flex-direction: column;
+    padding: 16px;
+    gap: 10px;
+  }
+  .cd-form-layout .field-input[type="date"] {
+    width: 100%;
+  }
+
+  /* Metrics: 5-col → 3-col wrap */
+  .metrics-row {
+    grid-template-columns: repeat(3, 1fr);
+    row-gap: 8px;
+  }
+  .metric:not(:last-child)::after {
+    display: none;
+  }
+  .metric-val {
+    font-size: 22px;
+  }
+
+  /* Notes */
+  .note-input-row {
+    flex-direction: column;
+  }
+}

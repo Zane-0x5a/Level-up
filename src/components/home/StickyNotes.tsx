@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { Plus, X } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getStickyNotes, addStickyNote, deleteStickyNote } from '@/lib/api/sticky-notes'
 
 type Note = { id: string; content: string }
@@ -10,25 +9,49 @@ export default function StickyNotes() {
   const [notes, setNotes] = useState<Note[]>([])
   const [showInput, setShowInput] = useState(false)
   const [text, setText] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
-    const data = await getStickyNotes()
-    setNotes(data ?? [])
+    try {
+      const data = await getStickyNotes()
+      setNotes(data ?? [])
+    } catch {
+      setNotes([])
+    }
   }, [])
 
   useEffect(() => { load() }, [load])
 
+  // Auto-focus input when shown
+  useEffect(() => {
+    if (showInput && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [showInput])
+
   const handleAdd = async () => {
-    if (!text.trim()) return
-    await addStickyNote(text.trim())
-    setText('')
-    setShowInput(false)
-    load()
+    if (!text.trim() || isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      await addStickyNote(text.trim())
+      setText('')
+      setShowInput(false)
+      await load()
+    } catch {
+      // Silently handle error
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleDelete = async (id: string) => {
-    await deleteStickyNote(id)
-    load()
+    try {
+      await deleteStickyNote(id)
+      await load()
+    } catch {
+      // Silently handle error
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -36,77 +59,79 @@ export default function StickyNotes() {
       e.preventDefault()
       handleAdd()
     }
+    if (e.key === 'Escape') {
+      setShowInput(false)
+      setText('')
+    }
   }
 
   return (
-    <section className="space-y-3 animate-in delay-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold" style={{ color: 'var(--color-text)' }}>
-          便签提醒
-        </h2>
-        <button
-          onClick={() => setShowInput(!showInput)}
-          className="glass-3 p-2 transition-transform duration-300"
-          style={{ borderRadius: 'var(--radius-glass-xs)' }}
-          aria-label="新增便签"
-        >
-          <Plus size={16} style={{ color: 'var(--color-accent)' }} />
-        </button>
+    <div>
+      <div className="sec-head">
+        <div className="sec-dot honey" />
+        <div className="sec-name">{'\u4FBF\u7B7E\u63D0\u9192'}</div>
       </div>
+      <div className="float-card glow-neutral">
+        {notes.map(note => (
+          <div key={note.id} className="note-item" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <div className="note-dot" />
+              <span>{note.content}</span>
+            </div>
+            <button
+              onClick={() => handleDelete(note.id)}
+              aria-label={'\u5220\u9664\u4FBF\u7B7E'}
+              className="note-delete"
+            >
+              {'\u00D7'}
+            </button>
+          </div>
+        ))}
 
-      {showInput && (
-        <div className="glass-2 p-3 animate-in">
-          <div className="flex gap-2">
+        {notes.length === 0 && !showInput && (
+          <div className="note-empty">
+            {'\u8FD8\u6CA1\u6709\u4FBF\u7B7E'}
+          </div>
+        )}
+
+        {showInput && (
+          <div className="note-input-row" style={{ marginTop: notes.length > 0 ? 12 : 0, alignItems: 'center' }}>
             <input
+              ref={inputRef}
               type="text"
-              placeholder="写点什么..."
+              placeholder={'\u5199\u70B9\u4EC0\u4E48...'}
               value={text}
               onChange={e => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              autoFocus
-              className="flex-1 px-3 py-2 text-sm outline-none"
+              className="field-input"
               style={{
-                background: 'var(--color-glass-input)',
-                borderRadius: 'var(--radius-glass-xs)',
-                color: 'var(--color-text)',
+                flex: 1,
+                fontSize: 13,
+                padding: '8px 12px',
               }}
             />
             <button
               onClick={handleAdd}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{
-                background: 'var(--color-accent)',
-                borderRadius: 'var(--radius-glass-xs)',
-              }}
+              disabled={isSubmitting || !text.trim()}
+              className="note-submit"
             >
-              添加
+              {'\u6DFB\u52A0'}
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="space-y-2">
-        {notes.map(note => (
-          <div key={note.id} className="glass-3 px-4 py-3 flex items-start justify-between gap-3">
-            <p className="text-sm flex-1" style={{ color: 'var(--color-text)' }}>
-              {note.content}
-            </p>
-            <button
-              onClick={() => handleDelete(note.id)}
-              className="shrink-0 p-1 rounded-full transition-colors duration-300"
-              style={{ color: 'var(--color-text-3)' }}
-              aria-label="删除便签"
-            >
-              <X size={14} />
-            </button>
+        {!showInput && (
+          <div
+            className="note-add"
+            onClick={() => setShowInput(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => { if (e.key === 'Enter') setShowInput(true) }}
+          >
+            + {'\u6DFB\u52A0\u4FBF\u7B7E'}
           </div>
-        ))}
-        {notes.length === 0 && !showInput && (
-          <p className="text-sm text-center py-4" style={{ color: 'var(--color-text-3)' }}>
-            还没有便签，点击 + 添加
-          </p>
         )}
       </div>
-    </section>
+    </div>
   )
 }

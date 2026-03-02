@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { LogOut } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { getFocusImages } from '@/lib/api/focus-images'
-import { incrementReturnCount } from '@/lib/api/focus-sessions'
+import { incrementReturnCount, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getStickyNotes } from '@/lib/api/sticky-notes'
 import ReturnButton from './ReturnButton'
 import AudioPlayer from './AudioPlayer'
@@ -13,118 +12,98 @@ type Props = {
 }
 
 export default function FocusImmersiveState({ onExit }: Props) {
-  const [bgUrl, setBgUrl] = useState('')
-  const [notes, setNotes] = useState<string[]>([])
-  const [returnFeedback, setReturnFeedback] = useState(false)
+  const [stickyNoteLoaded, setStickyNoteLoaded] = useState<string | null>(null)
+  const [bgUrl, setBgUrl] = useState<string | null>(null)
+  const [returnCount, setReturnCount] = useState(0)
+  const [showToast, setShowToast] = useState(false)
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const load = useCallback(async () => {
-    const [images, stickyNotes] = await Promise.all([
-      getFocusImages(),
-      getStickyNotes(),
-    ])
-    if (images.length > 0) {
-      const random = images[Math.floor(Math.random() * images.length)]
-      setBgUrl(random.file_path)
+    try {
+      const [images, notes, currentCount] = await Promise.all([
+        getFocusImages(),
+        getStickyNotes(),
+        getTodayReturnCount(),
+      ])
+
+      if (images.length > 0) {
+        const random = images[Math.floor(Math.random() * images.length)]
+        setBgUrl(random.file_path)
+      }
+
+      if (notes && notes.length > 0) {
+        const randomNote = notes[Math.floor(Math.random() * notes.length)]
+        setStickyNoteLoaded(randomNote.content)
+      }
+
+      setReturnCount(currentCount)
+    } catch {
+      // Graceful degradation
     }
-    setNotes(stickyNotes.map((n: { content: string }) => n.content))
   }, [])
 
   useEffect(() => { load() }, [load])
 
-  const handleReturn = async () => {
-    const today = new Date().toISOString().split('T')[0]
-    await incrementReturnCount(today)
-    setReturnFeedback(true)
-    setTimeout(() => setReturnFeedback(false), 1200)
-  }
+  useEffect(() => {
+    return () => { clearTimeout(toastTimerRef.current) }
+  }, [])
+
+  const handleReturn = useCallback(async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      await incrementReturnCount(today)
+      setReturnCount(c => c + 1)
+      setShowToast(true)
+      toastTimerRef.current = setTimeout(() => setShowToast(false), 1500)
+    } catch {
+      // Silently handle
+    }
+  }, [])
 
   return (
-    <div className="fixed inset-0 z-30">
-      {/* Background image */}
+    <div className="focus-immersive">
+      {/* Background */}
       {bgUrl ? (
         <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage: `url(${bgUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            animation: 'fadeIn 1.2s var(--ease-spring) both',
-          }}
+          className="immersive-bg-image"
+          style={{ backgroundImage: `url(${bgUrl})` }}
         />
       ) : (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-          }}
-        />
+        <div className="immersive-bg-fallback">
+          <div className="immersive-blob" />
+          <div className="immersive-blob" />
+          <div className="immersive-blob" />
+        </div>
       )}
 
-      {/* Dark overlay for readability */}
-      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.25)' }} />
+      {/* Dark overlay */}
+      <div className="immersive-overlay" />
 
-      {/* Content layer */}
-      <div className="relative z-10 flex flex-col h-full p-6">
-        {/* Top: exit button */}
-        <div className="flex justify-end">
-          <button
-            onClick={onExit}
-            className="flex items-center gap-2 px-4 py-2 text-sm"
-            style={{
-              background: 'rgba(0,0,0,0.3)',
-              backdropFilter: 'blur(12px)',
-              borderRadius: 'var(--radius-pill)',
-              border: '1px solid rgba(255,255,255,0.15)',
-              color: 'rgba(255,255,255,0.8)',
-              transition: 'all 0.3s var(--ease-spring)',
-            }}
-            aria-label="退出专注"
-          >
-            <LogOut size={16} />
-            <span>退出</span>
-          </button>
-        </div>
+      {/* Exit button */}
+      <button
+        className="immersive-exit"
+        onClick={onExit}
+        aria-label="退出专注"
+      >
+        &#x2715;
+      </button>
 
-        {/* Middle: floating sticky notes */}
-        <div className="flex-1 flex items-center justify-center">
-          {notes.length > 0 && (
-            <p
-              className="text-center text-lg font-medium max-w-xs"
-              style={{
-                color: 'rgba(255,255,255,0.85)',
-                textShadow: '0 2px 12px rgba(0,0,0,0.4)',
-                animation: 'fadeIn 2s var(--ease-spring) both',
-              }}
-            >
-              {notes[Math.floor(Math.random() * notes.length)]}
-            </p>
-          )}
-        </div>
-
-        {/* Return feedback toast */}
-        {returnFeedback && (
-          <div
-            className="fixed top-1/3 left-1/2 text-center animate-in"
-            style={{
-              transform: 'translateX(-50%)',
-              color: '#fff',
-              fontSize: 20,
-              fontWeight: 600,
-              textShadow: '0 2px 16px rgba(59,130,246,0.5)',
-            }}
-          >
-            回归 +1
-          </div>
-        )}
-
-        {/* Bottom: return button + audio */}
-        <div className="flex items-center justify-between">
-          <AudioPlayer />
-          <ReturnButton onReturn={handleReturn} />
-        </div>
+      {/* Center content */}
+      <div className="immersive-content">
+        <ReturnButton
+          onReturn={handleReturn}
+          returnCount={returnCount}
+          showToast={showToast}
+        />
       </div>
+
+      {/* Sticky note */}
+      {stickyNoteLoaded && (
+        <p className="immersive-sticky">{stickyNoteLoaded}</p>
+      )}
+
+      {/* Audio player */}
+      <AudioPlayer />
     </div>
   )
 }

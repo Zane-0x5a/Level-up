@@ -1,40 +1,60 @@
 'use client'
 
-import { useState } from 'react'
-import { RotateCcw } from 'lucide-react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 
 type Props = {
   onReturn: () => void
+  returnCount: number
+  showToast: boolean
 }
 
-export default function ReturnButton({ onReturn }: Props) {
-  const [animate, setAnimate] = useState(false)
+export default function ReturnButton({ onReturn, returnCount, showToast }: Props) {
+  const [animating, setAnimating] = useState(false)
+  const animatingRef = useRef(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-  const handleClick = () => {
-    setAnimate(true)
+  useEffect(() => {
+    return () => { clearTimeout(timerRef.current) }
+  }, [])
+
+  const handleClick = useCallback(() => {
+    if (animatingRef.current) return
+    animatingRef.current = true
+    setAnimating(true)
     onReturn()
-    setTimeout(() => setAnimate(false), 600)
-  }
+    timerRef.current = setTimeout(() => {
+      animatingRef.current = false
+      setAnimating(false)
+    }, 400)
+  }, [onReturn])
 
   return (
-    <button
-      onClick={handleClick}
-      className="flex items-center justify-center"
-      style={{
-        width: 56,
-        height: 56,
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.18)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255,255,255,0.3)',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-        color: '#fff',
-        transition: 'all 0.4s var(--ease-spring)',
-        transform: animate ? 'scale(1.2)' : 'scale(1)',
-      }}
-      aria-label="回归打卡"
-    >
-      <RotateCcw size={22} strokeWidth={2} />
-    </button>
+    <div className="return-orb-wrapper">
+      {/* +1 toast */}
+      {showToast && (
+        <div className="return-toast">+1</div>
+      )}
+
+      {/* The orb */}
+      <div className="focus-orb-wrapper" style={{ width: 180, height: 180 }}>
+        <div className="return-orb-ring" />
+        <button
+          className="return-orb"
+          onClick={handleClick}
+          style={{
+            transform: animating ? 'scale(1.15)' : 'scale(1)',
+            background: animating ? 'rgba(212,101,74,0.22)' : undefined,
+          }}
+          aria-label="回归打卡"
+        >
+          <span className="return-orb-text">回归</span>
+        </button>
+      </div>
+
+      {/* Count capsule */}
+      <div className="return-count-capsule">
+        今日回归 {returnCount} 次
+      </div>
+    </div>
   )
 }

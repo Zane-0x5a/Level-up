@@ -8,7 +8,7 @@ type Props = {
   entertainment: number
 }
 
-const COLORS = ['var(--color-accent)', 'var(--color-success)', 'var(--color-amber)']
+const COLORS = ['#d4654a', '#5b9279', '#a3a9b8']
 const LABELS = ['课内投入', '课外投入', '娱乐消费']
 
 export default function FocusTimePieChart({ inClass, outClass, entertainment }: Props) {
@@ -20,49 +20,57 @@ export default function FocusTimePieChart({ inClass, outClass, entertainment }: 
 
   if (data.length === 0) {
     return (
-      <div className="glass-2 p-4">
-        <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>专注分布</h3>
-        <p className="text-sm text-center py-6" style={{ color: 'var(--color-text-3)' }}>暂无数据</p>
+      <div className="float-card glow-coral">
+        <div className="chart-empty">暂无专注数据</div>
       </div>
     )
   }
 
   return (
-    <div className="glass-2 p-4">
-      <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--color-text)' }}>专注分布</h3>
-      <ResponsiveContainer width="100%" height={180}>
+    <div className="float-card glow-coral">
+      <ResponsiveContainer width="100%" height={200}>
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={40}
-            outerRadius={70}
+            innerRadius={50}
+            outerRadius={80}
             dataKey="value"
             stroke="none"
+            paddingAngle={3}
           >
-            {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i]} />
-            ))}
+            {data.map((entry, i) => {
+              const colorIdx = LABELS.indexOf(entry.name)
+              return <Cell key={i} fill={COLORS[colorIdx >= 0 ? colorIdx : i]} />
+            })}
           </Pie>
           <Tooltip
             formatter={(value) => `${Number(value).toFixed(1)}h`}
             contentStyle={{
-              background: 'rgba(255,255,255,0.9)',
-              border: 'none',
+              background: '#fff',
+              border: '1px solid rgba(43,45,66,0.06)',
               borderRadius: 10,
               fontSize: 12,
+              fontFamily: 'var(--font-body)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
             }}
           />
         </PieChart>
       </ResponsiveContainer>
-      <div className="flex justify-center gap-4 mt-2">
-        {data.map((d, i) => (
-          <span key={d.name} className="flex items-center gap-1 text-xs" style={{ color: 'var(--color-text-2)' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: COLORS[i], display: 'inline-block' }} />
-            {d.name}
-          </span>
-        ))}
+      <div className="chart-legend">
+        {data.map(d => {
+          const colorIdx = LABELS.indexOf(d.name)
+          return (
+            <span key={d.name} className="chart-legend-item">
+              <span
+                className="chart-legend-dot"
+                style={{ background: COLORS[colorIdx >= 0 ? colorIdx : 0] }}
+              />
+              {d.name} ({d.value.toFixed(1)}h)
+            </span>
+          )
+        })}
       </div>
     </div>
   )
