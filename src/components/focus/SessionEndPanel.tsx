@@ -32,6 +32,7 @@ export default function SessionEndPanel({ onComplete, onSkip }: Props) {
       await addFocusSession(category, hrs)
       onComplete()
     } catch (err) {
+      console.error('专注记录保存失败:', err)
       setError('保存失败，请重试')
       setSubmitting(false)
     }

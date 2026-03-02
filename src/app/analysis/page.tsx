@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getAllDailyRecords } from '@/lib/api/daily-records'
+import { getAllDailyRecords, clearDailyNote } from '@/lib/api/daily-records'
 import { getStreak, getTotalFocusHours, getWeeklyFocusHours, getTotalReturnCount } from '@/lib/api/stats'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
 import DayTypeFilter from '@/components/analysis/DayTypeFilter'
@@ -158,7 +158,9 @@ export default function AnalysisPage() {
           <span className="sec-dot honey" />
           <span className="sec-name">历史总结</span>
         </div>
-        <NotesDrawer records={filtered} />
+        <NotesDrawer records={filtered} onDeleteNote={async (date) => {
+          try { await clearDailyNote(date); await load() } catch { /* ignore */ }
+        }} />
       </section>
     </main>
   )
