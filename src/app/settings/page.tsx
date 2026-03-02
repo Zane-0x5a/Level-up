@@ -23,7 +23,6 @@ function generateThumbnail(url: string): Promise<string> {
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import './settings.css'
 
-type FocusImage = { id: string; file_path: string }
 type AudioClip = { id: string; label: string; file_path: string }
 
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
