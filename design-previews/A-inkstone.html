@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Level Up — 方案 A: 墨岩 Inkstone</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0a0b;
+    --bg-card: #141417;
+    --bg-card-hover: #1a1a1f;
+    --border: #2a2a30;
+    --text-primary: #e8e4df;
+    --text-secondary: #8a8580;
+    --text-muted: #5a5550;
+    --accent: #c4956a;
+    --accent-glow: #c4956a33;
+    --accent-bright: #daa87d;
+    --green: #6b9e7a;
+    --red: #c47a6a;
+    --blue: #6a8ec4;
+    --font-display: 'Noto Serif SC', serif;
+    --font-mono: 'DM Mono', monospace;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font-display);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+    background-size: 256px;
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  .page-container {
+    max-width: 420px;
+    margin: 0 auto;
+    padding: 0 20px;
+    padding-bottom: 100px;
+  }
+
+  /* ===== Navigation Tabs ===== */
+  .nav-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 16px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .nav-tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    position: relative;
+    transition: color 0.3s;
+  }
+  .nav-tab.active {
+    color: var(--accent);
+  }
+  .nav-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    width: 60%;
+    height: 1px;
+    background: var(--accent);
+  }
+
+  /* ===== Section Headers ===== */
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+  }
+
+  /* ===== Countdown Cards ===== */
+  .countdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .countdown-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  .countdown-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-glow);
+  }
+  .countdown-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.5;
+  }
+  .countdown-number {
+    font-size: 42px;
+    font-weight: 900;
+    line-height: 1;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+  }
+  .countdown-unit {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-left: 2px;
+  }
+  .countdown-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+  }
+
+  /* ===== Sticky Notes ===== */
+  .sticky-section {
+    margin-bottom: 32px;
+  }
+  .sticky-card {
+    background: var(--bg-card);
+    border-left: 2px solid var(--accent);
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    transition: all 0.2s;
+  }
+  .sticky-card:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+  }
+
+  /* ===== Today Overview ===== */
+  .today-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    margin-bottom: 32px;
+  }
+  .today-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .today-date {
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .today-badge {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: var(--accent-glow);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+  }
+  .today-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+  .stat-item {
+    text-align: center;
+  }
+  .stat-value {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--text-primary);
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  /* ===== Entry Button ===== */
+  .entry-btn {
+    width: 100%;
+    padding: 16px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    color: var(--accent);
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 32px;
+  }
+  .entry-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .entry-btn:hover::before { opacity: 0.1; }
+  .entry-btn:hover { box-shadow: 0 0 30px var(--accent-glow); }
+
+  /* ===== Page Separator ===== */
+  .page-sep {
+    text-align: center;
+    padding: 48px 0 32px;
+    position: relative;
+  }
+  .page-sep::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+  }
+  .page-sep span {
+    position: relative;
+    background: var(--bg-primary);
+    padding: 0 20px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  /* ===== Focus Mode ===== */
+  .focus-preview {
+    border-radius: 20px;
+    overflow: hidden;
+    position: relative;
+    height: 500px;
+    background: linear-gradient(135deg, #1a2a1a, #0a1520, #1a1025);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 32px;
+  }
+  .focus-preview::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(196,149,106,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(106,142,196,0.05) 0%, transparent 50%);
+  }
+  .focus-sticky-float {
+    position: absolute;
+    top: 40px;
+    right: 24px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    max-width: 160px;
+    text-align: right;
+    line-height: 1.8;
+  }
+  .return-btn {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(196,149,106,0.3);
+    color: var(--accent-bright);
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.4s;
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(10px);
+  }
+  .return-btn:hover {
+    background: rgba(196,149,106,0.15);
+    border-color: var(--accent);
+    box-shadow: 0 0 60px rgba(196,149,106,0.2);
+    transform: scale(1.05);
+  }
+  .return-count {
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    z-index: 1;
+  }
+  .audio-bar {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+    right: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(20px);
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .audio-play {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .audio-play::after {
+    content: '';
+    width: 0;
+    height: 0;
+    border-left: 8px solid #0a0a0b;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    margin-left: 2px;
+  }
+  .audio-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .audio-title {
+    font-size: 12px;
+    color: rgba(255,255,255,0.7);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .audio-wave {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    height: 16px;
+    margin-top: 4px;
+  }
+  .audio-wave span {
+    width: 2px;
+    background: var(--accent);
+    border-radius: 1px;
+    opacity: 0.5;
+    animation: wave 1.2s ease-in-out infinite;
+  }
+  @keyframes wave {
+    0%, 100% { height: 4px; }
+    50% { height: 14px; }
+  }
+  .audio-wave span:nth-child(1) { animation-delay: 0s; height: 6px; }
+  .audio-wave span:nth-child(2) { animation-delay: 0.1s; height: 10px; }
+  .audio-wave span:nth-child(3) { animation-delay: 0.2s; height: 4px; }
+  .audio-wave span:nth-child(4) { animation-delay: 0.3s; height: 12px; }
+  .audio-wave span:nth-child(5) { animation-delay: 0.15s; height: 8px; }
+  .audio-wave span:nth-child(6) { animation-delay: 0.25s; height: 5px; }
+  .audio-wave span:nth-child(7) { animation-delay: 0.35s; height: 11px; }
+  .audio-wave span:nth-child(8) { animation-delay: 0.05s; height: 7px; }
+
+  /* ===== Analysis Charts ===== */
+  .analysis-section {
+    margin-bottom: 32px;
+  }
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .filter-chip.active {
+    background: var(--accent-glow);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    margin-bottom: 16px;
+  }
+  .chart-title {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-title-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* Fake Pie Chart */
+  .pie-container {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+  .pie-svg { flex-shrink: 0; }
+  .pie-legend { flex: 1; }
+  .pie-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+  .pie-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .pie-legend-value {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  /* Fake Line Chart */
+  .line-chart {
+    height: 120px;
+    position: relative;
+    margin-top: 8px;
+  }
+  .line-chart svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== Notes Drawer ===== */
+  .note-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .note-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-glow);
+  }
+  .note-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .note-date {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .note-type {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--accent);
+  }
+  .note-text {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ===== Bottom Nav ===== */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 420px;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0 20px;
+    background: linear-gradient(to top, var(--bg-primary) 60%, transparent);
+    backdrop-filter: blur(20px);
+    z-index: 100;
+  }
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-icon {
+    width: 20px;
+    height: 20px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.5;
+  }
+
+  /* ===== Animations ===== */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-in {
+    animation: fadeUp 0.6s ease-out forwards;
+    opacity: 0;
+  }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
+  .delay-4 { animation-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<div class="page-container">
+
+  <!-- ===== HOME PAGE ===== -->
+  <div class="nav-tabs animate-in">
+    <div class="nav-tab active">首页</div>
+    <div class="nav-tab">专注</div>
+    <div class="nav-tab">分析</div>
+  </div>
+
+  <div class="section-label animate-in delay-1">倒计时</div>
+  <div class="countdown-grid animate-in delay-2">
+    <div class="countdown-card">
+      <div class="countdown-number">97<span class="countdown-unit">天</span></div>
+      <div class="countdown-label">高考</div>
+    </div>
+    <div class="countdown-card">
+      <div class="countdown-number">23<span class="countdown-unit">天</span></div>
+      <div class="countdown-label">期中考</div>
+    </div>
+  </div>
+
+  <div class="section-label animate-in delay-2">便签提醒</div>
+  <div class="sticky-section animate-in delay-3">
+    <div class="sticky-card">每天进步一点点，量变终会质变</div>
+    <div class="sticky-card">别忘了今天的英语阅读打卡</div>
+    <div class="sticky-card">保持专注，回归当下</div>
+  </div>
+
+  <div class="animate-in delay-3">
+    <div class="today-card">
+      <div class="today-header">
+        <div class="today-date">2月28日 · 周五</div>
+        <div class="today-badge">学习日</div>
+      </div>
+      <div class="today-stats">
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--blue)">4.5</div>
+          <div class="stat-label">课内 h</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--green)">2.0</div>
+          <div class="stat-label">课外 h</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color:var(--red)">1.5</div>
+          <div class="stat-label">娱乐 h</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="entry-btn animate-in delay-4">每日录入</button>
+
+  <!-- ===== FOCUS MODE ===== -->
+  <div class="page-sep"><span>专注模式</span></div>
+
+  <div class="focus-preview animate-in">
+    <div class="focus-sticky-float">
+      保持专注<br>回归当下<br><br>
+      <span style="opacity:0.5">每天进步一点点</span>
+    </div>
+    <button class="return-btn">回归</button>
+    <div class="return-count">今日回归：7 次</div>
+    <div class="audio-bar">
+      <button class="audio-play"></button>
+      <div class="audio-info">
+        <div class="audio-title">Rain on Window — 白噪音</div>
+        <div class="audio-wave">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ANALYSIS PAGE ===== -->
+  <div class="page-sep"><span>反思与分析</span></div>
+
+  <div class="analysis-section animate-in">
+    <div class="filter-bar">
+      <button class="filter-chip active">全部</button>
+      <button class="filter-chip">学习日</button>
+      <button class="filter-chip">休假日</button>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title"><div class="chart-title-dot"></div>时间分配</div>
+      <div class="pie-container">
+        <svg class="pie-svg" width="120" height="120" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#1a1a25" stroke-width="18"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#6a8ec4" stroke-width="18"
+            stroke-dasharray="141 314" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#6b9e7a" stroke-width="18"
+            stroke-dasharray="94 314" stroke-dashoffset="-141" transform="rotate(-90 60 60)"/>
+          <circle cx="60" cy="60" r="50" fill="none" stroke="#c47a6a" stroke-width="18"
+            stroke-dasharray="79 314" stroke-dashoffset="-235" transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="pie-legend">
+          <div class="pie-legend-item">
+            <div class="pie-legend-dot" style="background:#6a8ec4"></div>
+            <span>课内投入</span>
+            <span class="pie-legend-value">4.5h</span>
+          </div>
+          <div class="pie-legend-item">
+            <div class="pie-legend-dot" style="background:#6b9e7a"></div>
+            <span>课外投入</span>
+            <span class="pie-legend-value">3.0h</span>
+          </div>
+          <div class="pie-legend-item">
+            <div class="pie-legend-dot" style="background:#c47a6a"></div>
+            <span>娱乐消费</span>
+            <span class="pie-legend-value">2.5h</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-title"><div class="chart-title-dot"></div>投入趋势</div>
+      <div class="line-chart">
+        <svg viewBox="0 0 300 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color:#6a8ec4;stop-opacity:0.3"/>
+              <stop offset="100%" style="stop-color:#6a8ec4;stop-opacity:0"/>
+            </linearGradient>
+          </defs>
+          <path d="M0,60 C30,55 60,40 90,45 C120,50 150,30 180,25 C210,20 240,35 270,20 L300,15"
+            fill="none" stroke="#6a8ec4" stroke-width="2"/>
+          <path d="M0,60 C30,55 60,40 90,45 C120,50 150,30 180,25 C210,20 240,35 270,20 L300,15 L300,100 L0,100 Z"
+            fill="url(#grad1)"/>
+          <path d="M0,75 C30,70 60,65 90,72 C120,78 150,60 180,55 C210,50 240,62 270,48 L300,45"
+            fill="none" stroke="#6b9e7a" stroke-width="1.5" stroke-dasharray="4 3"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:28px;">历史总结</div>
+    <div class="note-card">
+      <div class="note-header">
+        <span class="note-date">2026-02-27</span>
+        <span class="note-type">学习日</span>
+      </div>
+      <div class="note-text">今天数学课效率不错，集中精力攻克了三道大题。课外时间完成了英语阅读任务，但物理复习进度略慢...</div>
+    </div>
+    <div class="note-card">
+      <div class="note-header">
+        <span class="note-date">2026-02-26</span>
+        <span class="note-type">学习日</span>
+      </div>
+      <div class="note-text">专注力有明显提升，回归按钮使用次数减少。语文作文框架已理清，需要继续打磨细节...</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="bottom-nav">
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10a1 1 0 001 1h3a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1h3a1 1 0 001-1V10"/></svg>
+    HOME
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    FOCUS
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+    STATS
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,1197 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Level Up — E: Porcelain 素瓷</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS — Porcelain
+   ═══════════════════════════════════════ */
+:root {
+  --bg: #f5f1eb;
+  --bg-warm: #ede8e0;
+  --surface: #faf8f4;
+  --surface-raised: #ffffff;
+  --text: #2c2825;
+  --text-2: #6b6460;
+  --text-3: #a09890;
+  --text-4: #c8c0b8;
+  --terracotta: #c06a45;
+  --terracotta-soft: rgba(192,106,69,0.08);
+  --terracotta-mid: rgba(192,106,69,0.18);
+  --sage: #7a8f72;
+  --sage-soft: rgba(122,143,114,0.10);
+  --blush: #c9a08a;
+  --blush-soft: rgba(201,160,138,0.12);
+  --cream: #e8dfd4;
+  --border: rgba(44,40,37,0.08);
+  --border-dark: rgba(44,40,37,0.15);
+  --font-display: 'Cormorant Garamond', serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --shadow-sm: 0 1px 4px rgba(44,40,37,0.04);
+  --shadow-md: 0 4px 16px rgba(44,40,37,0.06);
+  --shadow-lg: 0 12px 40px rgba(44,40,37,0.08);
+  --shadow-glow: 0 8px 32px rgba(192,106,69,0.10);
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+/* Organic paper texture */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.018'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 0;
+}
+::selection { background: var(--terracotta); color: #fff; }
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════ */
+.top-nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 56px; height: 72px;
+  background: rgba(245,241,235,0.85);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-brand {
+  font-family: var(--font-display);
+  font-size: 26px; font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.nav-brand em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+.nav-links { display: flex; gap: 8px; }
+.nav-link {
+  font-family: var(--font-body);
+  font-size: 13px; font-weight: 500;
+  color: var(--text-3);
+  text-decoration: none;
+  padding: 8px 20px;
+  border-radius: 100px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+.nav-link:hover { color: var(--text); background: rgba(44,40,37,0.04); }
+.nav-link.active {
+  color: var(--terracotta);
+  background: var(--terracotta-soft);
+}
+
+/* ═══════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════ */
+.page {
+  display: none;
+  padding-top: 72px;
+  position: relative; z-index: 1;
+}
+.page.active { display: block; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 56px; }
+
+/* ═══════════════════════════════════════
+   SECTION HEADER
+   ═══════════════════════════════════════ */
+.section-head {
+  display: flex; align-items: baseline; gap: 16px;
+  margin-bottom: 24px;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 28px; font-weight: 400;
+  font-style: italic;
+  color: var(--text);
+}
+.section-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, var(--border-dark), transparent);
+}
+
+/* ═══════════════════════════════════════
+   HOME — GREETING HERO
+   ═══════════════════════════════════════ */
+.greeting {
+  padding: 72px 0 56px;
+  text-align: center;
+}
+.greeting-date {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 400;
+  letter-spacing: 0.15em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.greeting-text {
+  font-family: var(--font-display);
+  font-size: 56px; font-weight: 300;
+  line-height: 1.2;
+  color: var(--text);
+  max-width: 600px;
+  margin: 0 auto 20px;
+}
+.greeting-text em {
+  font-style: italic;
+  color: var(--terracotta);
+}
+.greeting-sub {
+  font-size: 14px; color: var(--text-3);
+  font-weight: 400;
+}
+.greeting-sub .badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--sage-soft);
+  color: var(--sage);
+  font-weight: 600;
+  font-size: 12px;
+  padding: 4px 14px;
+  border-radius: 100px;
+  margin-left: 8px;
+}
+
+/* ═══════════════════════════════════════
+   HOME — COUNTDOWN
+   ═══════════════════════════════════════ */
+.home-section { margin-bottom: 56px; }
+
+.countdown-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.countdown-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  transition: all 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+  overflow: hidden;
+}
+.countdown-card::before {
+  content: '';
+  position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 60px; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--terracotta), transparent);
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.countdown-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+.countdown-card:hover::before { opacity: 1; }
+.countdown-icon {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  margin: 0 auto 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.countdown-icon.c1 { background: var(--terracotta-soft); }
+.countdown-icon.c2 { background: var(--sage-soft); }
+.countdown-icon.c3 { background: var(--blush-soft); }
+.countdown-number {
+  font-family: var(--font-display);
+  font-size: 64px; font-weight: 300;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.countdown-unit {
+  font-family: var(--font-display);
+  font-size: 16px; font-style: italic;
+  color: var(--text-3);
+  margin-bottom: 12px;
+}
+.countdown-label {
+  font-size: 14px; font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.countdown-target {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text-4);
+}
+
+/* ═══════════════════════════════════════
+   HOME — OVERVIEW + NOTES (side by side)
+   ═══════════════════════════════════════ */
+.home-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 24px;
+}
+
+/* Overview Card */
+.overview-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+}
+.metric {
+  text-align: center;
+  padding: 16px 8px;
+  position: relative;
+}
+.metric:not(:last-child)::after {
+  content: '';
+  position: absolute; right: 0; top: 20%; bottom: 20%;
+  width: 1px;
+  background: var(--border);
+}
+.metric-value {
+  font-family: var(--font-display);
+  font-size: 36px; font-weight: 400;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.metric-value .unit {
+  font-size: 16px; font-style: italic;
+  color: var(--text-3);
+}
+.metric-label {
+  font-size: 11px; font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.04em;
+}
+
+/* Highlight Ring */
+.metric-ring {
+  width: 72px; height: 72px;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  position: relative;
+  display: flex; align-items: center; justify-content: center;
+}
+.metric-ring svg {
+  position: absolute; inset: 0;
+  transform: rotate(-90deg);
+}
+.metric-ring .ring-bg { stroke: var(--bg-warm); fill: none; stroke-width: 3; }
+.metric-ring .ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; }
+.metric-ring .ring-val {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 400;
+  color: var(--text);
+  position: relative; z-index: 1;
+}
+
+/* Notes Panel */
+.notes-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+.notes-title {
+  font-family: var(--font-display);
+  font-size: 20px; font-weight: 500;
+  font-style: italic;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+.note-item {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px; line-height: 1.6;
+  color: var(--text-2);
+}
+.note-item:last-of-type { border-bottom: none; }
+.note-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--cream);
+  border: 2px solid var(--terracotta);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.note-add {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 16px;
+  font-size: 13px; color: var(--text-4);
+  cursor: pointer; transition: color 0.2s;
+}
+.note-add:hover { color: var(--terracotta); }
+.note-add .plus {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--border-dark);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; transition: all 0.2s;
+}
+.note-add:hover .plus { border-color: var(--terracotta); color: var(--terracotta); }
+
+/* ═══════════════════════════════════════
+   HOME — DAILY ENTRY
+   ═══════════════════════════════════════ */
+.entry-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+}
+.day-type-pills {
+  display: inline-flex; gap: 8px;
+  margin-bottom: 28px;
+}
+.pill {
+  font-size: 13px; font-weight: 500;
+  padding: 8px 22px;
+  border-radius: 100px;
+  border: 1px solid var(--border-dark);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer; transition: all 0.25s;
+}
+.pill.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface-raised);
+}
+.pill:hover:not(.active) { border-color: var(--terracotta); color: var(--terracotta); }
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px; margin-bottom: 28px;
+}
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field-label {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-3);
+}
+.field-input {
+  font-family: var(--font-mono);
+  font-size: 18px; font-weight: 500;
+  padding: 10px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+}
+.field-input:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px var(--terracotta-soft);
+}
+.field-textarea {
+  font-family: var(--font-body);
+  font-size: 14px; line-height: 1.7;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  outline: none; resize: vertical;
+  min-height: 100px; width: 100%;
+  transition: all 0.2s;
+}
+.field-textarea:focus {
+  border-color: var(--terracotta);
+  box-shadow: 0 0 0 3px var(--terracotta-soft);
+}
+.entry-actions { display: flex; gap: 12px; margin-top: 24px; }
+.btn-warm {
+  font-size: 13px; font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: none;
+  background: var(--terracotta);
+  color: #fff;
+  cursor: pointer; transition: all 0.25s;
+}
+.btn-warm:hover { background: #a85a3a; transform: translateY(-1px); box-shadow: var(--shadow-glow); }
+.btn-soft {
+  font-size: 13px; font-weight: 500;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: 1px solid var(--border-dark);
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer; transition: all 0.25s;
+}
+.btn-soft:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
+/* ═══════════════════════════════════════
+   FOCUS PAGE
+   ═══════════════════════════════════════ */
+.focus-wrapper {
+  position: fixed; inset: 0; padding-top: 72px;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 100%, rgba(192,106,69,0.06) 0%, transparent 60%),
+    linear-gradient(170deg, #2a2520 0%, #1a1714 40%, #252018 100%);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+/* Warm ambient glow */
+.focus-wrapper::before {
+  content: '';
+  position: absolute;
+  width: 800px; height: 800px;
+  top: -200px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(circle, rgba(192,106,69,0.05) 0%, transparent 60%);
+  pointer-events: none;
+}
+.focus-floating {
+  position: absolute; inset: 0; pointer-events: none;
+}
+.focus-note {
+  position: absolute;
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 300;
+  font-style: italic;
+  color: rgba(245,241,235,0.12);
+  letter-spacing: 0.02em;
+}
+.focus-note:nth-child(1) { top: 18%; left: 10%; }
+.focus-note:nth-child(2) { top: 28%; right: 12%; }
+.focus-note:nth-child(3) { bottom: 28%; left: 14%; }
+
+.focus-center {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+.return-btn {
+  width: 180px; height: 180px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(245,241,235,0.12);
+  background: rgba(245,241,235,0.03);
+  color: rgba(245,241,235,0.45);
+  font-family: var(--font-display);
+  font-size: 24px; font-weight: 400;
+  font-style: italic;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  position: relative;
+}
+.return-btn::before, .return-btn::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid rgba(245,241,235,0.05);
+  pointer-events: none;
+}
+.return-btn::before {
+  inset: -16px;
+  animation: breathe 4s ease-in-out infinite;
+}
+.return-btn::after {
+  inset: -32px;
+  animation: breathe 4s ease-in-out infinite 1s;
+}
+.return-btn:hover {
+  background: rgba(192,106,69,0.15);
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+  box-shadow: 0 0 80px rgba(192,106,69,0.12);
+  transform: scale(1.03);
+}
+.return-btn.flash {
+  background: rgba(192,106,69,0.25);
+  border-color: var(--terracotta);
+  color: #f5f1eb;
+}
+.focus-count {
+  font-family: var(--font-display);
+  font-size: 15px; font-style: italic;
+  color: rgba(245,241,235,0.25);
+  letter-spacing: 0.05em;
+}
+.focus-count strong {
+  color: rgba(245,241,235,0.5);
+  font-weight: 600; font-style: normal;
+}
+
+/* Audio */
+.audio-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  padding: 20px 56px;
+  display: flex; align-items: center; gap: 24px;
+  background: linear-gradient(to top, rgba(26,23,20,0.95), transparent);
+  z-index: 2;
+}
+.audio-info { min-width: 160px; }
+.audio-title {
+  font-family: var(--font-display);
+  font-size: 15px; font-weight: 500;
+  color: rgba(245,241,235,0.5);
+  font-style: italic;
+}
+.audio-artist {
+  font-size: 11px; color: rgba(245,241,235,0.2);
+}
+.audio-controls { display: flex; align-items: center; gap: 20px; }
+.audio-btn {
+  background: none; border: none;
+  color: rgba(245,241,235,0.3);
+  font-size: 14px; cursor: pointer;
+  transition: color 0.2s;
+}
+.audio-btn:hover { color: rgba(245,241,235,0.7); }
+.audio-btn.play {
+  width: 40px; height: 40px;
+  border: 1px solid rgba(245,241,235,0.15);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.audio-progress { flex: 1; display: flex; align-items: center; gap: 12px; }
+.audio-track {
+  flex: 1; height: 2px;
+  background: rgba(245,241,235,0.08);
+  border-radius: 1px; position: relative;
+}
+.audio-track-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 38%; border-radius: 1px;
+  background: var(--terracotta);
+  opacity: 0.5;
+}
+.audio-time {
+  font-family: var(--font-mono);
+  font-size: 11px; color: rgba(245,241,235,0.2);
+}
+
+/* ═══════════════════════════════════════
+   ANALYSIS PAGE
+   ═══════════════════════════════════════ */
+.analysis-hero {
+  padding: 64px 0 40px;
+  text-align: center;
+}
+.analysis-title {
+  font-family: var(--font-display);
+  font-size: 52px; font-weight: 300;
+  font-style: italic;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.analysis-sub {
+  font-size: 14px; color: var(--text-3);
+}
+
+/* Filter Pills */
+.filter-pills {
+  display: flex; justify-content: center;
+  gap: 8px; margin-bottom: 48px;
+}
+.filter-pill {
+  font-size: 13px; font-weight: 500;
+  padding: 8px 24px;
+  border-radius: 100px;
+  border: 1px solid var(--border-dark);
+  background: transparent;
+  color: var(--text-3);
+  cursor: pointer; transition: all 0.25s;
+}
+.filter-pill.active {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface-raised);
+}
+.filter-pill:hover:not(.active) {
+  border-color: var(--terracotta);
+  color: var(--terracotta);
+}
+
+/* Charts */
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 24px; margin-bottom: 40px;
+}
+.chart-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+}
+.chart-label-text {
+  font-family: var(--font-display);
+  font-size: 16px; font-weight: 500;
+  font-style: italic;
+  color: var(--text-2);
+  margin-bottom: 24px;
+}
+
+/* Donut — Organic style */
+.donut-area {
+  display: flex; align-items: center; gap: 32px;
+}
+.donut-svg { width: 170px; height: 170px; }
+.donut-ring { fill: none; stroke-linecap: round; }
+.donut-legend { display: flex; flex-direction: column; gap: 14px; }
+.legend-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.legend-swatch {
+  width: 12px; height: 12px; border-radius: 4px;
+}
+.legend-swatch.sw1 { background: var(--terracotta); }
+.legend-swatch.sw2 { background: var(--sage); }
+.legend-swatch.sw3 { background: var(--cream); }
+.legend-pct {
+  font-family: var(--font-mono);
+  font-weight: 500; margin-left: auto;
+}
+
+/* Line Chart */
+.line-svg { width: 100%; height: 200px; }
+.lc-grid { stroke: var(--border); stroke-width: 0.5; }
+.lc-line {
+  fill: none; stroke: var(--terracotta);
+  stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+.lc-area { fill: url(#eAreaGrad); }
+.lc-dot {
+  fill: var(--surface-raised);
+  stroke: var(--terracotta); stroke-width: 2;
+}
+.lc-label {
+  font-family: var(--font-mono);
+  font-size: 10px; fill: var(--text-4);
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px; margin-bottom: 40px;
+}
+.stat-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  text-align: center;
+}
+.stat-big {
+  font-family: var(--font-display);
+  font-size: 48px; font-weight: 300;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.stat-big .u {
+  font-size: 20px; font-style: italic;
+  color: var(--text-3);
+}
+.stat-name {
+  font-size: 13px; color: var(--text-3);
+  margin-bottom: 10px;
+}
+.stat-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 100px;
+}
+.stat-badge.up { color: var(--sage); background: var(--sage-soft); }
+.stat-badge.down { color: var(--terracotta); background: var(--terracotta-soft); }
+
+/* History */
+.history-section { margin-bottom: 80px; }
+.history-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.history-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.history-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+.history-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.history-date {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 500;
+  color: var(--text-2);
+}
+.history-tag {
+  font-size: 11px; font-weight: 500;
+  padding: 3px 12px;
+  border-radius: 100px;
+}
+.history-tag.study { color: var(--terracotta); background: var(--terracotta-soft); }
+.history-tag.rest { color: var(--sage); background: var(--sage-soft); }
+.history-text {
+  font-size: 14px; line-height: 1.7;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+@keyframes breathe {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.04); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-in {
+  animation: slideUp 0.7s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+.d1 { animation-delay: 0.06s; }
+.d2 { animation-delay: 0.12s; }
+.d3 { animation-delay: 0.18s; }
+.d4 { animation-delay: 0.24s; }
+.d5 { animation-delay: 0.30s; }
+.d6 { animation-delay: 0.36s; }
+.page { animation: fadeIn 0.3s ease; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--cream); border-radius: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════
+     NAV
+     ═══════════════════════════════════════ -->
+<nav class="top-nav">
+  <div class="nav-brand">Level <em>Up</em></div>
+  <div class="nav-links">
+    <a class="nav-link active" data-page="home">首页</a>
+    <a class="nav-link" data-page="focus">专注</a>
+    <a class="nav-link" data-page="analysis">分析</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     HOME
+     ═══════════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <div class="container">
+
+    <div class="greeting animate-in">
+      <div class="greeting-date">Saturday · February 28, 2026</div>
+      <div class="greeting-text">今天也要<em>温柔地</em>前进</div>
+      <div class="greeting-sub">
+        第 59 天
+        <span class="badge">● 学习日</span>
+      </div>
+    </div>
+
+    <!-- Countdowns -->
+    <section class="home-section animate-in d1">
+      <div class="section-head">
+        <div class="section-title">倒计时</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="countdown-row">
+        <div class="countdown-card">
+          <div class="countdown-icon c1">🎯</div>
+          <div class="countdown-number">99</div>
+          <div class="countdown-unit">days</div>
+          <div class="countdown-label">距离高考</div>
+          <div class="countdown-target">2026.06.07</div>
+        </div>
+        <div class="countdown-card">
+          <div class="countdown-icon c2">📝</div>
+          <div class="countdown-number">47</div>
+          <div class="countdown-unit">days</div>
+          <div class="countdown-label">期末考试</div>
+          <div class="countdown-target">2026.04.16</div>
+        </div>
+        <div class="countdown-card">
+          <div class="countdown-icon c3">☀️</div>
+          <div class="countdown-number">123</div>
+          <div class="countdown-unit">days</div>
+          <div class="countdown-label">暑假开始</div>
+          <div class="countdown-target">2026.07.01</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Overview + Notes -->
+    <section class="home-section animate-in d2">
+      <div class="home-grid">
+        <div>
+          <div class="section-head">
+            <div class="section-title">今日概览</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="overview-card">
+            <div class="overview-metrics">
+              <div class="metric">
+                <div class="metric-ring">
+                  <svg viewBox="0 0 72 72">
+                    <circle class="ring-bg" cx="36" cy="36" r="30"/>
+                    <circle class="ring-fill" cx="36" cy="36" r="30"
+                      stroke="var(--terracotta)" stroke-dasharray="132 56"
+                      style="transform-origin:center"/>
+                  </svg>
+                  <span class="metric-ring .ring-val" style="font-family:var(--font-display);font-size:22px;position:relative;z-index:1;">4.5</span>
+                </div>
+                <div class="metric-label">课内投入</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">2.0<span class="unit">h</span></div>
+                <div class="metric-label">课外投入</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">1.5<span class="unit">h</span></div>
+                <div class="metric-label">娱乐消费</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">3</div>
+                <div class="metric-label">iBetter</div>
+              </div>
+              <div class="metric">
+                <div class="metric-value">5</div>
+                <div class="metric-label">回归次数</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-head">
+            <div class="section-title">便签</div>
+            <div class="section-line"></div>
+          </div>
+          <div class="notes-card">
+            <div class="note-item"><div class="note-dot"></div>今天复习高等数学第三章</div>
+            <div class="note-item"><div class="note-dot"></div>论文初稿截止下周五</div>
+            <div class="note-item"><div class="note-dot"></div>每天至少跑步 20 分钟</div>
+            <div class="note-add"><span class="plus">+</span> 添加便签</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Entry -->
+    <section class="home-section animate-in d3">
+      <div class="section-head">
+        <div class="section-title">每日记录</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="entry-card">
+        <div class="day-type-pills">
+          <button class="pill active">学习日</button>
+          <button class="pill">休假日</button>
+        </div>
+        <div class="entry-grid">
+          <div class="field">
+            <label class="field-label">课内投入 (h)</label>
+            <input class="field-input" type="number" value="4.5" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">课外投入 (h)</label>
+            <input class="field-input" type="number" value="2.0" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">娱乐消费 (h)</label>
+            <input class="field-input" type="number" value="1.5" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">iBetter 完成</label>
+            <input class="field-input" type="number" value="3">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom: 0;">
+          <label class="field-label">今日总结</label>
+          <textarea class="field-textarea" placeholder="写下今天的感受...">今天上午数学课效率很高，终于搞懂了极限的定义。下午物理课有些走神，晚上集中补了一下笔记。</textarea>
+        </div>
+        <div class="entry-actions">
+          <button class="btn-warm">保存记录</button>
+          <button class="btn-soft">发送到 flomo →</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     FOCUS
+     ═══════════════════════════════════════ -->
+<div id="page-focus" class="page">
+  <div class="focus-wrapper">
+    <div class="focus-floating">
+      <div class="focus-note">每天至少跑步 20 分钟</div>
+      <div class="focus-note">论文初稿截止下周五</div>
+      <div class="focus-note">温柔地前进</div>
+    </div>
+    <div class="focus-center">
+      <button class="return-btn" id="returnBtn">回归</button>
+      <div class="focus-count">今日回归 · <strong id="returnCount">5</strong> 次</div>
+    </div>
+    <div class="audio-bar">
+      <div class="audio-info">
+        <div class="audio-title">Rain on Leaves</div>
+        <div class="audio-artist">Calm Atmospheres</div>
+      </div>
+      <div class="audio-controls">
+        <button class="audio-btn">⏮</button>
+        <button class="audio-btn play">▶</button>
+        <button class="audio-btn">⏭</button>
+      </div>
+      <div class="audio-progress">
+        <div class="audio-track"><div class="audio-track-fill"></div></div>
+        <div class="audio-time">1:47 / 4:30</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ANALYSIS
+     ═══════════════════════════════════════ -->
+<div id="page-analysis" class="page">
+  <div class="container">
+
+    <div class="analysis-hero animate-in">
+      <div class="analysis-title">反思与分析</div>
+      <div class="analysis-sub">回顾你的成长轨迹</div>
+    </div>
+
+    <div class="filter-pills animate-in d1">
+      <button class="filter-pill active">全部</button>
+      <button class="filter-pill">学习日</button>
+      <button class="filter-pill">休假日</button>
+    </div>
+
+    <!-- Charts -->
+    <section class="animate-in d2">
+      <div class="section-head">
+        <div class="section-title">数据概览</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="charts-grid">
+        <div class="chart-card">
+          <div class="chart-label-text">时间分配 · 近 7 天</div>
+          <div class="donut-area">
+            <svg class="donut-svg" viewBox="0 0 170 170">
+              <circle cx="85" cy="85" r="65" fill="none" stroke="var(--bg)" stroke-width="22"/>
+              <!-- Terracotta: 56% -->
+              <circle cx="85" cy="85" r="65" class="donut-ring"
+                stroke="var(--terracotta)" stroke-width="22"
+                stroke-dasharray="228.7 179.8"
+                transform="rotate(-90 85 85)"/>
+              <!-- Sage: 25% -->
+              <circle cx="85" cy="85" r="65" class="donut-ring"
+                stroke="var(--sage)" stroke-width="22"
+                stroke-dasharray="102.1 306.4"
+                stroke-dashoffset="-228.7"
+                transform="rotate(-90 85 85)"/>
+              <!-- Cream: 19% -->
+              <circle cx="85" cy="85" r="65" class="donut-ring"
+                stroke="var(--cream)" stroke-width="22"
+                stroke-dasharray="77.6 330.9"
+                stroke-dashoffset="-330.8"
+                transform="rotate(-90 85 85)"/>
+            </svg>
+            <div class="donut-legend">
+              <div class="legend-row"><div class="legend-swatch sw1"></div> 课内投入 <span class="legend-pct">56%</span></div>
+              <div class="legend-row"><div class="legend-swatch sw2"></div> 课外投入 <span class="legend-pct">25%</span></div>
+              <div class="legend-row"><div class="legend-swatch sw3"></div> 娱乐消费 <span class="legend-pct">19%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-label-text">专注时长趋势 · 近 7 天</div>
+          <svg class="line-svg" viewBox="0 0 560 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="eAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--terracotta)" stop-opacity="0.12"/>
+                <stop offset="100%" stop-color="var(--terracotta)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line class="lc-grid" x1="40" y1="40" x2="540" y2="40"/>
+            <line class="lc-grid" x1="40" y1="80" x2="540" y2="80"/>
+            <line class="lc-grid" x1="40" y1="120" x2="540" y2="120"/>
+            <line class="lc-grid" x1="40" y1="160" x2="540" y2="160"/>
+            <text class="lc-label" x="30" y="44" text-anchor="end">8h</text>
+            <text class="lc-label" x="30" y="84" text-anchor="end">6h</text>
+            <text class="lc-label" x="30" y="124" text-anchor="end">4h</text>
+            <text class="lc-label" x="30" y="164" text-anchor="end">2h</text>
+            <polygon class="lc-area" points="115,72 190,88 265,40 340,136 415,56 490,112 540,56 540,180 115,180"/>
+            <polyline class="lc-line" points="115,72 190,88 265,40 340,136 415,56 490,112 540,56"/>
+            <circle class="lc-dot" cx="115" cy="72" r="4"/>
+            <circle class="lc-dot" cx="190" cy="88" r="4"/>
+            <circle class="lc-dot" cx="265" cy="40" r="4"/>
+            <circle class="lc-dot" cx="340" cy="136" r="4"/>
+            <circle class="lc-dot" cx="415" cy="56" r="4"/>
+            <circle class="lc-dot" cx="490" cy="112" r="4"/>
+            <circle class="lc-dot" cx="540" cy="56" r="4"/>
+            <text class="lc-label" x="115" y="196" text-anchor="middle">2/22</text>
+            <text class="lc-label" x="190" y="196" text-anchor="middle">2/23</text>
+            <text class="lc-label" x="265" y="196" text-anchor="middle">2/24</text>
+            <text class="lc-label" x="340" y="196" text-anchor="middle">2/25</text>
+            <text class="lc-label" x="415" y="196" text-anchor="middle">2/26</text>
+            <text class="lc-label" x="490" y="196" text-anchor="middle">2/27</text>
+            <text class="lc-label" x="540" y="196" text-anchor="middle">2/28</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="animate-in d3">
+      <div class="section-head">
+        <div class="section-title">关键指标</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-big">75<span class="u">%</span></div>
+          <div class="stat-name">iBetter 周完成率</div>
+          <span class="stat-badge up">↑ 12%</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-big">5.4<span class="u">h</span></div>
+          <div class="stat-name">日均专注时长</div>
+          <span class="stat-badge up">↑ 0.3h</span>
+        </div>
+        <div class="stat-card">
+          <div class="stat-big">38</div>
+          <div class="stat-name">本周总回归次数</div>
+          <span class="stat-badge down">↓ 5</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section class="history-section animate-in d4">
+      <div class="section-head">
+        <div class="section-title">历史总结</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="history-list">
+        <div class="history-card">
+          <div class="history-top">
+            <span class="history-date">2026-02-27</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">今天效率很高，上午集中精力完成了数学作业，下午在图书馆自习了三个小时。晚上稍微放松了一下。</div>
+        </div>
+        <div class="history-card">
+          <div class="history-top">
+            <span class="history-date">2026-02-26</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">下午物理课有点走神，需要注意保持专注。晚上补了一下笔记，效果还不错。</div>
+        </div>
+        <div class="history-card">
+          <div class="history-top">
+            <span class="history-date">2026-02-25</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">数学终于突破了极限的概念！感觉豁然开朗。英语背了50个单词。</div>
+        </div>
+        <div class="history-card">
+          <div class="history-top">
+            <span class="history-date">2026-02-24</span>
+            <span class="history-tag rest">休假日</span>
+          </div>
+          <div class="history-text">休息日，上午睡了个懒觉。下午看了一部纪录片，傍晚出去散步。</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════ -->
+<script>
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = link.dataset.page;
+    document.getElementById('page-' + target).classList.add('active');
+    document.querySelectorAll('#page-' + target + ' .animate-in').forEach(el => {
+      el.style.animation = 'none'; el.offsetHeight; el.style.animation = '';
+    });
+  });
+});
+
+let returnCount = 5;
+document.getElementById('returnBtn').addEventListener('click', () => {
+  returnCount++;
+  document.getElementById('returnCount').textContent = returnCount;
+  const btn = document.getElementById('returnBtn');
+  btn.classList.add('flash');
+  setTimeout(() => btn.classList.remove('flash'), 350);
+});
+
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+document.querySelectorAll('.filter-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Level Up — H: Liquid Glass 液态玻璃</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════
+   DESIGN TOKENS — Liquid Glass
+   ═══════════════════════════════════════ */
+:root {
+  --text: #1a1a2e;
+  --text-2: rgba(26,26,46,0.6);
+  --text-3: rgba(26,26,46,0.35);
+  --text-on-dark: #f0f0f8;
+  --accent: #3b82f6;
+  --accent-soft: rgba(59,130,246,0.12);
+  --success: #10b981;
+  --success-soft: rgba(16,185,129,0.12);
+  --rose: #f43f5e;
+  --rose-soft: rgba(244,63,94,0.10);
+  --amber: #f59e0b;
+
+  /* Glass levels */
+  --glass-1: rgba(255,255,255,0.38);
+  --glass-1-hover: rgba(255,255,255,0.48);
+  --glass-2: rgba(255,255,255,0.22);
+  --glass-3: rgba(255,255,255,0.12);
+  --glass-border-t: rgba(255,255,255,0.65);
+  --glass-border-l: rgba(255,255,255,0.40);
+  --glass-border-r: rgba(255,255,255,0.18);
+  --glass-border-b: rgba(255,255,255,0.12);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+  --glass-shadow-lg: 0 16px 48px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.04);
+  --glass-highlight: inset 0 1px 0 rgba(255,255,255,0.55);
+
+  --font-body: 'Outfit', sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --radius: 24px;
+  --radius-md: 18px;
+  --radius-sm: 14px;
+  --radius-xs: 10px;
+  --radius-pill: 100px;
+}
+
+/* ═══════════════════════════════════════
+   RESET & BASE
+   ═══════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent); color: #fff; }
+
+/* ═══════════════════════════════════════
+   LIVING LANDSCAPE BACKGROUND
+   ═══════════════════════════════════════ */
+.bg-scene {
+  position: fixed; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 130% 80% at 25% 15%, rgba(96,165,250,0.35) 0%, transparent 55%),
+    radial-gradient(ellipse 100% 70% at 75% 85%, rgba(251,191,36,0.22) 0%, transparent 50%),
+    radial-gradient(ellipse 90% 90% at 55% 50%, rgba(52,211,153,0.18) 0%, transparent 55%),
+    radial-gradient(ellipse 70% 50% at 85% 25%, rgba(244,114,182,0.12) 0%, transparent 50%),
+    linear-gradient(160deg, #dbeafe 0%, #d1fae5 30%, #fef3c7 60%, #fce7f3 100%);
+}
+/* Animated liquid blobs */
+.blob {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none; z-index: 0;
+  opacity: 0.45;
+}
+.blob-1 {
+  width: 500px; height: 500px;
+  top: -10%; left: -5%;
+  background: rgba(96,165,250,0.5);
+  animation: blobA 18s ease-in-out infinite;
+}
+.blob-2 {
+  width: 400px; height: 400px;
+  bottom: -5%; right: -5%;
+  background: rgba(251,191,36,0.4);
+  animation: blobB 22s ease-in-out infinite;
+}
+.blob-3 {
+  width: 350px; height: 350px;
+  top: 40%; left: 60%;
+  background: rgba(52,211,153,0.35);
+  animation: blobC 20s ease-in-out infinite;
+}
+.blob-4 {
+  width: 300px; height: 300px;
+  top: 20%; right: 25%;
+  background: rgba(244,114,182,0.25);
+  animation: blobA 25s ease-in-out infinite reverse;
+}
+
+/* ═══════════════════════════════════════
+   GLASS MIXINS (applied via classes)
+   ═══════════════════════════════════════ */
+.glass-1 {
+  background: var(--glass-1);
+  backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8) brightness(1.05);
+  border-top: 1px solid var(--glass-border-t);
+  border-left: 1px solid var(--glass-border-l);
+  border-right: 1px solid var(--glass-border-r);
+  border-bottom: 1px solid var(--glass-border-b);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  border-radius: var(--radius);
+  transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
+}
+.glass-1:hover {
+  background: var(--glass-1-hover);
+  box-shadow: var(--glass-shadow-lg), var(--glass-highlight);
+  transform: translateY(-2px);
+}
+.glass-2 {
+  background: var(--glass-2);
+  backdrop-filter: blur(24px) saturate(1.5);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  border: 1px solid rgba(255,255,255,0.30);
+  box-shadow: var(--glass-shadow), var(--glass-highlight);
+  border-radius: var(--radius-md);
+}
+.glass-3 {
+  background: var(--glass-3);
+  backdrop-filter: blur(12px) saturate(1.2);
+  -webkit-backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: var(--radius-sm);
+}
+
+/* Specular sheen overlay */
+.glass-1::before, .glass-2::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18) 0%, transparent 40%);
+  pointer-events: none;
+}
+.glass-1, .glass-2 { position: relative; overflow: hidden; }
+
+/* ═══════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════ */
+.top-nav {
+  position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+  z-index: 100;
+  display: flex; align-items: center; gap: 32px;
+  padding: 10px 12px 10px 28px;
+  background: rgba(255,255,255,0.35);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.5);
+  border-radius: 100px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.6);
+}
+.nav-brand {
+  font-size: 16px; font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+.nav-brand span {
+  background: linear-gradient(135deg, var(--accent), #8b5cf6);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.nav-links { display: flex; gap: 4px; }
+.nav-link {
+  font-size: 13px; font-weight: 500;
+  color: var(--text-2);
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 100px;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.nav-link:hover { color: var(--text); background: rgba(255,255,255,0.3); }
+.nav-link.active {
+  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 2px 12px rgba(59,130,246,0.3);
+}
+
+/* ═══════════════════════════════════════
+   LAYOUT
+   ═══════════════════════════════════════ */
+.page { display: none; position: relative; z-index: 1; padding-top: 88px; }
+.page.active { display: block; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 48px; }
+
+/* Section */
+.section-title {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-2);
+  letter-spacing: 0.03em;
+  margin-bottom: 16px;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-title .icon {
+  width: 28px; height: 28px;
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.section-title .icon.blue { background: var(--accent-soft); }
+.section-title .icon.green { background: var(--success-soft); }
+.section-title .icon.rose { background: var(--rose-soft); }
+
+/* ═══════════════════════════════════════
+   HOME — HERO
+   ═══════════════════════════════════════ */
+.hero {
+  padding: 40px 0 36px;
+  text-align: center;
+}
+.hero-date {
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 500;
+  color: var(--text-3);
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+}
+.hero-greeting {
+  font-size: 42px; font-weight: 700;
+  line-height: 1.2;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.hero-greeting em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent), #8b5cf6, #ec4899);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600;
+  color: var(--accent);
+  padding: 5px 16px;
+  border-radius: 100px;
+  background: rgba(59,130,246,0.10);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59,130,246,0.15);
+}
+.hero-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* ═══════════════════════════════════════
+   HOME SECTIONS
+   ═══════════════════════════════════════ */
+.home-section { margin-bottom: 32px; }
+
+/* Countdown */
+.countdown-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.countdown-card {
+  padding: 28px 24px;
+  text-align: center;
+}
+.countdown-card .cd-emoji {
+  font-size: 28px;
+  margin-bottom: 12px;
+  display: block;
+}
+.cd-number {
+  font-family: var(--font-mono);
+  font-size: 48px; font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.cd-unit {
+  font-size: 12px; font-weight: 400;
+  color: var(--text-3);
+  margin-bottom: 10px;
+}
+.cd-label {
+  font-size: 14px; font-weight: 600;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+.cd-target {
+  font-family: var(--font-mono);
+  font-size: 11px; color: var(--text-3);
+}
+
+/* Overview + Notes row */
+.home-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+}
+.overview-glass { padding: 28px; }
+.overview-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0;
+}
+.metric {
+  text-align: center;
+  padding: 8px;
+  position: relative;
+}
+.metric:not(:last-child)::after {
+  content: '';
+  position: absolute; right: 0; top: 20%; bottom: 20%;
+  width: 1px;
+  background: rgba(255,255,255,0.3);
+}
+.metric-val {
+  font-family: var(--font-mono);
+  font-size: 28px; font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.metric-val .u {
+  font-size: 14px; font-weight: 400;
+  color: var(--text-2);
+}
+.metric-name {
+  font-size: 11px; font-weight: 500;
+  color: var(--text-3);
+}
+
+.notes-glass { padding: 24px; }
+.notes-heading {
+  font-size: 14px; font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.note-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  font-size: 13px; color: var(--text-2);
+  line-height: 1.5;
+}
+.note-item:last-of-type { border-bottom: none; }
+.note-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  flex-shrink: 0; margin-top: 6px;
+  background: var(--accent);
+}
+.note-add {
+  margin-top: 12px;
+  font-size: 12px; color: var(--text-3);
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+  transition: color 0.2s;
+}
+.note-add:hover { color: var(--accent); }
+
+/* Entry */
+.entry-glass { padding: 32px; }
+.type-pills { display: inline-flex; gap: 6px; margin-bottom: 24px; }
+.pill {
+  font-size: 13px; font-weight: 500;
+  padding: 8px 20px;
+  border-radius: 100px;
+  border: none;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  color: var(--text-2);
+  cursor: pointer; transition: all 0.3s;
+}
+.pill.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.25);
+}
+.pill:hover:not(.active) { background: rgba(255,255,255,0.4); color: var(--text); }
+.entry-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-bottom: 20px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field-label {
+  font-size: 12px; font-weight: 500;
+  color: var(--text-2);
+}
+.field-input {
+  font-family: var(--font-mono);
+  font-size: 16px; font-weight: 600;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  outline: none; width: 100%;
+  transition: all 0.2s;
+}
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: rgba(255,255,255,0.45);
+}
+.field-textarea {
+  font-family: var(--font-body);
+  font-size: 13px; line-height: 1.7;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  outline: none; resize: vertical; min-height: 90px; width: 100%;
+  transition: all 0.2s;
+}
+.field-textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: rgba(255,255,255,0.45);
+}
+.entry-actions { display: flex; gap: 10px; margin-top: 22px; }
+.btn-solid {
+  font-size: 13px; font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 100px; border: none;
+  background: var(--accent);
+  color: #fff; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.25);
+  transition: all 0.3s;
+}
+.btn-solid:hover {
+  background: #2563eb;
+  box-shadow: 0 6px 24px rgba(59,130,246,0.35);
+  transform: translateY(-1px);
+}
+.btn-glass {
+  font-size: 13px; font-weight: 500;
+  padding: 12px 28px;
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.2);
+  backdrop-filter: blur(8px);
+  color: var(--text-2);
+  cursor: pointer; transition: all 0.3s;
+}
+.btn-glass:hover {
+  background: rgba(255,255,255,0.35);
+  color: var(--text);
+}
+
+/* ═══════════════════════════════════════
+   FOCUS PAGE
+   ═══════════════════════════════════════ */
+.focus-wrapper {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+  /* Slightly cooler/deeper landscape for focus */
+  background:
+    radial-gradient(ellipse 120% 90% at 30% 30%, rgba(56,120,200,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 100% 80% at 70% 70%, rgba(139,92,246,0.2) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 50% 90%, rgba(52,211,153,0.15) 0%, transparent 50%),
+    linear-gradient(160deg, #c7d9f0 0%, #b4d5c8 35%, #ddd6f3 65%, #d4e4f7 100%);
+}
+.focus-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+  opacity: 0.4;
+}
+.focus-blob.fb1 {
+  width: 500px; height: 500px;
+  top: -10%; left: 10%;
+  background: rgba(56,120,200,0.4);
+  animation: blobA 16s ease-in-out infinite;
+}
+.focus-blob.fb2 {
+  width: 400px; height: 400px;
+  bottom: 0; right: 10%;
+  background: rgba(139,92,246,0.3);
+  animation: blobB 20s ease-in-out infinite;
+}
+.focus-floating {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+}
+.focus-note {
+  position: absolute;
+  font-size: 14px; font-weight: 300;
+  color: rgba(26,26,46,0.12);
+}
+.focus-note:nth-child(1) { top: 16%; left: 10%; }
+.focus-note:nth-child(2) { top: 24%; right: 12%; }
+.focus-note:nth-child(3) { bottom: 22%; left: 14%; }
+
+.focus-center {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+.return-btn {
+  width: 190px; height: 190px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(40px) saturate(1.6);
+  -webkit-backdrop-filter: blur(40px) saturate(1.6);
+  border-top: 1.5px solid rgba(255,255,255,0.6);
+  border-left: 1.5px solid rgba(255,255,255,0.4);
+  border-right: 1.5px solid rgba(255,255,255,0.15);
+  border-bottom: 1.5px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.08),
+    inset 0 2px 0 rgba(255,255,255,0.5);
+  color: var(--text-2);
+  font-family: var(--font-body);
+  font-size: 20px; font-weight: 600;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.23,1,0.32,1);
+  position: relative;
+}
+/* Outer glass ring */
+.return-btn::before {
+  content: '';
+  position: absolute; inset: -16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
+  animation: breatheRing 4s ease-in-out infinite;
+}
+.return-btn::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2) 0%, transparent 50%);
+  pointer-events: none;
+}
+.return-btn:hover {
+  background: rgba(59,130,246,0.2);
+  border-color: rgba(59,130,246,0.3);
+  color: var(--accent);
+  box-shadow:
+    0 16px 48px rgba(59,130,246,0.15),
+    inset 0 2px 0 rgba(255,255,255,0.6);
+  transform: scale(1.04);
+}
+.return-btn.flash {
+  background: rgba(59,130,246,0.35);
+  border-color: rgba(59,130,246,0.5);
+  color: var(--accent);
+}
+.focus-count {
+  font-family: var(--font-mono);
+  font-size: 13px; color: var(--text-3);
+  letter-spacing: 0.04em;
+  padding: 6px 18px;
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(12px);
+  border-radius: 100px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.focus-count strong { color: var(--accent); font-weight: 600; }
+
+/* Audio */
+.audio-bar {
+  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+  padding: 14px 28px;
+  display: flex; align-items: center; gap: 20px;
+  background: rgba(255,255,255,0.3);
+  backdrop-filter: blur(40px) saturate(1.8);
+  -webkit-backdrop-filter: blur(40px) saturate(1.8);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 100px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5);
+  z-index: 2;
+  min-width: 560px;
+}
+.audio-info { min-width: 140px; }
+.audio-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.audio-artist { font-size: 11px; color: var(--text-3); }
+.audio-controls { display: flex; align-items: center; gap: 14px; }
+.audio-btn {
+  background: none; border: none;
+  color: var(--text-3); font-size: 13px;
+  cursor: pointer; transition: color 0.2s;
+}
+.audio-btn:hover { color: var(--text); }
+.audio-btn.play {
+  width: 34px; height: 34px;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+}
+.audio-progress { flex: 1; display: flex; align-items: center; gap: 10px; }
+.audio-track {
+  flex: 1; height: 4px; border-radius: 2px;
+  background: rgba(26,26,46,0.08);
+  position: relative;
+}
+.audio-track-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 35%; border-radius: 2px;
+  background: var(--accent);
+}
+.audio-track-fill::after {
+  content: '';
+  position: absolute; right: -4px; top: -3px;
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+}
+.audio-time {
+  font-family: var(--font-mono);
+  font-size: 10px; color: var(--text-3);
+  min-width: 70px;
+}
+
+/* ═══════════════════════════════════════
+   ANALYSIS PAGE
+   ═══════════════════════════════════════ */
+.analysis-hero {
+  padding: 40px 0 28px;
+  text-align: center;
+}
+.analysis-title {
+  font-size: 36px; font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.analysis-sub {
+  font-size: 14px; color: var(--text-3);
+}
+
+/* Filter */
+.filter-row {
+  display: flex; justify-content: center;
+  gap: 6px; margin-bottom: 36px;
+}
+.filter-pill {
+  font-size: 12px; font-weight: 500;
+  padding: 7px 20px;
+  border-radius: 100px; border: none;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(8px);
+  color: var(--text-2);
+  cursor: pointer; transition: all 0.3s;
+}
+.filter-pill.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 2px 12px rgba(59,130,246,0.25);
+}
+.filter-pill:hover:not(.active) { background: rgba(255,255,255,0.4); color: var(--text); }
+
+/* Charts */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px; margin-bottom: 32px;
+}
+.chart-glass { padding: 28px; }
+.chart-heading {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 20px;
+}
+
+/* Donut */
+.donut-area { display: flex; align-items: center; gap: 24px; }
+.donut-svg { width: 150px; height: 150px; }
+.donut-ring { fill: none; stroke-linecap: round; }
+.donut-legend { display: flex; flex-direction: column; gap: 12px; }
+.leg-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--text-2); }
+.leg-dot { width: 10px; height: 10px; border-radius: 4px; }
+.leg-dot.d1 { background: var(--accent); }
+.leg-dot.d2 { background: #8b5cf6; }
+.leg-dot.d3 { background: rgba(26,26,46,0.15); }
+.leg-pct { margin-left: auto; font-family: var(--font-mono); font-weight: 600; color: var(--text); font-size: 12px; }
+
+/* Line Chart */
+.line-svg { width: 100%; height: 200px; }
+.lc-grid { stroke: rgba(26,26,46,0.06); stroke-width: 0.5; }
+.lc-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.lc-area { fill: url(#hAreaGrad); }
+.lc-dot { fill: #fff; stroke: var(--accent); stroke-width: 2.5; }
+.lc-label { font-family: var(--font-mono); font-size: 10px; fill: var(--text-3); }
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px; margin-bottom: 32px;
+}
+.stat-glass {
+  padding: 24px; text-align: center;
+}
+.stat-big {
+  font-family: var(--font-mono);
+  font-size: 40px; font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.stat-big .u { font-size: 18px; font-weight: 400; color: var(--text-2); }
+.stat-name { font-size: 12px; color: var(--text-3); margin-bottom: 8px; }
+.stat-badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500;
+  padding: 3px 12px; border-radius: 100px;
+}
+.stat-badge.up { color: var(--success); background: var(--success-soft); }
+.stat-badge.down { color: var(--rose); background: var(--rose-soft); }
+
+/* History */
+.history-section { margin-bottom: 80px; }
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.history-card {
+  padding: 22px;
+  cursor: pointer;
+}
+.history-top {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px;
+}
+.history-date {
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 500; color: var(--text-2);
+}
+.history-tag {
+  font-size: 10px; font-weight: 600;
+  padding: 3px 10px; border-radius: 100px;
+}
+.history-tag.study { color: var(--accent); background: var(--accent-soft); }
+.history-tag.rest { color: #8b5cf6; background: rgba(139,92,246,0.10); }
+.history-text {
+  font-size: 13px; line-height: 1.7;
+  color: var(--text-2);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════
+   ANIMATIONS
+   ═══════════════════════════════════════ */
+@keyframes blobA {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(40px, -30px) scale(1.05); }
+  66%  { transform: translate(-20px, 20px) scale(0.95); }
+}
+@keyframes blobB {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-30px, 40px) scale(1.08); }
+  66%  { transform: translate(25px, -15px) scale(0.92); }
+}
+@keyframes blobC {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(-40px, -30px) scale(1.1); }
+}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+@keyframes breatheRing {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.06); }
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-in { animation: slideUp 0.7s cubic-bezier(0.23,1,0.32,1) both; }
+.d1 { animation-delay: 0.06s; }
+.d2 { animation-delay: 0.12s; }
+.d3 { animation-delay: 0.18s; }
+.d4 { animation-delay: 0.24s; }
+.d5 { animation-delay: 0.30s; }
+.page { animation: fadeIn 0.3s ease; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(26,26,46,0.08); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(26,26,46,0.15); }
+</style>
+</head>
+<body>
+
+<!-- Landscape Background -->
+<div class="bg-scene"></div>
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+<div class="blob blob-3"></div>
+<div class="blob blob-4"></div>
+
+<!-- NAV (floating pill) -->
+<nav class="top-nav">
+  <div class="nav-brand">Level <span>Up</span></div>
+  <div class="nav-links">
+    <a class="nav-link active" data-page="home">首页</a>
+    <a class="nav-link" data-page="focus">专注</a>
+    <a class="nav-link" data-page="analysis">分析</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════
+     HOME
+     ═══════════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <div class="container">
+
+    <div class="hero animate-in">
+      <div class="hero-date">SATURDAY · FEBRUARY 28, 2026</div>
+      <div class="hero-greeting">保持热爱，<em>奔赴山海</em></div>
+      <div class="hero-badge"><span class="dot"></span> 学习日 · 第 59 天</div>
+    </div>
+
+    <!-- Countdowns -->
+    <section class="home-section animate-in d1">
+      <div class="section-title"><span class="icon blue">⏳</span> 倒计时</div>
+      <div class="countdown-row">
+        <div class="countdown-card glass-1">
+          <span class="cd-emoji">🎯</span>
+          <div class="cd-number">099</div>
+          <div class="cd-unit">days</div>
+          <div class="cd-label">距离高考</div>
+          <div class="cd-target">2026.06.07</div>
+        </div>
+        <div class="countdown-card glass-1">
+          <span class="cd-emoji">📝</span>
+          <div class="cd-number">047</div>
+          <div class="cd-unit">days</div>
+          <div class="cd-label">期末考试</div>
+          <div class="cd-target">2026.04.16</div>
+        </div>
+        <div class="countdown-card glass-1">
+          <span class="cd-emoji">☀️</span>
+          <div class="cd-number">123</div>
+          <div class="cd-unit">days</div>
+          <div class="cd-label">暑假开始</div>
+          <div class="cd-target">2026.07.01</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Overview + Notes -->
+    <section class="home-section animate-in d2">
+      <div class="home-grid">
+        <div>
+          <div class="section-title"><span class="icon green">📊</span> 今日概览</div>
+          <div class="overview-glass glass-1">
+            <div class="overview-metrics">
+              <div class="metric">
+                <div class="metric-val">4.5<span class="u">h</span></div>
+                <div class="metric-name">课内投入</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val">2.0<span class="u">h</span></div>
+                <div class="metric-name">课外投入</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val">1.5<span class="u">h</span></div>
+                <div class="metric-name">娱乐消费</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val">3</div>
+                <div class="metric-name">iBetter</div>
+              </div>
+              <div class="metric">
+                <div class="metric-val">5</div>
+                <div class="metric-name">回归次数</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title"><span class="icon rose">📌</span> 便签提醒</div>
+          <div class="notes-glass glass-1">
+            <div class="note-item"><div class="note-dot"></div>今天复习高等数学第三章</div>
+            <div class="note-item"><div class="note-dot"></div>论文初稿截止下周五</div>
+            <div class="note-item"><div class="note-dot"></div>每天至少跑步 20 分钟</div>
+            <div class="note-add">+ 添加便签</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Entry -->
+    <section class="home-section animate-in d3">
+      <div class="section-title"><span class="icon blue">✏️</span> 每日记录</div>
+      <div class="entry-glass glass-1">
+        <div class="type-pills">
+          <button class="pill active">学习日</button>
+          <button class="pill">休假日</button>
+        </div>
+        <div class="entry-grid">
+          <div class="field">
+            <label class="field-label">课内投入 (h)</label>
+            <input class="field-input" type="number" value="4.5" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">课外投入 (h)</label>
+            <input class="field-input" type="number" value="2.0" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">娱乐消费 (h)</label>
+            <input class="field-input" type="number" value="1.5" step="0.5">
+          </div>
+          <div class="field">
+            <label class="field-label">iBetter 完成</label>
+            <input class="field-input" type="number" value="3">
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">今日总结</label>
+          <textarea class="field-textarea" placeholder="记录今天的感受...">今天上午数学课效率很高，终于搞懂了极限的定义。下午物理课有些走神，晚上集中补了一下笔记。</textarea>
+        </div>
+        <div class="entry-actions">
+          <button class="btn-solid">保存记录</button>
+          <button class="btn-glass">发送到 flomo →</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     FOCUS
+     ═══════════════════════════════════════ -->
+<div id="page-focus" class="page">
+  <div class="focus-wrapper">
+    <div class="focus-blob fb1"></div>
+    <div class="focus-blob fb2"></div>
+    <div class="focus-floating">
+      <div class="focus-note">每天至少跑步 20 分钟</div>
+      <div class="focus-note">论文初稿截止下周五</div>
+      <div class="focus-note">保持热爱，奔赴山海</div>
+    </div>
+    <div class="focus-center">
+      <button class="return-btn" id="returnBtn">回归</button>
+      <div class="focus-count">今日回归 · <strong id="returnCount">5</strong> 次</div>
+    </div>
+    <div class="audio-bar">
+      <div class="audio-info">
+        <div class="audio-title">Morning Meadow</div>
+        <div class="audio-artist">Ambient Light</div>
+      </div>
+      <div class="audio-controls">
+        <button class="audio-btn">⏮</button>
+        <button class="audio-btn play">▶</button>
+        <button class="audio-btn">⏭</button>
+      </div>
+      <div class="audio-progress">
+        <div class="audio-track"><div class="audio-track-fill"></div></div>
+        <div class="audio-time">1:23 / 4:10</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     ANALYSIS
+     ═══════════════════════════════════════ -->
+<div id="page-analysis" class="page">
+  <div class="container">
+
+    <div class="analysis-hero animate-in">
+      <div class="analysis-title">反思与分析</div>
+      <div class="analysis-sub">回顾你的成长轨迹</div>
+    </div>
+
+    <div class="filter-row animate-in d1">
+      <button class="filter-pill active">全部</button>
+      <button class="filter-pill">学习日</button>
+      <button class="filter-pill">休假日</button>
+    </div>
+
+    <!-- Charts -->
+    <section class="animate-in d2">
+      <div class="section-title"><span class="icon blue">📈</span> 数据概览</div>
+      <div class="charts-row">
+        <div class="chart-glass glass-1">
+          <div class="chart-heading">时间分配 · 近 7 天</div>
+          <div class="donut-area">
+            <svg class="donut-svg" viewBox="0 0 150 150">
+              <circle cx="75" cy="75" r="55" fill="none" stroke="rgba(26,26,46,0.06)" stroke-width="18"/>
+              <circle cx="75" cy="75" r="55" class="donut-ring"
+                stroke="var(--accent)" stroke-width="18"
+                stroke-dasharray="193.4 152.4"
+                transform="rotate(-90 75 75)"/>
+              <circle cx="75" cy="75" r="55" class="donut-ring"
+                stroke="#8b5cf6" stroke-width="18"
+                stroke-dasharray="86.4 259.4"
+                stroke-dashoffset="-193.4"
+                transform="rotate(-90 75 75)"/>
+              <circle cx="75" cy="75" r="55" class="donut-ring"
+                stroke="rgba(26,26,46,0.12)" stroke-width="18"
+                stroke-dasharray="65.6 280.2"
+                stroke-dashoffset="-279.8"
+                transform="rotate(-90 75 75)"/>
+            </svg>
+            <div class="donut-legend">
+              <div class="leg-row"><div class="leg-dot d1"></div> 课内投入 <span class="leg-pct">56%</span></div>
+              <div class="leg-row"><div class="leg-dot d2"></div> 课外投入 <span class="leg-pct">25%</span></div>
+              <div class="leg-row"><div class="leg-dot d3"></div> 娱乐消费 <span class="leg-pct">19%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-glass glass-1">
+          <div class="chart-heading">专注时长趋势 · 近 7 天</div>
+          <svg class="line-svg" viewBox="0 0 560 200" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="hAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.15"/>
+                <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <line class="lc-grid" x1="40" y1="40" x2="540" y2="40"/>
+            <line class="lc-grid" x1="40" y1="80" x2="540" y2="80"/>
+            <line class="lc-grid" x1="40" y1="120" x2="540" y2="120"/>
+            <line class="lc-grid" x1="40" y1="160" x2="540" y2="160"/>
+            <text class="lc-label" x="30" y="44" text-anchor="end">8h</text>
+            <text class="lc-label" x="30" y="84" text-anchor="end">6h</text>
+            <text class="lc-label" x="30" y="124" text-anchor="end">4h</text>
+            <text class="lc-label" x="30" y="164" text-anchor="end">2h</text>
+            <polygon class="lc-area" points="115,72 190,88 265,40 340,136 415,56 490,112 540,56 540,180 115,180"/>
+            <polyline class="lc-line" points="115,72 190,88 265,40 340,136 415,56 490,112 540,56"/>
+            <circle class="lc-dot" cx="115" cy="72" r="4.5"/>
+            <circle class="lc-dot" cx="190" cy="88" r="4.5"/>
+            <circle class="lc-dot" cx="265" cy="40" r="4.5"/>
+            <circle class="lc-dot" cx="340" cy="136" r="4.5"/>
+            <circle class="lc-dot" cx="415" cy="56" r="4.5"/>
+            <circle class="lc-dot" cx="490" cy="112" r="4.5"/>
+            <circle class="lc-dot" cx="540" cy="56" r="4.5"/>
+            <text class="lc-label" x="115" y="196" text-anchor="middle">2/22</text>
+            <text class="lc-label" x="190" y="196" text-anchor="middle">2/23</text>
+            <text class="lc-label" x="265" y="196" text-anchor="middle">2/24</text>
+            <text class="lc-label" x="340" y="196" text-anchor="middle">2/25</text>
+            <text class="lc-label" x="415" y="196" text-anchor="middle">2/26</text>
+            <text class="lc-label" x="490" y="196" text-anchor="middle">2/27</text>
+            <text class="lc-label" x="540" y="196" text-anchor="middle">2/28</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats -->
+    <section class="animate-in d3">
+      <div class="section-title"><span class="icon green">🎯</span> 关键指标</div>
+      <div class="stats-row">
+        <div class="stat-glass glass-1">
+          <div class="stat-big">75<span class="u">%</span></div>
+          <div class="stat-name">iBetter 周完成率</div>
+          <span class="stat-badge up">↑ 12%</span>
+        </div>
+        <div class="stat-glass glass-1">
+          <div class="stat-big">5.4<span class="u">h</span></div>
+          <div class="stat-name">日均专注时长</div>
+          <span class="stat-badge up">↑ 0.3h</span>
+        </div>
+        <div class="stat-glass glass-1">
+          <div class="stat-big">38</div>
+          <div class="stat-name">本周总回归次数</div>
+          <span class="stat-badge down">↓ 5</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- History -->
+    <section class="history-section animate-in d4">
+      <div class="section-title"><span class="icon rose">📖</span> 历史总结</div>
+      <div class="history-grid">
+        <div class="history-card glass-2">
+          <div class="history-top">
+            <span class="history-date">2026-02-27</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">今天效率很高，上午集中精力完成了数学作业，下午在图书馆自习了三个小时。晚上稍微放松。</div>
+        </div>
+        <div class="history-card glass-2">
+          <div class="history-top">
+            <span class="history-date">2026-02-26</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">下午物理课有点走神，需要注意保持专注。晚上补了一下笔记，效果还不错。</div>
+        </div>
+        <div class="history-card glass-2">
+          <div class="history-top">
+            <span class="history-date">2026-02-25</span>
+            <span class="history-tag study">学习日</span>
+          </div>
+          <div class="history-text">数学终于突破了极限的概念！感觉豁然开朗。英语背了50个单词。</div>
+        </div>
+        <div class="history-card glass-2">
+          <div class="history-top">
+            <span class="history-date">2026-02-24</span>
+            <span class="history-tag rest">休假日</span>
+          </div>
+          <div class="history-text">休息日，上午睡了个懒觉。下午看了一部纪录片，傍晚出去散步。</div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     SCRIPTS
+     ═══════════════════════════════════════ -->
+<script>
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    link.classList.add('active');
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const t = link.dataset.page;
+    document.getElementById('page-' + t).classList.add('active');
+    // Show/hide background blobs based on page
+    const blobs = document.querySelectorAll('.blob');
+    blobs.forEach(b => b.style.display = t === 'focus' ? 'none' : '');
+    document.querySelectorAll('#page-' + t + ' .animate-in').forEach(el => {
+      el.style.animation = 'none'; el.offsetHeight; el.style.animation = '';
+    });
+  });
+});
+
+let rc = 5;
+document.getElementById('returnBtn').addEventListener('click', () => {
+  rc++;
+  document.getElementById('returnCount').textContent = rc;
+  const btn = document.getElementById('returnBtn');
+  btn.classList.add('flash');
+  setTimeout(() => btn.classList.remove('flash'), 400);
+});
+
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.pill').forEach(b => b.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+document.querySelectorAll('.filter-pill').forEach(p => {
+  p.addEventListener('click', () => {
+    document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+    p.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>

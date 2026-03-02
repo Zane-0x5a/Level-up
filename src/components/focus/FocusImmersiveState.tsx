@@ -27,7 +27,13 @@ export default function FocusImmersiveState({ onExit }: Props) {
       ])
 
       if (images.length > 0) {
-        const random = images[Math.floor(Math.random() * images.length)]
+        const isMobile = window.matchMedia('(max-width: 768px)').matches
+        const filtered = images.filter(img =>
+          img.device_type === 'universal' ||
+          (isMobile ? img.device_type === 'mobile' : img.device_type === 'desktop')
+        )
+        const pool = filtered.length > 0 ? filtered : images
+        const random = pool[Math.floor(Math.random() * pool.length)]
         setBgUrl(random.file_path)
       }
 
