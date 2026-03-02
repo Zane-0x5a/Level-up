@@ -14,7 +14,7 @@ export async function getStickyNotes() {
 export async function addStickyNote(content: string) {
   const { error } = await supabase
     .from('sticky_notes')
-    .insert({ content, user_id: DEFAULT_USER_ID, order: Date.now() })
+    .insert({ content, user_id: DEFAULT_USER_ID, order: Math.floor(Date.now() / 1000) })
   if (error) throw error
 }
 
