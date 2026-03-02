@@ -606,12 +606,32 @@
     font-size: 17px;
   }
 
+  .immersive-exit {
+    top: 16px;
+    right: 16px;
+  }
+
+  .immersive-sticky {
+    bottom: 100px;
+    max-width: 260px;
+    font-size: 13px;
+  }
+
   .audio-player {
+    bottom: 20px;
     padding: 8px 14px;
     gap: 8px;
   }
 
   .audio-progress-bar {
     width: 50px;
+  }
+
+  .session-end-card {
+    max-width: 100%;
+  }
+
+  .session-end-pills {
+    flex-wrap: wrap;
   }
 }

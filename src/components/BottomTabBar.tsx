@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { useNav } from '@/contexts/NavContext'
 
 const tabs = [
   { href: '/', label: '首页', icon: '🏠' },
@@ -12,6 +13,9 @@ const tabs = [
 
 export default function BottomTabBar() {
   const pathname = usePathname()
+  const { navHidden } = useNav()
+
+  if (navHidden) return null
 
   return (
     <nav className="bottom-tab-bar">

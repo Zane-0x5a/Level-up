@@ -38,8 +38,8 @@ export default function StickyNotes() {
       setText('')
       setShowInput(false)
       await load()
-    } catch {
-      // Silently handle error
+    } catch (err) {
+      console.error('便签添加失败:', err)
     } finally {
       setIsSubmitting(false)
     }

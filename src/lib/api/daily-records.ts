@@ -27,6 +27,15 @@ export async function upsertDailyRecord(record: {
   if (error) throw error
 }
 
+export async function clearDailyNote(date: string) {
+  const { error } = await supabase
+    .from('daily_records')
+    .update({ note: null })
+    .eq('user_id', DEFAULT_USER_ID)
+    .eq('date', date)
+  if (error) throw error
+}
+
 export async function getAllDailyRecords() {
   const { data, error } = await supabase
     .from('daily_records')

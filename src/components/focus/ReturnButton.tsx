@@ -36,7 +36,7 @@ export default function ReturnButton({ onReturn, returnCount, showToast }: Props
       )}
 
       {/* The orb */}
-      <div className="focus-orb-wrapper" style={{ width: 180, height: 180 }}>
+      <div className="focus-orb-wrapper">
         <div className="return-orb-ring" />
         <button
           className="return-orb"
