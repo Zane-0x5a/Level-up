@@ -238,10 +238,10 @@
 .cd-pill.honey { background: var(--color-honey-soft); }
 .cd-number {
   font-family: var(--font-display);
-  font-size: 52px;
+  font-size: 88px;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -2px;
+  letter-spacing: -4px;
 }
 .cd-pill.coral .cd-number { color: var(--color-coral); }
 .cd-pill.sage .cd-number { color: var(--color-sage); }
