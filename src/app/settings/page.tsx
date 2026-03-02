@@ -85,7 +85,8 @@ export default function SettingsPage() {
     try {
       await uploadFocusImage(file)
       await loadMedia()
-    } catch {
+    } catch (err) {
+      console.error('图片上传失败:', err)
       setError('图片上传失败，请重试')
       setTimeout(() => setError(null), 3000)
     } finally {
@@ -102,7 +103,8 @@ export default function SettingsPage() {
       await uploadAudioClip(file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
-    } catch {
+    } catch (err) {
+      console.error('音频上传失败:', err)
       setError('音频上传失败，请重试')
       setTimeout(() => setError(null), 3000)
     } finally {

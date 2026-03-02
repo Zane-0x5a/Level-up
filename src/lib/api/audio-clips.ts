@@ -14,12 +14,12 @@ export async function getAudioClips() {
 export async function uploadAudioClip(file: File, label: string) {
   const filePath = `audio/${DEFAULT_USER_ID}/${Date.now()}-${file.name}`
   const { error: uploadError } = await supabase.storage
-    .from('audio')
+    .from('audio-clips')
     .upload(filePath, file)
   if (uploadError) throw uploadError
 
   const { data: urlData } = supabase.storage
-    .from('audio')
+    .from('audio-clips')
     .getPublicUrl(filePath)
 
   const { error } = await supabase
