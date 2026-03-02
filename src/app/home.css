@@ -4,12 +4,13 @@
    Row 2: Overview + Sticky Notes
    ═══════════════════════════════════════ */
 
-/* Layout container */
+/* Layout container — fills viewport, 2 rows split space evenly */
 .home-layout {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
+  display: grid;
+  grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr);
+  gap: 24px;
   padding: 20px 0 40px;
+  min-height: calc(100vh - 82px);
 }
 
 /* Row 1: Hero + Countdown — equal halves */
@@ -35,6 +36,14 @@
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 20px;
+}
+/* Row 2 children: stretch cards to fill available height */
+.home-row2 > div {
+  display: flex;
+  flex-direction: column;
+}
+.home-row2 .float-card {
+  flex: 1;
 }
 
 /* ═══════════════════════════════════════
@@ -144,7 +153,8 @@
 .cd-card {
   padding: 0;
   position: relative;
-  height: 140px;
+  min-height: 140px;
+  flex: 1;
   overflow: hidden;
   display: flex;
   align-items: stretch;
