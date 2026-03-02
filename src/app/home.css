@@ -691,9 +691,13 @@
   }
 
   /* Hero: centered in single-column */
+  .grid-hero {
+    justify-content: center;
+  }
   .hero {
     padding: 20px 0 24px;
     text-align: center;
+    width: 100%;
   }
   .hero-greeting {
     font-size: 30px;
@@ -741,6 +745,7 @@
   .hero {
     padding: 20px 0 24px;
     text-align: center;
+    width: 100%;
   }
   .hero-date {
     font-size: 11px;
