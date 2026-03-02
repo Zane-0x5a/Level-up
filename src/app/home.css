@@ -690,9 +690,10 @@
     gap: 16px;
   }
 
-  /* Hero */
+  /* Hero: centered in single-column */
   .hero {
     padding: 20px 0 24px;
+    text-align: center;
   }
   .hero-greeting {
     font-size: 30px;
@@ -709,6 +710,12 @@
   }
   .cd-right {
     padding: 16px 20px;
+    align-items: center;
+    text-align: center;
+  }
+  .cd-nav {
+    width: 100%;
+    justify-content: space-between;
   }
 
   /* Metrics */
