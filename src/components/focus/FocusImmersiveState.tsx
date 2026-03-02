@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages } from '@/lib/api/focus-images'
 import { incrementReturnCount, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getStickyNotes } from '@/lib/api/sticky-notes'
@@ -12,6 +13,7 @@ type Props = {
 }
 
 export default function FocusImmersiveState({ onExit }: Props) {
+  const { user } = useAuth()
   const [stickyNoteLoaded, setStickyNoteLoaded] = useState<string | null>(null)
   const [bgUrl, setBgUrl] = useState<string | null>(null)
   const [returnCount, setReturnCount] = useState(0)
@@ -19,11 +21,12 @@ export default function FocusImmersiveState({ onExit }: Props) {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const load = useCallback(async () => {
+    if (!user) return
     try {
       const [images, notes, currentCount] = await Promise.all([
-        getFocusImages(),
-        getStickyNotes(),
-        getTodayReturnCount(),
+        getFocusImages(user.id),
+        getStickyNotes(user.id),
+        getTodayReturnCount(user.id),
       ])
 
       if (images.length > 0) {
@@ -46,7 +49,7 @@ export default function FocusImmersiveState({ onExit }: Props) {
     } catch {
       // Graceful degradation
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { load() }, [load])
 
@@ -55,16 +58,17 @@ export default function FocusImmersiveState({ onExit }: Props) {
   }, [])
 
   const handleReturn = useCallback(async () => {
+    if (!user) return
     try {
       const today = new Date().toISOString().split('T')[0]
-      await incrementReturnCount(today)
+      await incrementReturnCount(user.id, today)
       setReturnCount(c => c + 1)
       setShowToast(true)
       toastTimerRef.current = setTimeout(() => setShowToast(false), 1500)
     } catch {
       // Silently handle
     }
-  }, [])
+  }, [user])
 
   return (
     <div className="focus-immersive">

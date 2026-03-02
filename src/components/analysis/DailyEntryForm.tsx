@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
 import { sendToFlomo } from '@/lib/flomo'
 
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
+  const { user } = useAuth()
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
@@ -18,8 +20,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   const loadRecord = useCallback(async () => {
+    if (!user) return
     try {
-      const record = await getDailyRecord(date)
+      const record = await getDailyRecord(user.id, date)
       if (record) {
         setDayType(record.day_type)
         setIbetter(record.ibetter_count ?? 0)
@@ -32,11 +35,12 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       // ignore load errors
     }
-  }, [date])
+  }, [date, user])
 
   const loadFocus = useCallback(async () => {
+    if (!user) return
     try {
-      const sessions = await getTodayFocusSessions()
+      const sessions = await getTodayFocusSessions(user.id)
       let inC = 0, outC = 0, ent = 0
       for (const s of sessions) {
         if (s.category === 'in_class') inC += s.duration
@@ -49,16 +53,17 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       // ignore
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { loadRecord() }, [loadRecord])
   useEffect(() => { loadFocus() }, [loadFocus])
 
   const handleSave = async () => {
+    if (!user) return
     setSaving(true)
     setStatus(null)
     try {
-      await upsertDailyRecord({ date, day_type: dayType, ibetter_count: ibetter, note })
+      await upsertDailyRecord(user.id, { date, day_type: dayType, ibetter_count: ibetter, note })
       onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)

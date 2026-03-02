@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, RefObject } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getWeeklyFocusHours } from '@/lib/api/stats'
 
@@ -18,6 +19,7 @@ const quietLines = [
 ]
 
 export default function FocusDefaultState({ onEnter, orbRef }: Props) {
+  const { user } = useAuth()
   const [todayHours, setTodayHours] = useState(0)
   const [returnCount, setReturnCount] = useState(0)
   const [lastSession, setLastSession] = useState<{ category: string; duration: number } | null>(null)
@@ -25,11 +27,12 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
   const [quietLine] = useState(() => quietLines[Math.floor(Math.random() * quietLines.length)])
 
   const load = useCallback(async () => {
+    if (!user) return
     try {
       const [sessions, returns, weekly] = await Promise.all([
-        getTodayFocusSessions(),
-        getTodayReturnCount(),
-        getWeeklyFocusHours(),
+        getTodayFocusSessions(user.id),
+        getTodayReturnCount(user.id),
+        getWeeklyFocusHours(user.id),
       ])
       const total = sessions.reduce((s: number, r: { duration: number }) => s + (r.duration ?? 0), 0)
       setTodayHours(total)
@@ -44,7 +47,7 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
     } catch {
       // Silently handle — page still works with zero state
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { load() }, [load])
 

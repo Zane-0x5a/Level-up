@@ -1,20 +1,19 @@
 import { supabase } from '@/lib/supabase'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export async function getStickyNotes() {
+export async function getStickyNotes(userId: string) {
   const { data, error } = await supabase
     .from('sticky_notes')
     .select('*')
-    .eq('user_id', DEFAULT_USER_ID)
+    .eq('user_id', userId)
     .order('order', { ascending: true })
   if (error) throw error
   return data
 }
 
-export async function addStickyNote(content: string) {
+export async function addStickyNote(userId: string, content: string) {
   const { error } = await supabase
     .from('sticky_notes')
-    .insert({ content, user_id: DEFAULT_USER_ID, order: Math.floor(Date.now() / 1000) })
+    .insert({ content, user_id: userId, order: Math.floor(Date.now() / 1000) })
   if (error) throw error
 }
 

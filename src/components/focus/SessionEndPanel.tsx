@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { addFocusSession } from '@/lib/api/focus-sessions'
 
 type Props = {
@@ -15,12 +16,14 @@ const CATEGORIES = [
 ]
 
 export default function SessionEndPanel({ onComplete, onSkip }: Props) {
+  const { user } = useAuth()
   const [category, setCategory] = useState('in_class')
   const [duration, setDuration] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   const handleSubmit = async () => {
+    if (!user) return
     const hrs = parseFloat(duration)
     if (!hrs || hrs <= 0) {
       setError('请输入有效的时长')
@@ -29,7 +32,7 @@ export default function SessionEndPanel({ onComplete, onSkip }: Props) {
     setError('')
     setSubmitting(true)
     try {
-      await addFocusSession(category, hrs)
+      await addFocusSession(user.id, category, hrs)
       onComplete()
     } catch (err) {
       console.error('专注记录保存失败:', err)

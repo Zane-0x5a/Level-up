@@ -1,18 +1,17 @@
 import { supabase } from '@/lib/supabase'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export async function getAudioClips() {
+export async function getAudioClips(userId: string) {
   const { data, error } = await supabase
     .from('audio_clips')
     .select('*')
-    .eq('user_id', DEFAULT_USER_ID)
+    .eq('user_id', userId)
     .order('order', { ascending: true })
   if (error) throw error
   return data ?? []
 }
 
-export async function uploadAudioClip(file: File, label: string) {
-  const filePath = `audio/${DEFAULT_USER_ID}/${Date.now()}-${file.name}`
+export async function uploadAudioClip(userId: string, file: File, label: string) {
+  const filePath = `audio/${userId}/${Date.now()}-${file.name}`
   const { error: uploadError } = await supabase.storage
     .from('audio-clips')
     .upload(filePath, file)
@@ -25,7 +24,7 @@ export async function uploadAudioClip(file: File, label: string) {
   const { error } = await supabase
     .from('audio_clips')
     .insert({
-      user_id: DEFAULT_USER_ID,
+      user_id: userId,
       label,
       file_path: urlData.publicUrl,
     })

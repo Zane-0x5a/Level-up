@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 
@@ -13,6 +14,7 @@ type DailyData = {
 }
 
 export default function ProgressOverview() {
+  const { user } = useAuth()
   const [data, setData] = useState<DailyData>({
     focusInClass: 0,
     focusOutClass: 0,
@@ -23,12 +25,13 @@ export default function ProgressOverview() {
 
   useEffect(() => {
     async function load() {
+      if (!user) return
       try {
         const today = new Date().toISOString().split('T')[0]
         const [record, sessions, returnCount] = await Promise.all([
-          getDailyRecord(today),
-          getTodayFocusSessions(),
-          getTodayReturnCount(),
+          getDailyRecord(user.id, today),
+          getTodayFocusSessions(user.id),
+          getTodayReturnCount(user.id),
         ])
 
         // Always aggregate focus time from focus_sessions (source of truth)
@@ -54,7 +57,7 @@ export default function ProgressOverview() {
       }
     }
     load()
-  }, [])
+  }, [user])
 
   const metrics = [
     { label: '\u8BFE\u5185\u6295\u5165', value: data.focusInClass, unit: 'h', highlighted: true },

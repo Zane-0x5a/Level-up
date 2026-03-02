@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 
 function generateThumbnail(url: string): Promise<string> {
@@ -28,6 +29,7 @@ type AudioClip = { id: string; label: string; file_path: string }
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
+  const { user } = useAuth()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -57,15 +59,16 @@ export default function SettingsPage() {
   }, [])
 
   const loadMedia = useCallback(async () => {
+    if (!user) return
     try {
-      const [imgs, auds] = await Promise.all([getFocusImages(), getAudioClips()])
+      const [imgs, auds] = await Promise.all([getFocusImages(user.id), getAudioClips(user.id)])
       setImages(imgs)
       setClips(auds)
     } catch {
       setError('加载媒体失败，请刷新重试')
       setTimeout(() => setError(null), 3000)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { loadMedia() }, [loadMedia])
 
@@ -109,10 +112,10 @@ export default function SettingsPage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
     setUploadingImage(true)
     try {
-      await uploadFocusImage(file, uploadDeviceType)
+      await uploadFocusImage(user.id, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -126,10 +129,10 @@ export default function SettingsPage() {
 
   const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !audioLabel.trim()) return
+    if (!file || !audioLabel.trim() || !user) return
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(file, audioLabel.trim())
+      await uploadAudioClip(user.id, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
@@ -143,6 +146,7 @@ export default function SettingsPage() {
   }
 
   const handleDeleteImage = async (id: string) => {
+    if (!user) return
     try {
       await deleteFocusImage(id)
       await loadMedia()
@@ -153,6 +157,7 @@ export default function SettingsPage() {
   }
 
   const handleDeleteClip = async (id: string) => {
+    if (!user) return
     try {
       await deleteAudioClip(id)
       await loadMedia()

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getAllDailyRecords, clearDailyNote } from '@/lib/api/daily-records'
 import { getStreak, getTotalFocusHours, getWeeklyFocusHours, getTotalReturnCount } from '@/lib/api/stats'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
@@ -31,6 +32,7 @@ type Metrics = {
 }
 
 export default function AnalysisPage() {
+  const { user } = useAuth()
   const [records, setRecords] = useState<DailyRecord[]>([])
   const [filter, setFilter] = useState<'all' | 'study_day' | 'rest_day'>('all')
   const [metrics, setMetrics] = useState<Metrics>({
@@ -42,13 +44,14 @@ export default function AnalysisPage() {
   })
 
   const load = useCallback(async () => {
+    if (!user) return
     try {
       const [data, streak, totalHours, weeklyHours, totalReturns] = await Promise.all([
-        getAllDailyRecords(),
-        getStreak(),
-        getTotalFocusHours(),
-        getWeeklyFocusHours(),
-        getTotalReturnCount(),
+        getAllDailyRecords(user.id),
+        getStreak(user.id),
+        getTotalFocusHours(user.id),
+        getWeeklyFocusHours(user.id),
+        getTotalReturnCount(user.id),
       ])
       setRecords(data)
 
@@ -63,7 +66,7 @@ export default function AnalysisPage() {
     } catch {
       // ignore load errors
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { load() }, [load])
 
@@ -159,7 +162,8 @@ export default function AnalysisPage() {
           <span className="sec-name">历史总结</span>
         </div>
         <NotesDrawer records={filtered} onDeleteNote={async (date) => {
-          try { await clearDailyNote(date); await load() } catch { /* ignore */ }
+          if (!user) return
+          try { await clearDailyNote(user.id, date); await load() } catch { /* ignore */ }
         }} />
       </section>
     </main>

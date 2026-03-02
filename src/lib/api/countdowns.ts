@@ -1,20 +1,19 @@
 import { supabase } from '@/lib/supabase'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export async function getCountdowns() {
+export async function getCountdowns(userId: string) {
   const { data, error } = await supabase
     .from('countdowns')
     .select('*')
-    .eq('user_id', DEFAULT_USER_ID)
+    .eq('user_id', userId)
     .order('target_date', { ascending: true })
   if (error) throw error
   return data
 }
 
-export async function addCountdown(label: string, targetDate: string) {
+export async function addCountdown(userId: string, label: string, targetDate: string) {
   const { error } = await supabase
     .from('countdowns')
-    .insert({ label, target_date: targetDate, user_id: DEFAULT_USER_ID })
+    .insert({ label, target_date: targetDate, user_id: userId })
   if (error) throw error
 }
 
