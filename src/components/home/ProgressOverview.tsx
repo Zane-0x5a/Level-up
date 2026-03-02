@@ -31,18 +31,15 @@ export default function ProgressOverview() {
           getTodayReturnCount(),
         ])
 
-        // Calculate from focus sessions if daily record doesn't have the data
-        let focusInClass = record?.focus_in_class ?? 0
-        let focusOutClass = record?.focus_out_class ?? 0
-        let entertainment = record?.entertainment ?? 0
+        // Always aggregate focus time from focus_sessions (source of truth)
+        let focusInClass = 0
+        let focusOutClass = 0
+        let entertainment = 0
 
-        // If we have sessions but no record data, aggregate from sessions
-        if (!record && sessions.length > 0) {
-          for (const s of sessions) {
-            if (s.category === 'in_class') focusInClass += s.duration
-            else if (s.category === 'out_class') focusOutClass += s.duration
-            else if (s.category === 'entertainment') entertainment += s.duration
-          }
+        for (const s of sessions) {
+          if (s.category === 'in_class') focusInClass += s.duration
+          else if (s.category === 'out_class') focusOutClass += s.duration
+          else if (s.category === 'entertainment') entertainment += s.duration
         }
 
         setData({

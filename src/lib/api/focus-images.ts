@@ -13,12 +13,12 @@ export async function getFocusImages() {
 export async function uploadFocusImage(file: File) {
   const filePath = `focus/${DEFAULT_USER_ID}/${Date.now()}-${file.name}`
   const { error: uploadError } = await supabase.storage
-    .from('images')
+    .from('focus-images')
     .upload(filePath, file)
   if (uploadError) throw uploadError
 
   const { data: urlData } = supabase.storage
-    .from('images')
+    .from('focus-images')
     .getPublicUrl(filePath)
 
   const { error } = await supabase
