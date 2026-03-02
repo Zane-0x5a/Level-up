@@ -1,10 +1,17 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { format, parseISO } from 'date-fns'
 import { getCountdowns, addCountdown, deleteCountdown } from '@/lib/api/countdowns'
 import CountdownCard from './CountdownCard'
 
 type Countdown = { id: string; label: string; target_date: string }
+
+const GLOW_CYCLE = ['coral', 'sage', 'honey'] as const
+
+function formatDate(dateStr: string) {
+  return format(parseISO(dateStr), 'yyyy.MM.dd')
+}
 
 export default function CountdownSection() {
   const [items, setItems] = useState<Countdown[]>([])
@@ -105,136 +112,124 @@ export default function CountdownSection() {
   }
 
   const currentItem = items[activeIndex]
+  const glowColor = items.length > 0 ? GLOW_CYCLE[activeIndex % 3] : 'neutral'
   const enterClass = direction === 'left' ? 'cd-slide-enter-left' : 'cd-slide-enter-right'
 
   return (
     <div className="cd-carousel-wrap">
       <div className="cd-carousel-header">
         <div className="sec-dot coral" />
-        <div className="sec-name">{'\u5012\u8BA1\u65F6'}</div>
+        <div className="sec-name">倒计时</div>
         <button
           className="cd-add-btn"
           onClick={() => setShowAddForm(!showAddForm)}
-          aria-label={'\u6DFB\u52A0\u5012\u8BA1\u65F6'}
-          title={'\u6DFB\u52A0\u5012\u8BA1\u65F6'}
+          aria-label="添加倒计时"
         >
-          {showAddForm ? '\u00D7' : '+'}
+          {showAddForm ? '×' : '+'}
         </button>
       </div>
 
-      {showAddForm && (
-        <div className="float-card glow-neutral" style={{ marginBottom: 12 }}>
-          <div className="cd-add-form">
-            <div className="cd-form-row">
-              <input
-                ref={labelInputRef}
-                type="text"
-                placeholder={'\u4E8B\u4EF6\u540D\u79F0'}
-                value={newLabel}
-                onChange={e => setNewLabel(e.target.value)}
-                onKeyDown={handleAddKeyDown}
-                className="field-input"
-              />
-            </div>
-            <div className="cd-form-row">
-              <input
-                type="date"
-                value={newDate}
-                onChange={e => setNewDate(e.target.value)}
-                onKeyDown={handleAddKeyDown}
-                className="field-input"
-              />
-            </div>
-            <div className="cd-add-form-actions">
-              <button
-                onClick={handleAdd}
-                disabled={isSubmitting || !newLabel.trim() || !newDate}
-                className="btn-warm"
-                style={{ fontSize: 12, padding: '8px 20px' }}
-              >
-                {'\u4FDD\u5B58'}
-              </button>
-              <button
-                onClick={() => { setShowAddForm(false); setNewLabel(''); setNewDate('') }}
-                className="btn-outline"
-                style={{ fontSize: 12, padding: '8px 20px' }}
-              >
-                {'\u53D6\u6D88'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="cd-carousel-viewport">
-        {items.length > 0 && currentItem ? (
-          <div
-            className={`float-card glow-${['coral', 'sage', 'honey'][activeIndex % 3]} cd-card`}
+      <div className={`float-card glow-${glowColor} cd-card`}>
+        {/* Delete button — absolute positioned, only when showing a countdown */}
+        {!showAddForm && currentItem && (
+          <button
+            className="cd-delete"
+            onClick={() => handleDelete(currentItem.id)}
+            aria-label="删除倒计时"
           >
-            <button
-              className="cd-delete"
-              onClick={() => handleDelete(currentItem.id)}
-              aria-label={'\u5220\u9664\u5012\u8BA1\u65F6'}
-            >
-              {'\u00D7'}
-            </button>
-            <div
-              key={animKey}
-              className={`cd-slide ${direction ? enterClass : ''}`}
-            >
-              <CountdownCard
-                id={currentItem.id}
-                label={currentItem.label}
-                targetDate={currentItem.target_date}
-                index={activeIndex}
-                animate={direction !== null}
-              />
-            </div>
-            {items.length > 1 && (
-              <div className="cd-nav">
-                <button
-                  className="cd-arrow"
-                  onClick={() => navigate('left')}
-                  aria-label={'\u4E0A\u4E00\u4E2A'}
-                >
-                  {'\u2039'}
-                </button>
-                <div className="cd-dots">
-                  {items.map((_, i) => (
-                    <button
-                      key={i}
-                      className={`cd-dot ${i === activeIndex ? 'active' : ''}`}
-                      onClick={() => goToIndex(i)}
-                      aria-label={`\u5012\u8BA1\u65F6 ${i + 1}`}
-                    />
-                  ))}
+            ×
+          </button>
+        )}
+
+        <div className="cd-inner-clip">
+          <div
+            key={showAddForm ? 'form' : animKey}
+            className={`cd-slide ${!showAddForm && direction ? enterClass : ''}`}
+          >
+            {showAddForm ? (
+              /* Add form — horizontal, same height as card */
+              <div className="cd-form-layout">
+                <input
+                  ref={labelInputRef}
+                  type="text"
+                  placeholder="事件名称"
+                  value={newLabel}
+                  onChange={e => setNewLabel(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  className="field-input"
+                />
+                <input
+                  type="date"
+                  value={newDate}
+                  onChange={e => setNewDate(e.target.value)}
+                  onKeyDown={handleAddKeyDown}
+                  className="field-input"
+                />
+                <div className="cd-form-btns">
+                  <button
+                    onClick={handleAdd}
+                    disabled={isSubmitting || !newLabel.trim() || !newDate}
+                    className="btn-warm"
+                    style={{ fontSize: 12, padding: '8px 20px' }}
+                  >
+                    保存
+                  </button>
+                  <button
+                    onClick={() => { setShowAddForm(false); setNewLabel(''); setNewDate('') }}
+                    className="btn-outline"
+                    style={{ fontSize: 12, padding: '8px 20px' }}
+                  >
+                    取消
+                  </button>
                 </div>
-                <button
-                  className="cd-arrow"
-                  onClick={() => navigate('right')}
-                  aria-label={'\u4E0B\u4E00\u4E2A'}
-                >
-                  {'\u203A'}
+              </div>
+            ) : items.length > 0 && currentItem ? (
+              /* Countdown display — horizontal layout */
+              <div className="cd-layout">
+                <div className="cd-left">
+                  <div className={`cd-pill ${GLOW_CYCLE[activeIndex % 3]}`}>
+                    <CountdownCard
+                      id={currentItem.id}
+                      label={currentItem.label}
+                      targetDate={currentItem.target_date}
+                      index={activeIndex}
+                      animate={direction !== null}
+                    />
+                  </div>
+                </div>
+                <div className="cd-right">
+                  <div className="cd-label">{currentItem.label}</div>
+                  <div className="cd-target">{formatDate(currentItem.target_date)}</div>
+                  {items.length > 1 && (
+                    <div className="cd-nav">
+                      <button className="cd-arrow" onClick={() => navigate('left')} aria-label="上一个">‹</button>
+                      <div className="cd-dots">
+                        {items.map((_, i) => (
+                          <button
+                            key={i}
+                            className={`cd-dot ${i === activeIndex ? 'active' : ''}`}
+                            onClick={() => goToIndex(i)}
+                            aria-label={`倒计时 ${i + 1}`}
+                          />
+                        ))}
+                      </div>
+                      <button className="cd-arrow" onClick={() => navigate('right')} aria-label="下一个">›</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Empty state */
+              <div className="cd-empty">
+                <span className="cd-empty-icon">🎯</span>
+                <div className="cd-empty-text">还没有倒计时</div>
+                <button className="cd-empty-add" onClick={() => setShowAddForm(true)}>
+                  + 添加第一个
                 </button>
               </div>
             )}
           </div>
-        ) : (
-          <div className="float-card glow-neutral cd-card">
-            <div className="cd-empty">
-              <span className="cd-empty-icon">{'\uD83C\uDFAF'}</span>
-              <div className="cd-empty-text">{'\u8FD8\u6CA1\u6709\u5012\u8BA1\u65F6'}</div>
-              {!showAddForm && (
-                <button
-                  className="cd-empty-add"
-                  onClick={() => setShowAddForm(true)}
-                >
-                  + {'\u6DFB\u52A0\u7B2C\u4E00\u4E2A'}
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

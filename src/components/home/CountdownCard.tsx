@@ -1,9 +1,5 @@
 'use client'
-
-import { differenceInDays, parseISO, format } from 'date-fns'
-
-const GLOW_CYCLE = ['coral', 'sage', 'honey'] as const
-const EMOJI_CYCLE = ['\uD83C\uDFAF', '\uD83D\uDCDD', '\u2600\uFE0F'] // target, memo, sun
+import { differenceInDays, parseISO } from 'date-fns'
 
 type Props = {
   id: string
@@ -13,22 +9,14 @@ type Props = {
   animate?: boolean
 }
 
-export default function CountdownCard({ label, targetDate, index, animate }: Props) {
+export default function CountdownCard({ targetDate, index, animate }: Props) {
   const days = Math.max(0, differenceInDays(parseISO(targetDate), new Date()))
-  const color = GLOW_CYCLE[index % 3]
-  const emoji = EMOJI_CYCLE[index % 3]
-  const formattedDate = format(parseISO(targetDate), 'yyyy.MM.dd')
   const paddedDays = String(days).padStart(3, '0')
 
   return (
     <>
-      <span className="cd-icon">{emoji}</span>
-      <div className={`cd-pill ${color}`}>
-        <div className={`cd-number ${animate ? 'cd-number-anim' : ''}`}>{paddedDays}</div>
-      </div>
-      <div className="cd-unit">{'\u5929'}</div>
-      <div className="cd-label">{label}</div>
-      <div className="cd-target">{formattedDate}</div>
+      <div className={`cd-number ${animate ? 'cd-number-anim' : ''}`}>{paddedDays}</div>
+      <div className="cd-unit">天</div>
     </>
   )
 }
