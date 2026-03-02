@@ -379,3 +379,98 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(43,45,66,0.12);
 }
+
+/* ═══════════════════════════════════════
+   PAGE CONTENT WRAPPER — nav offset
+   ═══════════════════════════════════════ */
+.page-content {
+  position: relative;
+  z-index: 10;
+  padding-top: 82px;
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Tablet (≤ 900px)
+   ═══════════════════════════════════════ */
+@media (max-width: 900px) {
+  .float-card {
+    padding: 20px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Mobile (≤ 640px)
+   ═══════════════════════════════════════ */
+@media (max-width: 640px) {
+  .float-card {
+    padding: 16px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Nav switch (≤ 768px)
+   ═══════════════════════════════════════ */
+@media (max-width: 768px) {
+  .top-nav {
+    display: none;
+  }
+  .page-content {
+    padding-top: 0;
+    padding-bottom: 72px;
+  }
+}
+
+/* ═══════════════════════════════════════
+   BOTTOM TAB BAR — mobile only
+   ═══════════════════════════════════════ */
+.bottom-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 56px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  border-top: 1px solid rgba(43,45,66,0.05);
+  align-items: center;
+  justify-content: space-around;
+}
+
+@media (max-width: 768px) {
+  .bottom-tab-bar {
+    display: flex;
+  }
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  text-decoration: none;
+  color: var(--color-text-3);
+  transition: color 0.2s;
+  padding: 6px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.tab-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.tab-label {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 500;
+}
+.tab-item.active {
+  color: var(--color-coral);
+}
+.tab-item.active .tab-label {
+  font-weight: 600;
+}

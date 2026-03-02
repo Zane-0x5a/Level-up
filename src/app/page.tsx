@@ -6,7 +6,7 @@ import StickyNotes from '@/components/home/StickyNotes'
 
 export default function HomePage() {
   return (
-    <main style={{ maxWidth: 1200, margin: '0 auto', padding: '0 48px' }}>
+    <main className="home-main">
       <div className="home-layout">
         {/* Row 1: Hero (left) + Countdown Carousel (right) — 1fr 1fr */}
         <div className="home-row1 anim">

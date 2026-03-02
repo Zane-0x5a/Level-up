@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { NavProvider } from "@/contexts/NavContext";
 import TopNav from "@/components/TopNav";
+import BottomTabBar from "@/components/BottomTabBar";
 
 export const metadata: Metadata = {
   title: "Level Up",
@@ -37,9 +38,10 @@ export default function RootLayout({
       <body className="antialiased min-h-full">
         <NavProvider>
           <TopNav />
+          <BottomTabBar />
 
           {/* Page content */}
-          <div className="relative z-10" style={{ paddingTop: 82 }}>
+          <div className="page-content">
             {children}
           </div>
         </NavProvider>
