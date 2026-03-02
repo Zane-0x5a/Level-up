@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getStreak } from '@/lib/api/stats'
 
@@ -24,6 +25,7 @@ function splitGreeting(text: string): [string, string] {
 }
 
 export default function HeroSection() {
+  const { user } = useAuth()
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [streak, setStreak] = useState(0)
   const [dateStr, setDateStr] = useState('')
@@ -53,11 +55,12 @@ export default function HeroSection() {
 
   useEffect(() => {
     async function load() {
+      if (!user) return
       try {
         const today = new Date().toISOString().split('T')[0]
         const [record, streakCount] = await Promise.all([
-          getDailyRecord(today),
-          getStreak(),
+          getDailyRecord(user.id, today),
+          getStreak(user.id),
         ])
         if (record?.day_type === 'rest_day') {
           setDayType('rest_day')
@@ -68,14 +71,15 @@ export default function HeroSection() {
       }
     }
     load()
-  }, [])
+  }, [user])
 
   const handleToggleDayType = async () => {
+    if (!user) return
     const newType = dayType === 'study_day' ? 'rest_day' : 'study_day'
     const prevType = dayType
     setDayType(newType)
     try {
-      await upsertDailyRecord({ date: todayStr, day_type: newType })
+      await upsertDailyRecord(user.id, { date: todayStr, day_type: newType })
     } catch {
       setDayType(prevType)
     }

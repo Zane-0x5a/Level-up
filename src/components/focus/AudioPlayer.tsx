@@ -1,11 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getAudioClips } from '@/lib/api/audio-clips'
 
 type Clip = { id: string; label: string; file_path: string }
 
 export default function AudioPlayer() {
+  const { user } = useAuth()
   const [clips, setClips] = useState<Clip[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -14,13 +16,14 @@ export default function AudioPlayer() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const load = useCallback(async () => {
+    if (!user) return
     try {
-      const data = await getAudioClips()
+      const data = await getAudioClips(user.id)
       setClips(data)
     } catch {
       // No audio available
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { load() }, [load])
 
