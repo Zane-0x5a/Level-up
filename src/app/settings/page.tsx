@@ -1,7 +1,25 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { getFocusImages, uploadFocusImage, deleteFocusImage } from '@/lib/api/focus-images'
+import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
+
+function generateThumbnail(url: string): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.crossOrigin = 'anonymous'
+    img.onload = () => {
+      const MAX = 200
+      const scale = Math.min(MAX / img.width, MAX / img.height, 1)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL('image/jpeg', 0.8))
+    }
+    img.onerror = () => resolve(url)
+    img.src = url
+  })
+}
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import './settings.css'
 
@@ -19,6 +37,8 @@ export default function SettingsPage() {
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingAudio, setUploadingAudio] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
+  const [uploadDeviceType, setUploadDeviceType] = useState<'mobile' | 'desktop' | 'universal'>('universal')
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
@@ -49,6 +69,16 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => { loadMedia() }, [loadMedia])
+
+  useEffect(() => {
+    if (images.length === 0) return
+    images.forEach(img => {
+      if (thumbnails[img.id]) return
+      generateThumbnail(img.file_path).then(dataUrl => {
+        setThumbnails(prev => ({ ...prev, [img.id]: dataUrl }))
+      })
+    })
+  }, [images]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const saveFlomoUrl = () => {
     localStorage.setItem('flomo_api_url', flomoUrl.trim())
@@ -83,7 +113,7 @@ export default function SettingsPage() {
     if (!file) return
     setUploadingImage(true)
     try {
-      await uploadFocusImage(file)
+      await uploadFocusImage(file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -219,7 +249,8 @@ export default function SettingsPage() {
           <div className="image-grid">
             {images.map(img => (
               <div key={img.id} className="image-thumb">
-                <img src={img.file_path} alt="" />
+                <img src={thumbnails[img.id] ?? img.file_path} alt="" />
+                <span className="image-thumb-tag">{img.device_type === 'universal' ? '通' : img.device_type === 'mobile' ? '机' : '脑'}</span>
                 <button
                   onClick={() => handleDeleteImage(img.id)}
                   className="image-thumb-delete"
@@ -229,18 +260,29 @@ export default function SettingsPage() {
                 </button>
               </div>
             ))}
-            <label className="image-upload-trigger">
-              <span style={{ fontSize: 24, lineHeight: 1 }}>+</span>
-              <span>上传图片</span>
-              <input
-                ref={imageInputRef}
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                onChange={handleImageUpload}
-                disabled={uploadingImage}
-              />
-            </label>
+            <div className="image-upload-controls">
+              <select
+                value={uploadDeviceType}
+                onChange={e => setUploadDeviceType(e.target.value as 'mobile' | 'desktop' | 'universal')}
+                className="device-type-select"
+              >
+                <option value="universal">通用</option>
+                <option value="mobile">手机</option>
+                <option value="desktop">电脑</option>
+              </select>
+              <label className="image-upload-trigger">
+                <span style={{ fontSize: 24, lineHeight: 1 }}>+</span>
+                <span>上传图片</span>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleImageUpload}
+                  disabled={uploadingImage}
+                />
+              </label>
+            </div>
           </div>
           {images.length === 0 && (
             <p className="settings-empty">还没有背景图，点击上方上传</p>

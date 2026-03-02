@@ -1,7 +1,13 @@
 import { supabase } from '@/lib/supabase'
 import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export async function getFocusImages() {
+export type FocusImage = {
+  id: string
+  file_path: string
+  device_type: 'mobile' | 'desktop' | 'universal'
+}
+
+export async function getFocusImages(): Promise<FocusImage[]> {
   const { data, error } = await supabase
     .from('focus_images')
     .select('*')
@@ -10,7 +16,10 @@ export async function getFocusImages() {
   return data ?? []
 }
 
-export async function uploadFocusImage(file: File) {
+export async function uploadFocusImage(
+  file: File,
+  deviceType: 'mobile' | 'desktop' | 'universal' = 'universal'
+) {
   const filePath = `focus/${DEFAULT_USER_ID}/${Date.now()}-${file.name}`
   const { error: uploadError } = await supabase.storage
     .from('focus-images')
@@ -23,7 +32,7 @@ export async function uploadFocusImage(file: File) {
 
   const { error } = await supabase
     .from('focus_images')
-    .insert({ user_id: DEFAULT_USER_ID, file_path: urlData.publicUrl })
+    .insert({ user_id: DEFAULT_USER_ID, file_path: urlData.publicUrl, device_type: deviceType })
   if (error) throw error
 }
 
