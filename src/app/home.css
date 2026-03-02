@@ -181,7 +181,7 @@
 }
 
 .cd-left {
-  flex-shrink: 0;
+  flex: 2;
   display: flex;
   align-items: stretch;
 }
@@ -231,8 +231,7 @@
   justify-content: center;
   padding: 20px 32px;
   border-radius: var(--radius) 0 0 var(--radius);
-  min-width: 60%;
-  flex: 2;
+  flex: 1;
 }
 .cd-pill.coral { background: var(--color-coral-soft); }
 .cd-pill.sage { background: var(--color-sage-soft); }
