@@ -1,8 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { Sora, Lexend, DM_Mono } from "next/font/google";
 import { NavProvider } from "@/contexts/NavContext";
 import TopNav from "@/components/TopNav";
 import BottomTabBar from "@/components/BottomTabBar";
+
+const sora = Sora({ subsets: ["latin"], variable: "--font-display" });
+const lexend = Lexend({ subsets: ["latin"], variable: "--font-body" });
+const dmMono = DM_Mono({ subsets: ["latin"], weight: ["400", "500"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
   title: "Level Up",
@@ -22,19 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh" className="h-full">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin="anonymous"
-        />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Sora:wght@300..800&family=Lexend:wght@300..700&family=DM+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="zh" className={`h-full ${sora.variable} ${lexend.variable} ${dmMono.variable}`}>
       <body className="antialiased min-h-full">
         <NavProvider>
           <TopNav />
