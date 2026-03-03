@@ -29,6 +29,7 @@ export default function ChannelList({ channels, activeChannelId, onSelect, isAdm
   }
 
   const handleDelete = async (channelId: string) => {
+    if (!window.confirm('删除频道将同时删除所有消息，确定要继续吗？')) return
     try {
       await deleteChannel(channelId)
       onChannelsChange()

@@ -41,8 +41,13 @@ export default function CommunityPage() {
       setProfilesMap(map)
       setChannels(allChannels)
 
-      if (allChannels.length > 0 && !activeChannelId) {
-        setActiveChannelId(allChannels[0].id)
+      if (allChannels.length > 0) {
+        const stillExists = activeChannelId && allChannels.some(ch => ch.id === activeChannelId)
+        if (!stillExists) {
+          setActiveChannelId(allChannels[0].id)
+        }
+      } else {
+        setActiveChannelId(null)
       }
     } catch (err) {
       console.error('加载社群数据失败:', err)
