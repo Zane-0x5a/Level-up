@@ -893,3 +893,128 @@
     padding: 28px;
   }
 }
+
+/* ── Delete Button ── */
+.msg-delete-btn {
+  opacity: 0;
+  border: none;
+  background: none;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--color-text-3);
+  cursor: pointer;
+  padding: 2px 6px;
+  margin-top: 2px;
+  margin-left: 4px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.msg-item:hover .msg-delete-btn {
+  opacity: 1;
+}
+
+.msg-delete-btn:hover {
+  color: var(--color-rose);
+  background: var(--color-rose-soft);
+}
+
+/* ── Delete Confirmation Dialog ── */
+.delete-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease-out;
+  backdrop-filter: blur(2px);
+}
+
+.delete-dialog {
+  background: var(--color-card);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: var(--shadow-lg);
+  animation: dialogSlideIn 0.25s var(--ease-spring);
+}
+
+@keyframes dialogSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.delete-dialog-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 8px;
+}
+
+.delete-dialog-text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-2);
+  margin-bottom: 20px;
+}
+
+.delete-dialog-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.delete-dialog-cancel,
+.delete-dialog-confirm {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.delete-dialog-cancel {
+  background: var(--color-bg-sub);
+  color: var(--color-text-2);
+}
+
+.delete-dialog-cancel:hover:not(:disabled) {
+  background: rgba(43, 45, 66, 0.08);
+}
+
+.delete-dialog-confirm {
+  background: var(--color-rose);
+  color: #fff;
+}
+
+.delete-dialog-confirm:hover:not(:disabled) {
+  background: #c53030;
+  transform: translateY(-1px);
+}
+
+.delete-dialog-cancel:disabled,
+.delete-dialog-confirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Mobile: always show delete button */
+@media (max-width: 640px) {
+  .msg-delete-btn {
+    opacity: 1;
+  }
+}

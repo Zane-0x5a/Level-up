@@ -1,17 +1,21 @@
 'use client'
 
+import { useState } from 'react'
 import type { Message } from '@/lib/api/messages'
 import type { UserProfile } from '@/lib/api/user-profiles'
 import CheckinCard from './CheckinCard'
+import DeleteConfirmDialog from './DeleteConfirmDialog'
 
 interface Props {
   message: Message
   profile?: UserProfile
   isOwn: boolean
+  isAdmin: boolean
   replyMessage?: Message
   replyProfile?: UserProfile
   onReply?: (message: Message) => void
   onImageClick?: (url: string) => void
+  onDelete?: (messageId: string) => Promise<void>
 }
 
 function formatTime(iso: string): string {
@@ -22,12 +26,37 @@ function formatTime(iso: string): string {
   return isToday ? time : `${d.getMonth() + 1}/${d.getDate()} ${time}`
 }
 
-export default function MessageItem({ message, profile, isOwn, replyMessage, replyProfile, onReply, onImageClick }: Props) {
+export default function MessageItem({ message, profile, isOwn, isAdmin, replyMessage, replyProfile, onReply, onImageClick, onDelete }: Props) {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   const nickname = profile?.nickname ?? '未知用户'
   const initial = nickname[0]?.toUpperCase() ?? '?'
 
+  const canDelete = () => {
+    if (isAdmin) return true
+    if (!isOwn) return false
+    const elapsed = (Date.now() - new Date(message.created_at).getTime()) / 1000 / 60
+    return elapsed <= 3
+  }
+
+  const handleDelete = async () => {
+    if (!onDelete) return
+    setDeleting(true)
+    try {
+      await onDelete(message.id)
+      setShowDeleteDialog(false)
+    } catch (err) {
+      console.error('删除失败:', err)
+      alert(err instanceof Error ? err.message : '删除失败')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   return (
-    <div className={`msg-item${isOwn ? ' own' : ''}`}>
+    <>
+      <div className={`msg-item${isOwn ? ' own' : ''}`}>
       <div className="msg-avatar" title={nickname}>{initial}</div>
       <div className="msg-body">
         <div className="msg-meta">
@@ -72,7 +101,21 @@ export default function MessageItem({ message, profile, isOwn, replyMessage, rep
         {onReply && (
           <button className="msg-reply-btn" onClick={() => onReply(message)}>回复</button>
         )}
+        {canDelete() && onDelete && (
+          <button className="msg-delete-btn" onClick={() => setShowDeleteDialog(true)}>
+            删除
+          </button>
+        )}
       </div>
     </div>
+
+    {showDeleteDialog && (
+      <DeleteConfirmDialog
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteDialog(false)}
+        loading={deleting}
+      />
+    )}
+  </>
   )
 }

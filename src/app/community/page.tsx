@@ -94,6 +94,7 @@ export default function CommunityPage() {
               <MessageList
                 channelId={activeChannelId}
                 userId={user.id}
+                isAdmin={profile?.is_admin ?? false}
                 profilesMap={profilesMap}
                 onReply={setReplyTo}
               />
