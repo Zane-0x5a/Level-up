@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { createChannel, deleteChannel, type Channel } from '@/lib/api/channels'
+import DeleteConfirmDialog from './DeleteConfirmDialog'
 
 interface Props {
   channels: Channel[]
@@ -15,6 +16,8 @@ interface Props {
 export default function ChannelList({ channels, activeChannelId, onSelect, isAdmin, userId, onChannelsChange }: Props) {
   const [adding, setAdding] = useState(false)
   const [newName, setNewName] = useState('')
+  const [deletingChannelId, setDeletingChannelId] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const handleAdd = async () => {
     if (!newName.trim()) return
@@ -29,12 +32,16 @@ export default function ChannelList({ channels, activeChannelId, onSelect, isAdm
   }
 
   const handleDelete = async (channelId: string) => {
-    if (!window.confirm('删除频道将同时删除所有消息，确定要继续吗？')) return
+    setDeleting(true)
     try {
       await deleteChannel(channelId)
+      setDeletingChannelId(null)
       onChannelsChange()
     } catch (err) {
       console.error('删除频道失败:', err)
+      alert('删除频道失败')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -80,7 +87,7 @@ export default function ChannelList({ channels, activeChannelId, onSelect, isAdm
             {isAdmin && (
               <button
                 className="channel-delete-btn"
-                onClick={e => { e.stopPropagation(); handleDelete(ch.id) }}
+                onClick={e => { e.stopPropagation(); setDeletingChannelId(ch.id) }}
                 title="删除频道"
               >
                 &times;
@@ -89,6 +96,14 @@ export default function ChannelList({ channels, activeChannelId, onSelect, isAdm
           </div>
         ))}
       </div>
+
+      {deletingChannelId && (
+        <DeleteConfirmDialog
+          onConfirm={() => handleDelete(deletingChannelId)}
+          onCancel={() => setDeletingChannelId(null)}
+          loading={deleting}
+        />
+      )}
     </aside>
   )
 }

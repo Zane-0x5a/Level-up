@@ -111,3 +111,43 @@ export function subscribeToChannel(
 export function unsubscribeFromChannel(channel: RealtimeChannel): void {
   supabase.removeChannel(channel)
 }
+
+export async function deleteMessage(
+  messageId: string,
+  userId: string,
+  isAdmin: boolean
+): Promise<void> {
+  const { data: message, error: fetchError } = await supabase
+    .from('messages')
+    .select('user_id, created_at, image_url, message_type')
+    .eq('id', messageId)
+    .single()
+
+  if (fetchError) throw new Error('消息不存在')
+
+  const isOwner = message.user_id === userId
+  if (!isAdmin && !isOwner) {
+    throw new Error('您没有权限删除此消息')
+  }
+
+  if (!isAdmin && isOwner) {
+    const elapsed = (Date.now() - new Date(message.created_at).getTime()) / 1000 / 60
+    if (elapsed > 3) {
+      throw new Error('消息发送超过3分钟，无法撤回')
+    }
+  }
+
+  if (message.message_type === 'image' && message.image_url) {
+    const path = message.image_url.split('/chat-images/')[1]
+    if (path) {
+      await supabase.storage.from('chat-images').remove([path])
+    }
+  }
+
+  const { error: deleteError } = await supabase
+    .from('messages')
+    .delete()
+    .eq('id', messageId)
+
+  if (deleteError) throw deleteError
+}

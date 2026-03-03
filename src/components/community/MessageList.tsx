@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { getMessages, subscribeToChannel, unsubscribeFromChannel, type Message } from '@/lib/api/messages'
+import { getMessages, subscribeToChannel, unsubscribeFromChannel, deleteMessage, type Message } from '@/lib/api/messages'
 import type { UserProfile } from '@/lib/api/user-profiles'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import MessageItem from './MessageItem'
@@ -10,11 +10,12 @@ import ImagePreview from './ImagePreview'
 interface Props {
   channelId: string
   userId: string
+  isAdmin: boolean
   profilesMap: Record<string, UserProfile>
   onReply?: (message: Message) => void
 }
 
-export default function MessageList({ channelId, userId, profilesMap, onReply }: Props) {
+export default function MessageList({ channelId, userId, isAdmin, profilesMap, onReply }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -31,6 +32,11 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
   messagesRef.current = messages
   loadingMoreRef.current = loadingMore
   hasMoreRef.current = hasMore
+
+  const handleDelete = async (messageId: string) => {
+    await deleteMessage(messageId, userId, isAdmin)
+    setMessages(prev => prev.filter(m => m.id !== messageId))
+  }
 
   // Load initial messages
   useEffect(() => {
@@ -63,6 +69,17 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
       }
     })
+
+    channel.on('postgres_changes', {
+      event: 'DELETE',
+      schema: 'public',
+      table: 'messages',
+      filter: `channel_id=eq.${channelId}`,
+    }, (payload) => {
+      const deletedId = payload.old.id
+      setMessages(prev => prev.filter(m => m.id !== deletedId))
+    })
+
     realtimeRef.current = channel
 
     return () => {
@@ -119,10 +136,12 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
               message={msg}
               profile={profilesMap[msg.user_id]}
               isOwn={msg.user_id === userId}
+              isAdmin={isAdmin}
               replyMessage={replied}
               replyProfile={replied ? profilesMap[replied.user_id] : undefined}
               onReply={onReply}
               onImageClick={setPreviewImage}
+              onDelete={handleDelete}
             />
           )
         })
