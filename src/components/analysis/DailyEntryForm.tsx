@@ -40,7 +40,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const loadFocus = useCallback(async () => {
     if (!user) return
     try {
-      const sessions = await getTodayFocusSessions(user.id)
+      const sessions = await getTodayFocusSessions(user.id, date)
       let inC = 0, outC = 0, ent = 0
       for (const s of sessions) {
         if (s.category === 'in_class') inC += s.duration
@@ -53,7 +53,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       // ignore
     }
-  }, [user])
+  }, [user, date])
 
   useEffect(() => { loadRecord() }, [loadRecord])
   useEffect(() => { loadFocus() }, [loadFocus])
@@ -63,7 +63,15 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     setSaving(true)
     setStatus(null)
     try {
-      await upsertDailyRecord(user.id, { date, day_type: dayType, ibetter_count: ibetter, note })
+      await upsertDailyRecord(user.id, {
+        date,
+        day_type: dayType,
+        ibetter_count: ibetter,
+        note,
+        focus_in_class: focusIn,
+        focus_out_class: focusOut,
+        entertainment,
+      })
       onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
