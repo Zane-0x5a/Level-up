@@ -95,7 +95,6 @@ export default function CommunityPage() {
                 channelId={activeChannelId}
                 userId={user.id}
                 profilesMap={profilesMap}
-                replyTo={replyTo}
                 onReply={setReplyTo}
               />
               <ChatInput

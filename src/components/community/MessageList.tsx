@@ -10,7 +10,6 @@ interface Props {
   channelId: string
   userId: string
   profilesMap: Record<string, UserProfile>
-  replyTo?: Message | null
   onReply?: (message: Message) => void
 }
 
@@ -23,6 +22,13 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
   const bottomRef = useRef<HTMLDivElement>(null)
   const isNearBottom = useRef(true)
   const realtimeRef = useRef<RealtimeChannel | null>(null)
+  const messagesRef = useRef<Message[]>([])
+  const loadingMoreRef = useRef(false)
+  const hasMoreRef = useRef(true)
+
+  messagesRef.current = messages
+  loadingMoreRef.current = loadingMore
+  hasMoreRef.current = hasMore
 
   // Load initial messages
   useEffect(() => {
@@ -72,9 +78,10 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
     isNearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 100
 
     // Load more when near top
-    if (el.scrollTop < 50 && hasMore && !loadingMore && messages.length > 0) {
+    if (el.scrollTop < 50 && hasMoreRef.current && !loadingMoreRef.current && messagesRef.current.length > 0) {
       setLoadingMore(true)
-      const oldest = messages[0]?.created_at
+      loadingMoreRef.current = true
+      const oldest = messagesRef.current[0]?.created_at
       const prevHeight = el.scrollHeight
       getMessages(channelId, oldest).then(older => {
         if (older.length < 50) setHasMore(false)
@@ -86,9 +93,13 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
           })
         }
         setLoadingMore(false)
-      }).catch(() => setLoadingMore(false))
+        loadingMoreRef.current = false
+      }).catch(() => {
+        setLoadingMore(false)
+        loadingMoreRef.current = false
+      })
     }
-  }, [channelId, hasMore, loadingMore, messages])
+  }, [channelId])
 
   return (
     <div className="message-list" ref={listRef} onScroll={handleScroll}>
@@ -98,17 +109,20 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
       ) : messages.length === 0 ? (
         <div className="message-empty">还没有消息，说点什么吧</div>
       ) : (
-        messages.map(msg => (
-          <MessageItem
-            key={msg.id}
-            message={msg}
-            profile={profilesMap[msg.user_id]}
-            isOwn={msg.user_id === userId}
-            replyMessage={msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined}
-            replyProfile={msg.reply_to ? profilesMap[messages.find(m => m.id === msg.reply_to)?.user_id ?? ''] : undefined}
-            onReply={onReply}
-          />
-        ))
+        messages.map(msg => {
+          const replied = msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined
+          return (
+            <MessageItem
+              key={msg.id}
+              message={msg}
+              profile={profilesMap[msg.user_id]}
+              isOwn={msg.user_id === userId}
+              replyMessage={replied}
+              replyProfile={replied ? profilesMap[replied.user_id] : undefined}
+              onReply={onReply}
+            />
+          )
+        })
       )}
       <div ref={bottomRef} />
     </div>
