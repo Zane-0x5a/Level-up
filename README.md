@@ -14,7 +14,9 @@ I track intentions in iBetter, log time in iHour, write notes in flomo. Each doe
 
 **Analysis** — Daily entry form, focus time by category, weekly trend chart, history drawer with notes.
 
-**Settings** — Background images, audio clips, Flomo webhook URL, custom homepage greetings.
+**Community** — Multi-channel chat for the people you invited. Text, images, reply threads. Check-in button posts your daily stats as a card. Real-time sync through Supabase.
+
+**Settings** — Background images, audio clips, Flomo webhook URL, custom homepage greetings, nickname for community.
 
 ## The return button
 
@@ -32,7 +34,7 @@ Two made the shortlist. Atelier: Swiss editorial style, strong countdown hover e
 
 ## Built with Claude Code
 
-The whole project was developed over four days, from an empty Next.js repo to a deployed app.
+The whole project was developed over six days, from an empty Next.js repo to a multi-user platform.
 
 **Feb 27** — System design document, Supabase schema, project scaffold.
 
@@ -40,7 +42,9 @@ The whole project was developed over four days, from an empty Next.js repo to a 
 
 **Mar 1** — Full rebuild with L-Drift design system. Focus mode 4-state machine (default → transitioning → immersive → ending). Analysis and settings pages. First Vercel deployment.
 
-**Mar 2** — Mobile adaptation at three breakpoints (640px, 768px, 900px). Bug fixes: int4 overflow in sticky notes ordering (Date.now() in milliseconds exceeds PostgreSQL int4 max ~2.1B), storage bucket name mismatches, home overview reading from the wrong data source.
+**Mar 2** — Mobile adaptation at three breakpoints (640px, 768px, 900px). Bug fixes: int4 overflow in sticky notes ordering (Date.now() in milliseconds exceeds PostgreSQL int4 max ~2.1B), storage bucket name mismatches, home overview reading from the wrong data source. Multi-user auth with invite codes. Row-level security on tables and storage.
+
+**Mar 3** — Community chat. Three new tables (user_profiles, channels, messages), real-time sync, image uploads, reply threads, check-in cards. Admins can create and delete channels. First-run nickname modal.
 
 The design decisions weren't AI output — they were proposals evaluated through iteration. The ten HTML prototypes were things to react to, not things to accept. What emerged came from repeated feedback about what read as too safe, what felt borrowed, what the colors were saying.
 
@@ -50,7 +54,8 @@ The design decisions weren't AI output — they were proposals evaluated through
 |---|---|
 | Framework | Next.js 14 App Router |
 | Styling | Vanilla CSS, L-Drift design system |
-| Database | Supabase (PostgreSQL + Storage) |
+| Database | Supabase (PostgreSQL + Storage + Realtime) |
+| Auth | Supabase Auth with invite codes |
 | Charts | Recharts |
 | Deployment | Vercel |
 | Fonts | Sora · Lexend · DM Mono |
@@ -61,19 +66,31 @@ Fork the repo, set up Supabase, deploy to Vercel.
 
 **Supabase:**
 
-1. Create tables: `daily_records`, `sticky_notes`, `focus_sessions`, `focus_images`, `audio_clips`
-2. Disable RLS on all tables (single-user setup)
-3. Create two public storage buckets: `focus-images` and `audio-clips`
+1. Run the migration: `supabase/migration.sql`
+2. Create storage buckets: `focus-images`, `audio-clips`, `chat-images` (all public)
+3. Generate invite codes manually in the `invite_codes` table
+
+The migration creates these tables:
+- `invite_codes` — Registration control
+- `user_profiles` — Nicknames and admin flags
+- `channels` — Chat channels
+- `messages` — Chat messages
+- `daily_records`, `sticky_notes`, `focus_sessions`, `focus_images`, `audio_clips`, `countdowns` — Personal data
+
+Users see only their own data. Community tables (profiles, channels, messages) are readable by everyone logged in.
 
 **Environment variables:**
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_DEFAULT_USER_ID=
 ```
 
-Add these to Vercel's environment settings. `DEFAULT_USER_ID` is any UUID — use it consistently across all Supabase records.
+Add these to Vercel. No `DEFAULT_USER_ID` needed — auth handles user identity.
+
+**First user:**
+
+The first registered user should be marked as admin. Update `user_profiles.is_admin = true` for that user in Supabase dashboard. Admins can create and delete channels.
 
 ## License
 
