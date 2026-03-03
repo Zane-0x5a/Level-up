@@ -62,7 +62,7 @@ The design decisions weren't AI output — they were proposals evaluated through
 
 ## Self-host
 
-Fork the repo, set up Supabase, deploy to Vercel.
+Fork the repo, set up Supabase, deploy to Vercel/Cloudflare.
 
 **Supabase:**
 
