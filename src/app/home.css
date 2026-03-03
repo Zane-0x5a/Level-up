@@ -1,13 +1,14 @@
 /* ═══════════════════════════════════════
-   HOME PAGE — 2×2 Grid Layout
+   HOME PAGE — 3-Row Grid Layout
    Row 1: Hero + Countdown Carousel
    Row 2: Overview + Sticky Notes
+   Row 3: Community Entry Card
    ═══════════════════════════════════════ */
 
-/* Layout container — fills viewport, 2 rows split space evenly */
+/* Layout container — fills viewport, 2 main rows + 1 auto row */
 .home-layout {
   display: grid;
-  grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr);
+  grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr) auto;
   gap: 24px;
   padding: 20px 0 40px;
   min-height: calc(100vh - 82px);
@@ -661,6 +662,55 @@
 }
 
 /* ═══════════════════════════════════════
+   Row 3: Community Entry Card
+   ═══════════════════════════════════════ */
+.home-row3 {
+  padding-top: 4px;
+}
+
+.community-entry-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 28px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.25s var(--ease-spring);
+  cursor: pointer;
+}
+.community-entry-card:hover {
+  transform: translateY(-2px);
+}
+.community-entry-icon {
+  font-size: 28px;
+}
+.community-entry-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.community-entry-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.community-entry-desc {
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+.community-entry-arrow {
+  margin-left: auto;
+  font-size: 18px;
+  color: var(--color-text-3);
+  transition: transform 0.2s, color 0.2s;
+}
+.community-entry-card:hover .community-entry-arrow {
+  transform: translateX(4px);
+  color: var(--color-sage);
+}
+
+/* ═══════════════════════════════════════
    HOME MAIN — replaces inline style on <main>
    ═══════════════════════════════════════ */
 .home-main {
@@ -679,7 +729,7 @@
   }
   .home-layout {
     min-height: auto;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
   }
   .home-row1 {
     grid-template-columns: 1fr;
@@ -688,6 +738,9 @@
   .home-row2 {
     grid-template-columns: 1fr;
     gap: 16px;
+  }
+  .home-row3 {
+    padding-top: 0;
   }
 
   /* Hero: centered in single-column */
@@ -814,5 +867,20 @@
   /* Notes */
   .note-input-row {
     flex-direction: column;
+  }
+
+  /* Community entry card */
+  .community-entry-card {
+    padding: 16px 20px;
+    gap: 12px;
+  }
+  .community-entry-icon {
+    font-size: 24px;
+  }
+  .community-entry-title {
+    font-size: 15px;
+  }
+  .community-entry-desc {
+    font-size: 12px;
   }
 }

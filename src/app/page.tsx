@@ -3,6 +3,7 @@ import HeroSection from '@/components/home/HeroSection'
 import CountdownSection from '@/components/home/CountdownSection'
 import ProgressOverview from '@/components/home/ProgressOverview'
 import StickyNotes from '@/components/home/StickyNotes'
+import CommunityCard from '@/components/home/CommunityCard'
 
 export default function HomePage() {
   return (
@@ -22,6 +23,11 @@ export default function HomePage() {
         <div className="home-row2 anim d2">
           <ProgressOverview />
           <StickyNotes />
+        </div>
+
+        {/* Row 3: Community entry card */}
+        <div className="home-row3 anim d3">
+          <CommunityCard />
         </div>
       </div>
     </main>
