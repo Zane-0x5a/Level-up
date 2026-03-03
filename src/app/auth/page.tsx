@@ -3,30 +3,21 @@
 import { useState, useEffect, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
 import './auth.css'
 
 export default function AuthPage() {
-  const { user, loading, signIn, signUp } = useAuth()
+  const { user, loading, isRecovery, signIn, signUp, updatePassword, clearRecovery } = useAuth()
   const router = useRouter()
-  const [mode, setMode] = useState<'login' | 'register' | 'reset'>('login')
+  const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [inviteCode, setInviteCode] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
-  // Detect password recovery token in URL
   useEffect(() => {
-    const hash = window.location.hash
-    if (hash.includes('type=recovery')) {
-      setMode('reset')
-    }
-  }, [])
-
-  useEffect(() => {
-    if (!loading && user && mode !== 'reset') router.replace('/')
-  }, [user, loading, router, mode])
+    if (!loading && user && !isRecovery) router.replace('/')
+  }, [user, loading, router, isRecovery])
 
   if (loading) return null
 
@@ -35,15 +26,14 @@ export default function AuthPage() {
     setError('')
     setSubmitting(true)
     try {
-      if (mode === 'login') {
+      if (isRecovery) {
+        await updatePassword(password)
+        router.replace('/')
+      } else if (mode === 'login') {
         await signIn(email, password)
         router.replace('/')
-      } else if (mode === 'register') {
-        await signUp(email, password, inviteCode)
-        router.replace('/')
       } else {
-        const { error } = await supabase.auth.updateUser({ password })
-        if (error) throw error
+        await signUp(email, password, inviteCode)
         router.replace('/')
       }
     } catch (err: any) {
@@ -53,7 +43,8 @@ export default function AuthPage() {
     }
   }
 
-  const subtitle = mode === 'login' ? '登录你的账户' : mode === 'register' ? '创建新账户' : '设置新密码'
+  const actualMode = isRecovery ? 'reset' : mode
+  const subtitle = actualMode === 'login' ? '登录你的账户' : actualMode === 'register' ? '创建新账户' : '设置新密码'
 
   return (
     <div className="auth-page">
@@ -62,7 +53,7 @@ export default function AuthPage() {
         <p className="auth-subtitle">{subtitle}</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {mode !== 'reset' && (
+          {actualMode !== 'reset' && (
             <label>
               邮箱
               <input
@@ -76,7 +67,7 @@ export default function AuthPage() {
           )}
 
           <label>
-            {mode === 'reset' ? '新密码' : '密码'}
+            {actualMode === 'reset' ? '新密码' : '密码'}
             <input
               className="field-input"
               type="password"
@@ -86,7 +77,7 @@ export default function AuthPage() {
             />
           </label>
 
-          {mode === 'register' && (
+          {actualMode === 'register' && (
             <label>
               邀请码
               <input
@@ -106,11 +97,11 @@ export default function AuthPage() {
             type="submit"
             disabled={submitting}
           >
-            {submitting ? '请稍候...' : mode === 'login' ? '登录' : mode === 'register' ? '注册' : '确认新密码'}
+            {submitting ? '请稍候...' : actualMode === 'login' ? '登录' : actualMode === 'register' ? '注册' : '确认新密码'}
           </button>
         </form>
 
-        {mode !== 'reset' && (
+        {actualMode !== 'reset' && (
           <div className="auth-toggle">
             {mode === 'login' ? '没有账户？' : '已有账户？'}
             <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}>

@@ -22,6 +22,7 @@ function generateThumbnail(url: string): Promise<string> {
   })
 }
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
+import { useRouter } from 'next/navigation'
 import './settings.css'
 
 type AudioClip = { id: string; label: string; file_path: string }
@@ -29,7 +30,8 @@ type AudioClip = { id: string; label: string; file_path: string }
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
+  const router = useRouter()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -353,6 +355,27 @@ export default function SettingsPage() {
               <p className="settings-empty">还没有音频片段</p>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Section 4: Account */}
+      <section className="settings-section anim d4">
+        <div className="float-card glow-neutral">
+          <div className="sec-head">
+            <span className="sec-dot neutral" />
+            <span className="sec-name">账户</span>
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--c-sub)', marginBottom: 16 }}>{user?.email}</p>
+          <button
+            className="btn-outline"
+            style={{ color: '#e55', borderColor: 'rgba(229,85,85,0.3)' }}
+            onClick={async () => {
+              await signOut()
+              router.replace('/auth')
+            }}
+          >
+            退出登录
+          </button>
         </div>
       </section>
     </main>
