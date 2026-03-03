@@ -10,6 +10,7 @@ interface Props {
   replyMessage?: Message
   replyProfile?: UserProfile
   onReply?: (message: Message) => void
+  onImageClick?: (url: string) => void
 }
 
 function formatTime(iso: string): string {
@@ -20,7 +21,7 @@ function formatTime(iso: string): string {
   return isToday ? time : `${d.getMonth() + 1}/${d.getDate()} ${time}`
 }
 
-export default function MessageItem({ message, profile, isOwn, replyMessage, replyProfile, onReply }: Props) {
+export default function MessageItem({ message, profile, isOwn, replyMessage, replyProfile, onReply, onImageClick }: Props) {
   const nickname = profile?.nickname ?? '未知用户'
   const initial = nickname[0]?.toUpperCase() ?? '?'
 
@@ -56,6 +57,7 @@ export default function MessageItem({ message, profile, isOwn, replyMessage, rep
               alt=""
               className="msg-image"
               loading="lazy"
+              onClick={() => onImageClick?.(message.image_url ?? '')}
             />
           </div>
         )}

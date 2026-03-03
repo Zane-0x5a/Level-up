@@ -5,6 +5,7 @@ import { getMessages, subscribeToChannel, unsubscribeFromChannel, type Message }
 import type { UserProfile } from '@/lib/api/user-profiles'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import MessageItem from './MessageItem'
+import ImagePreview from './ImagePreview'
 
 interface Props {
   channelId: string
@@ -18,6 +19,7 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
   const listRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const isNearBottom = useRef(true)
@@ -120,11 +122,13 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
               replyMessage={replied}
               replyProfile={replied ? profilesMap[replied.user_id] : undefined}
               onReply={onReply}
+              onImageClick={setPreviewImage}
             />
           )
         })
       )}
       <div ref={bottomRef} />
+      {previewImage && <ImagePreview src={previewImage} onClose={() => setPreviewImage(null)} />}
     </div>
   )
 }
