@@ -64,9 +64,9 @@ export default function SettingsPage() {
       const [imgs, auds] = await Promise.all([getFocusImages(user.id), getAudioClips(user.id)])
       setImages(imgs)
       setClips(auds)
-    } catch {
-      setError('加载媒体失败，请刷新重试')
-      setTimeout(() => setError(null), 3000)
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(`加载媒体失败：${msg}`)
     }
   }, [user])
 
@@ -137,8 +137,8 @@ export default function SettingsPage() {
       await loadMedia()
     } catch (err) {
       console.error('音频上传失败:', err)
-      setError('音频上传失败，请重试')
-      setTimeout(() => setError(null), 3000)
+      const msg = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(`音频上传失败：${msg}`)
     } finally {
       setUploadingAudio(false)
       if (audioInputRef.current) audioInputRef.current.value = ''
