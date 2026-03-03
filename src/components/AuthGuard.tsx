@@ -5,15 +5,19 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth()
+  const { user, loading, isRecovery } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
 
   useEffect(() => {
     if (loading) return
+    if (isRecovery && pathname !== '/auth') {
+      router.replace('/auth')
+      return
+    }
     if (!user && pathname !== '/auth') router.replace('/auth')
-    if (user && pathname === '/auth') router.replace('/')
-  }, [user, loading, pathname, router])
+    if (user && !isRecovery && pathname === '/auth') router.replace('/')
+  }, [user, loading, pathname, router, isRecovery])
 
   if (loading) {
     return (
@@ -23,8 +27,9 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     )
   }
 
+  if (isRecovery && pathname !== '/auth') return null
   if (!user && pathname !== '/auth') return null
-  if (user && pathname === '/auth') return null
+  if (user && !isRecovery && pathname === '/auth') return null
 
   return <>{children}</>
 }

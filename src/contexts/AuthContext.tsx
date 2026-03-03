@@ -7,9 +7,12 @@ import { supabase } from '@/lib/supabase'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  isRecovery: boolean
   signIn: (email: string, password: string) => Promise<void>
   signUp: (email: string, password: string, inviteCode: string) => Promise<void>
   signOut: () => Promise<void>
+  updatePassword: (password: string) => Promise<void>
+  clearRecovery: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -17,6 +20,7 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isRecovery, setIsRecovery] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,8 +28,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -56,8 +63,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error
   }
 
+  const updatePassword = async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password })
+    if (error) throw error
+    setIsRecovery(false)
+  }
+
+  const clearRecovery = () => setIsRecovery(false)
+
   return (
-    <AuthContext.Provider value={{ user, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, loading, isRecovery, signIn, signUp, signOut, updatePassword, clearRecovery }}>
       {children}
     </AuthContext.Provider>
   )
