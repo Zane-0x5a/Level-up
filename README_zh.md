@@ -63,7 +63,7 @@
 
 ## 自部署
 
-Fork 仓库，配置 Supabase，部署到 Vercel。
+Fork 仓库，配置 Supabase，部署到 Vercel/Cloudflare。
 
 **Supabase：**
 
