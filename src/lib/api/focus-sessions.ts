@@ -12,13 +12,13 @@ export async function addFocusSession(userId: string, category: string, duration
   if (error) throw error
 }
 
-export async function getTodayFocusSessions(userId: string) {
-  const today = new Date().toISOString().split('T')[0]
+export async function getTodayFocusSessions(userId: string, date?: string) {
+  const targetDate = date ?? new Date().toISOString().split('T')[0]
   const { data, error } = await supabase
     .from('focus_sessions')
     .select('*')
     .eq('user_id', userId)
-    .eq('date', today)
+    .eq('date', targetDate)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []

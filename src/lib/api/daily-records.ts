@@ -16,6 +16,9 @@ export async function upsertDailyRecord(userId: string, record: {
   day_type: string
   ibetter_count?: number
   note?: string
+  focus_in_class?: number
+  focus_out_class?: number
+  entertainment?: number
 }) {
   const { error } = await supabase
     .from('daily_records')
