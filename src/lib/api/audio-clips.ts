@@ -11,7 +11,8 @@ export async function getAudioClips(userId: string) {
 }
 
 export async function uploadAudioClip(userId: string, file: File, label: string) {
-  const filePath = `audio/${userId}/${Date.now()}-${file.name}`
+  const ext = file.name.split('.').pop() || 'mp3'
+  const filePath = `audio/${userId}/${Date.now()}.${ext}`
   const { error: uploadError } = await supabase.storage
     .from('audio-clips')
     .upload(filePath, file)
