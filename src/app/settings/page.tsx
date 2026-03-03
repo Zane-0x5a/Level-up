@@ -71,7 +71,7 @@ export default function SettingsPage() {
     if (!user) return
     getProfile(user.id).then(p => {
       if (p) setNickname(p.nickname)
-    }).catch(() => {})
+    }).catch((err) => { console.error('加载用户昵称失败:', err) })
   }, [user])
 
   const loadMedia = useCallback(async () => {
@@ -399,6 +399,7 @@ export default function SettingsPage() {
                   className="field-input"
                   value={nicknameInput}
                   onChange={e => setNicknameInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveNickname() }}
                   maxLength={20}
                   placeholder="输入昵称..."
                 />
