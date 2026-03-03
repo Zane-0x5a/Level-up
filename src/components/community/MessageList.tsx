@@ -47,7 +47,10 @@ export default function MessageList({ channelId, userId, profilesMap, onReply }:
   // Realtime subscription
   useEffect(() => {
     const channel = subscribeToChannel(channelId, (newMsg) => {
-      setMessages(prev => [...prev, newMsg])
+      setMessages(prev => {
+        if (prev.some(m => m.id === newMsg.id)) return prev
+        return [...prev, newMsg]
+      })
       if (isNearBottom.current) {
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
       }

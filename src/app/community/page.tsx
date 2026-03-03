@@ -83,7 +83,7 @@ export default function CommunityPage() {
         <ChannelList
           channels={channels}
           activeChannelId={activeChannelId}
-          onSelect={setActiveChannelId}
+          onSelect={(id: string) => { setActiveChannelId(id); setReplyTo(null) }}
           isAdmin={profile?.is_admin ?? false}
           userId={user?.id ?? ''}
           onChannelsChange={loadData}
