@@ -2,6 +2,7 @@
 
 import type { Message } from '@/lib/api/messages'
 import type { UserProfile } from '@/lib/api/user-profiles'
+import CheckinCard from './CheckinCard'
 
 interface Props {
   message: Message
@@ -61,9 +62,9 @@ export default function MessageItem({ message, profile, isOwn, replyMessage, rep
             />
           </div>
         )}
-        {message.message_type === 'checkin' && (
+        {message.message_type === 'checkin' && message.checkin_data && (
           <div className="msg-checkin-card">
-            <div className="checkin-placeholder">打卡数据</div>
+            <CheckinCard data={message.checkin_data as any} />
           </div>
         )}
 
