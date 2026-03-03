@@ -20,7 +20,8 @@ export async function uploadFocusImage(
   file: File,
   deviceType: 'mobile' | 'desktop' | 'universal' = 'universal'
 ) {
-  const filePath = `focus/${userId}/${Date.now()}-${file.name}`
+  const ext = file.name.split('.').pop() || 'png'
+  const filePath = `focus/${userId}/${Date.now()}.${ext}`
   const { error: uploadError } = await supabase.storage
     .from('focus-images')
     .upload(filePath, file)
