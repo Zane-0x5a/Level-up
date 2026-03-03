@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getProfile, type UserProfile } from '@/lib/api/user-profiles'
 import { getAllProfiles } from '@/lib/api/user-profiles'
 import { getChannels, type Channel } from '@/lib/api/channels'
+import type { Message } from '@/lib/api/messages'
 import NicknameModal from '@/components/community/NicknameModal'
 import ChannelList from '@/components/community/ChannelList'
 import MessageList from '@/components/community/MessageList'
@@ -19,6 +20,7 @@ export default function CommunityPage() {
   const [activeChannelId, setActiveChannelId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [needsNickname, setNeedsNickname] = useState(false)
+  const [replyTo, setReplyTo] = useState<Message | null>(null)
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -93,10 +95,14 @@ export default function CommunityPage() {
                 channelId={activeChannelId}
                 userId={user.id}
                 profilesMap={profilesMap}
+                replyTo={replyTo}
+                onReply={setReplyTo}
               />
               <ChatInput
                 channelId={activeChannelId}
                 userId={user.id}
+                replyTo={replyTo}
+                onClearReply={() => setReplyTo(null)}
               />
             </>
           ) : (
