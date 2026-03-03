@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
+import { getProfile, updateProfile } from '@/lib/api/user-profiles'
 
 function generateThumbnail(url: string): Promise<string> {
   return new Promise((resolve) => {
@@ -45,6 +46,11 @@ export default function SettingsPage() {
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
+  // Nickname state
+  const [nickname, setNickname] = useState('')
+  const [editingNickname, setEditingNickname] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
+
   // Hero greetings state
   const [greetings, setGreetings] = useState<string[]>([])
   const [newGreeting, setNewGreeting] = useState('')
@@ -59,6 +65,14 @@ export default function SettingsPage() {
       setGreetings(DEFAULT_GREETINGS)
     }
   }, [])
+
+  // Load user profile nickname
+  useEffect(() => {
+    if (!user) return
+    getProfile(user.id).then(p => {
+      if (p) setNickname(p.nickname)
+    }).catch((err) => { console.error('加载用户昵称失败:', err) })
+  }, [user])
 
   const loadMedia = useCallback(async () => {
     if (!user) return
@@ -109,6 +123,17 @@ export default function SettingsPage() {
     if (e.key === 'Enter') {
       e.preventDefault()
       addGreeting()
+    }
+  }
+
+  const saveNickname = async () => {
+    if (!user || !nicknameInput.trim()) return
+    try {
+      await updateProfile(user.id, { nickname: nicknameInput.trim() })
+      setNickname(nicknameInput.trim())
+      setEditingNickname(false)
+    } catch {
+      setError('昵称更新失败')
     }
   }
 
@@ -366,6 +391,28 @@ export default function SettingsPage() {
             <span className="sec-name">账户</span>
           </div>
           <p style={{ fontSize: 14, color: 'var(--c-sub)', marginBottom: 16 }}>{user?.email}</p>
+          <div className="nickname-row">
+            <span className="nickname-label">昵称：</span>
+            {editingNickname ? (
+              <div className="nickname-edit-row">
+                <input
+                  className="field-input"
+                  value={nicknameInput}
+                  onChange={e => setNicknameInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') saveNickname() }}
+                  maxLength={20}
+                  placeholder="输入昵称..."
+                />
+                <button className="btn-warm" onClick={saveNickname}>保存</button>
+                <button className="btn-outline" onClick={() => setEditingNickname(false)}>取消</button>
+              </div>
+            ) : (
+              <div className="nickname-display">
+                <span>{nickname || '未设置'}</span>
+                <button className="btn-outline" onClick={() => { setNicknameInput(nickname); setEditingNickname(true) }}>修改</button>
+              </div>
+            )}
+          </div>
           <button
             className="btn-outline"
             style={{ color: '#e55', borderColor: 'rgba(229,85,85,0.3)' }}
