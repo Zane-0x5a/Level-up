@@ -15,7 +15,9 @@
 
 **分析** — 每日录入表单、分类专注时长、周趋势图、历史记录抽屉。
 
-**设置** — 背景图、音频片段、Flomo Webhook、主页问候语。
+**社群** — 多频道聊天，成员是你邀请的人。文字、图片、回复引用。打卡按钮发送今日数据卡片。Supabase 实时同步。
+
+**设置** — 背景图、音频片段、Flomo Webhook、主页问候语、社群昵称。
 
 ## 关于回归按钮
 
@@ -33,7 +35,7 @@
 
 ## 用 Claude Code 开发
 
-整个项目用了四天，从空白的 Next.js 仓库到上线。
+整个项目用了六天，从空白的 Next.js 仓库到多用户平台。
 
 **2 月 27 日** — 系统设计文档、Supabase schema、项目初始化。
 
@@ -41,7 +43,9 @@
 
 **3 月 1 日** — 用 L-Drift 设计系统完整重建。专注模式四状态机（默认 → 过渡 → 沉浸 → 结束）。分析页和设置页。首次 Vercel 部署。
 
-**3 月 2 日** — 三个断点的移动端适配（640px、768px、900px）。Bug 修复：便签排序 int4 溢出（Date.now() 毫秒数超过 PostgreSQL int4 上限约 21 亿）、Storage bucket 名称不匹配、首页今日概览从错误数据源读取数据。
+**3 月 2 日** — 三个断点的移动端适配（640px、768px、900px）。Bug 修复：便签排序 int4 溢出（Date.now() 毫秒数超过 PostgreSQL int4 上限约 21 亿）、Storage bucket 名称不匹配、首页今日概览从错误数据源读取数据。多用户认证，邀请码注册。表和存储的行级安全。
+
+**3 月 3 日** — 社群聊天。三张新表（user_profiles、channels、messages），实时同步，图片上传，回复引用，打卡卡片。管理员可创建和删除频道。首次进入昵称弹窗。
 
 设计决策不是 AI 输出，而是通过迭代评估出来的。十个 HTML 原型是用来产生反应的，不是直接接受的。最终形成的东西，来自反复的反馈：什么看起来太保守，什么有借鉴痕迹，什么是在跟风。
 
@@ -51,7 +55,8 @@
 |---|---|
 | 框架 | Next.js 14 App Router |
 | 样式 | 原生 CSS，L-Drift 设计系统 |
-| 数据库 | Supabase（PostgreSQL + Storage）|
+| 数据库 | Supabase（PostgreSQL + Storage + Realtime）|
+| 认证 | Supabase Auth，邀请码注册 |
 | 图表 | Recharts |
 | 部署 | Vercel |
 | 字体 | Sora · Lexend · DM Mono |
@@ -62,19 +67,31 @@ Fork 仓库，配置 Supabase，部署到 Vercel。
 
 **Supabase：**
 
-1. 创建表：`daily_records`、`sticky_notes`、`focus_sessions`、`focus_images`、`audio_clips`
-2. 关闭所有表的 RLS（单用户配置）
-3. 创建两个 Public Storage bucket：`focus-images` 和 `audio-clips`
+1. 运行迁移脚本：`supabase/migration.sql`
+2. 创建 Storage bucket：`focus-images`、`audio-clips`、`chat-images`（都设为 public）
+3. 在 `invite_codes` 表手动生成邀请码
+
+迁移脚本会创建这些表：
+- `invite_codes` — 注册控制
+- `user_profiles` — 昵称和管理员标记
+- `channels` — 聊天频道
+- `messages` — 聊天消息
+- `daily_records`、`sticky_notes`、`focus_sessions`、`focus_images`、`audio_clips`、`countdowns` — 个人数据
+
+用户只能看到自己的数据。社群表（profiles、channels、messages）所有登录用户可读。
 
 **环境变量：**
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_DEFAULT_USER_ID=
 ```
 
-在 Vercel 的环境变量设置里填入。`DEFAULT_USER_ID` 是任意 UUID，在所有 Supabase 记录中保持一致即可。
+在 Vercel 的环境变量设置里填入。不需要 `DEFAULT_USER_ID`，认证系统会处理用户身份。
+
+**首个用户：**
+
+第一个注册的用户应该标记为管理员。在 Supabase 控制台更新该用户的 `user_profiles.is_admin = true`。管理员可以创建和删除频道。
 
 ## License
 
