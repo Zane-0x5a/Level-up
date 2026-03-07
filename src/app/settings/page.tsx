@@ -5,9 +5,9 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getProfile, updateProfile } from '@/lib/api/user-profiles'
 
-function getThumbnailUrl(url: string, width = 200, quality = 60): string {
+function getThumbnailUrl(url: string, width = 400, quality = 60): string {
   if (!url.includes('/object/public/')) return url
-  return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=${quality}`
+  return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=${quality}&resize=contain`
 }
 
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'

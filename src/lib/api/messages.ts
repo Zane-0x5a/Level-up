@@ -75,8 +75,8 @@ export async function sendCheckinMessage(
   channelId: string,
   userId: string,
   checkinData: Record<string, unknown>
-): Promise<void> {
-  const { error } = await supabase
+): Promise<Message> {
+  const { data, error } = await supabase
     .from('messages')
     .insert({
       channel_id: channelId,
@@ -84,7 +84,10 @@ export async function sendCheckinMessage(
       message_type: 'checkin',
       checkin_data: checkinData,
     })
+    .select()
+    .single()
   if (error) throw error
+  return data as Message
 }
 
 export async function getMessageById(id: string): Promise<Message | null> {
@@ -116,13 +119,20 @@ export function subscribeToChannel(
       },
       async (payload) => {
         const msg = payload.new as Message
-        // Realtime WAL may omit jsonb fields — re-fetch checkin messages for complete data
+        // Realtime WAL may omit jsonb fields — re-fetch checkin messages with retry
         if (msg.message_type === 'checkin' && !msg.checkin_data) {
-          const full = await getMessageById(msg.id)
-          if (full) {
-            onNewMessage(full)
+          const delays = [300, 800, 2000]
+          for (const delay of delays) {
+            await new Promise(r => setTimeout(r, delay))
+            const full = await getMessageById(msg.id)
+            if (full?.checkin_data) {
+              onNewMessage(full)
+              return
+            }
           }
-          // Drop the message if re-fetch fails; it will appear on next page load
+          // All retries exhausted — still deliver so it appears on next page load
+          const last = await getMessageById(msg.id)
+          onNewMessage(last ?? msg)
           return
         }
         onNewMessage(msg)

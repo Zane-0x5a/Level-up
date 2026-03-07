@@ -10,9 +10,10 @@ interface Props {
   userId: string
   replyTo?: Message | null
   onClearReply?: () => void
+  onNewMessage?: (message: Message) => void
 }
 
-export default function ChatInput({ channelId, userId, replyTo, onClearReply }: Props) {
+export default function ChatInput({ channelId, userId, replyTo, onClearReply, onNewMessage }: Props) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -64,12 +65,13 @@ export default function ChatInput({ channelId, userId, replyTo, onClearReply }: 
         getTodayFocusSessions(userId),
       ])
       const focusMinutes = sessions.reduce((sum: number, s: any) => sum + (s.duration ?? 0), 0)
-      await sendCheckinMessage(channelId, userId, {
+      const msg = await sendCheckinMessage(channelId, userId, {
         date: today,
         day_type: record?.day_type ?? 'study_day',
         focus_minutes: focusMinutes,
         note_snippet: record?.note ? record.note.slice(0, 50) : undefined,
       })
+      onNewMessage?.(msg)
     } catch (err) {
       console.error('打卡失败:', err)
     } finally {
