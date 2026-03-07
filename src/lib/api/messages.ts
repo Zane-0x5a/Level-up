@@ -75,8 +75,8 @@ export async function sendCheckinMessage(
   channelId: string,
   userId: string,
   checkinData: Record<string, unknown>
-): Promise<void> {
-  const { error } = await supabase
+): Promise<Message> {
+  const { data, error } = await supabase
     .from('messages')
     .insert({
       channel_id: channelId,
@@ -84,7 +84,10 @@ export async function sendCheckinMessage(
       message_type: 'checkin',
       checkin_data: checkinData,
     })
+    .select()
+    .single()
   if (error) throw error
+  return data as Message
 }
 
 export async function getMessageById(id: string): Promise<Message | null> {

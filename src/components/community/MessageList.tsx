@@ -13,9 +13,10 @@ interface Props {
   isAdmin: boolean
   profilesMap: Record<string, UserProfile>
   onReply?: (message: Message) => void
+  pendingMessage?: Message | null
 }
 
-export default function MessageList({ channelId, userId, isAdmin, profilesMap, onReply }: Props) {
+export default function MessageList({ channelId, userId, isAdmin, profilesMap, onReply, pendingMessage }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -95,6 +96,23 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
       }
     }
   }, [channelId])
+
+  // Insert pending message from parent (e.g. optimistic checkin)
+  useEffect(() => {
+    if (!pendingMessage) return
+    setMessages(prev => {
+      const idx = prev.findIndex(m => m.id === pendingMessage.id)
+      if (idx !== -1) {
+        const updated = [...prev]
+        updated[idx] = pendingMessage
+        return updated
+      }
+      return [...prev, pendingMessage]
+    })
+    if (isNearBottom.current) {
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+    }
+  }, [pendingMessage])
 
   // Track scroll position
   const handleScroll = useCallback(() => {

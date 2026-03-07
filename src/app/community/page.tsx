@@ -21,6 +21,7 @@ export default function CommunityPage() {
   const [loading, setLoading] = useState(true)
   const [needsNickname, setNeedsNickname] = useState(false)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
+  const [pendingMessage, setPendingMessage] = useState<Message | null>(null)
 
   const loadData = useCallback(async () => {
     if (!user) return
@@ -97,12 +98,14 @@ export default function CommunityPage() {
                 isAdmin={profile?.is_admin ?? false}
                 profilesMap={profilesMap}
                 onReply={setReplyTo}
+                pendingMessage={pendingMessage}
               />
               <ChatInput
                 channelId={activeChannelId}
                 userId={user.id}
                 replyTo={replyTo}
                 onClearReply={() => setReplyTo(null)}
+                onNewMessage={setPendingMessage}
               />
             </>
           ) : (
