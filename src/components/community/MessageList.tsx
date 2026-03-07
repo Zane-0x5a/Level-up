@@ -62,7 +62,13 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
   useEffect(() => {
     const channel = subscribeToChannel(channelId, (newMsg) => {
       setMessages(prev => {
-        if (prev.some(m => m.id === newMsg.id)) return prev
+        const idx = prev.findIndex(m => m.id === newMsg.id)
+        if (idx !== -1) {
+          // Replace existing entry (e.g. checkin with stale null data now has full data)
+          const updated = [...prev]
+          updated[idx] = newMsg
+          return updated
+        }
         return [...prev, newMsg]
       })
       if (isNearBottom.current) {
