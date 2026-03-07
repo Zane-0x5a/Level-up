@@ -84,13 +84,13 @@ export default function AnalysisPage() {
     { inClass: 0, outClass: 0, entertainment: 0 }
   )
 
-  // iBetter weekly completion: count records in last 7 days with ibetter_count > 0
+  // Weekly average habit check-ins: sum of ibetter_count in last 7 days / 7
   const weekAgo = new Date()
   weekAgo.setDate(weekAgo.getDate() - 7)
   const weekStr = weekAgo.toISOString().split('T')[0]
   const weekRecords = records.filter(r => r.date >= weekStr)
-  const ibetterDays = weekRecords.filter(r => (r.ibetter_count ?? 0) > 0).length
-  const ibetterRate = weekRecords.length > 0 ? Math.round((ibetterDays / 7) * 100) : 0
+  const weeklyHabitTotal = weekRecords.reduce((sum, r) => sum + (r.ibetter_count ?? 0), 0)
+  const weeklyHabitAvg = parseFloat((weeklyHabitTotal / 7).toFixed(1))
 
   // Average daily focus from weekly
   const avgDailyFocus = metrics.weeklyHours > 0 ? (metrics.weeklyHours / 7) : 0
@@ -132,10 +132,10 @@ export default function AnalysisPage() {
         </div>
         <div className="metrics-grid">
           <div className="float-card glow-sage metric-card">
-            <div className="metric-number">{ibetterRate}%</div>
-            <div className="metric-name">iBetter 周完成率</div>
-            <span className={`trend-badge ${ibetterRate >= 70 ? 'up' : ibetterRate >= 40 ? 'neutral' : 'down'}`}>
-              {ibetterRate >= 70 ? '↑ 良好' : ibetterRate >= 40 ? '— 一般' : '↓ 需加油'}
+            <div className="metric-number">{weeklyHabitAvg}<span style={{ fontSize: 18, fontWeight: 500, color: 'var(--color-text-3)' }}>次</span></div>
+            <div className="metric-name">周均习惯打卡数</div>
+            <span className={`trend-badge ${weeklyHabitAvg >= 3 ? 'up' : weeklyHabitAvg >= 1 ? 'neutral' : 'down'}`}>
+              {weeklyHabitAvg >= 3 ? '↑ 良好' : weeklyHabitAvg >= 1 ? '— 一般' : '↓ 需加油'}
             </span>
           </div>
           <div className="float-card glow-sage metric-card">

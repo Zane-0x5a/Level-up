@@ -14,6 +14,7 @@ export default function AudioPlayer() {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const loadedRef = useRef(false)
 
   const load = useCallback(async () => {
     if (!user) return
@@ -27,17 +28,25 @@ export default function AudioPlayer() {
 
   useEffect(() => { load() }, [load])
 
-  // Update audio source when index changes
+  // Set audio source only on initial clips load or explicit index change
   useEffect(() => {
     if (!audioRef.current || clips.length === 0) return
     const clip = clips[currentIndex]
     if (!clip) return
+    // On initial load: set src without resetting if already playing
+    if (!loadedRef.current) {
+      loadedRef.current = true
+      audioRef.current.src = clip.file_path
+      audioRef.current.load()
+      return
+    }
+    // On index change: switch track and resume if was playing (read from DOM, not React state)
+    const wasPlaying = !audioRef.current.paused
     audioRef.current.src = clip.file_path
     audioRef.current.load()
-    if (playing) {
+    if (wasPlaying) {
       audioRef.current.play().catch(() => {})
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, clips])
 
   const toggle = useCallback(() => {

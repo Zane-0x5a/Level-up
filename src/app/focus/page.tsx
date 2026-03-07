@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { useNav } from '@/contexts/NavContext'
 import FocusDefaultState from '@/components/focus/FocusDefaultState'
 import SpaceTransition from '@/components/focus/SpaceTransition'
@@ -10,12 +10,33 @@ import './focus.css'
 
 type FocusState = 'default' | 'transitioning' | 'immersive' | 'ending'
 
+const SESSION_KEY = 'focus_state'
+
 export default function FocusPage() {
   const [state, setState] = useState<FocusState>('default')
   const [exiting, setExiting] = useState(false)
   const { setNavHidden } = useNav()
   const orbRef = useRef<HTMLDivElement>(null)
   const [orbCenter, setOrbCenter] = useState<{ x: number; y: number } | null>(null)
+
+  // Restore focus state from sessionStorage on mount (avoids hydration mismatch)
+  useEffect(() => {
+    const saved = sessionStorage.getItem(SESSION_KEY)
+    if (saved === 'immersive' || saved === 'ending') {
+      setState(saved as FocusState)
+    }
+  }, [])
+
+  // Sync nav visibility and sessionStorage whenever state changes
+  useEffect(() => {
+    if (state === 'immersive' || state === 'ending') {
+      setNavHidden(true)
+      sessionStorage.setItem(SESSION_KEY, state)
+    } else {
+      setNavHidden(false)
+      sessionStorage.removeItem(SESSION_KEY)
+    }
+  }, [state, setNavHidden])
 
   const handleEnter = useCallback(() => {
     // Capture the orb's screen position for the transition origin
@@ -27,14 +48,13 @@ export default function FocusPage() {
       })
     }
     setExiting(true) // trigger content fade-out
-    setNavHidden(true)
 
     // After content fades (400ms), start transition
     setTimeout(() => {
       setState('transitioning')
       setExiting(false)
     }, 400)
-  }, [setNavHidden])
+  }, [])
 
   const handleTransitionComplete = useCallback(() => {
     setState('immersive')
@@ -45,14 +65,12 @@ export default function FocusPage() {
   }, [])
 
   const handleSessionComplete = useCallback(() => {
-    setNavHidden(false)
     setState('default')
-  }, [setNavHidden])
+  }, [])
 
   const handleSkip = useCallback(() => {
-    setNavHidden(false)
     setState('default')
-  }, [setNavHidden])
+  }, [])
 
   return (
     <>
