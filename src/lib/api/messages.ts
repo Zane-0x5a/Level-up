@@ -87,6 +87,19 @@ export async function sendCheckinMessage(
   if (error) throw error
 }
 
+export async function getMessageById(id: string): Promise<Message | null> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('id', id)
+    .single()
+  if (error) {
+    console.error('Failed to fetch message by id:', error)
+    return null
+  }
+  return data as Message
+}
+
 export function subscribeToChannel(
   channelId: string,
   onNewMessage: (message: Message) => void
@@ -101,8 +114,18 @@ export function subscribeToChannel(
         table: 'messages',
         filter: `channel_id=eq.${channelId}`,
       },
-      (payload) => {
-        onNewMessage(payload.new as Message)
+      async (payload) => {
+        const msg = payload.new as Message
+        // Realtime WAL may omit jsonb fields — re-fetch checkin messages for complete data
+        if (msg.message_type === 'checkin' && !msg.checkin_data) {
+          const full = await getMessageById(msg.id)
+          if (full) {
+            onNewMessage(full)
+          }
+          // Drop the message if re-fetch fails; it will appear on next page load
+          return
+        }
+        onNewMessage(msg)
       }
     )
     .subscribe()

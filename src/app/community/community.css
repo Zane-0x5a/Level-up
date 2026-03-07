@@ -812,6 +812,7 @@
 @media (max-width: 768px) {
   .community-page {
     height: 100vh;
+    height: 100dvh;
     padding-bottom: calc(56px + env(safe-area-inset-bottom));
   }
 }
