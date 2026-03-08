@@ -410,8 +410,11 @@
 .audio-player {
   position: absolute;
   bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  width: fit-content;
+  max-width: calc(100% - 32px);
+  margin: 0 auto;
   display: flex;
   align-items: center;
   gap: 12px;

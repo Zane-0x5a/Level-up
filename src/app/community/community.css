@@ -13,6 +13,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow: clip; /* clip doesn't create a scroll container, preventing scrollIntoView from shifting the layout */
 }
 
 .community-loading {
@@ -211,6 +212,7 @@
 .community-main {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--color-bg);
@@ -222,6 +224,8 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
@@ -811,9 +815,12 @@
    ═══════════════════════════════════════ */
 @media (max-width: 768px) {
   .community-page {
-    height: 100vh;
-    height: 100dvh;
-    padding-bottom: calc(56px + env(safe-area-inset-bottom));
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: calc(56px + env(safe-area-inset-bottom));
+    height: auto;
   }
 }
 
