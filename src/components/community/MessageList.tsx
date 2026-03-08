@@ -50,7 +50,9 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
       if (cancelled) return
       setMessages(msgs)
       setLoading(false)
-      setTimeout(() => bottomRef.current?.scrollIntoView(), 50)
+      setTimeout(() => {
+        if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
+      }, 50)
     }).catch(err => {
       console.error('加载消息失败:', err)
       if (!cancelled) setLoading(false)
@@ -73,7 +75,9 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
         return [...prev, newMsg]
       })
       if (isNearBottom.current) {
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+        setTimeout(() => {
+          if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+        }, 50)
       }
     })
 
@@ -110,7 +114,9 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
       return [...prev, pendingMessage]
     })
     if (isNearBottom.current) {
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
+      setTimeout(() => {
+        if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+      }, 50)
     }
   }, [pendingMessage])
 

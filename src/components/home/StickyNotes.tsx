@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getStickyNotes, addStickyNote, deleteStickyNote } from '@/lib/api/sticky-notes'
+import { cached, cache } from '@/lib/home-cache'
 
 type Note = { id: string; content: string }
 
 export default function StickyNotes() {
   const { user } = useAuth()
-  const [notes, setNotes] = useState<Note[]>([])
+  const [notes, setNotes] = useState<Note[]>(() => cached<Note[]>('notes:list') ?? [])
   const [showInput, setShowInput] = useState(false)
   const [text, setText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -19,6 +20,7 @@ export default function StickyNotes() {
     try {
       const data = await getStickyNotes(user.id)
       setNotes(data ?? [])
+      cache('notes:list', data ?? [])
     } catch {
       setNotes([])
     }

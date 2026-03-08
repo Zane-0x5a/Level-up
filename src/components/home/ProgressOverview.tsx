@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
+import { cached, cache } from '@/lib/home-cache'
 
 type DailyData = {
   focusInClass: number
@@ -15,7 +16,7 @@ type DailyData = {
 
 export default function ProgressOverview() {
   const { user } = useAuth()
-  const [data, setData] = useState<DailyData>({
+  const [data, setData] = useState<DailyData>(() => cached<DailyData>('overview:data') ?? {
     focusInClass: 0,
     focusOutClass: 0,
     entertainment: 0,
@@ -46,6 +47,13 @@ export default function ProgressOverview() {
         }
 
         setData({
+          focusInClass,
+          focusOutClass,
+          entertainment,
+          ibetterCount: record?.ibetter_count ?? 0,
+          returnCount: returnCount,
+        })
+        cache('overview:data', {
           focusInClass,
           focusOutClass,
           entertainment,

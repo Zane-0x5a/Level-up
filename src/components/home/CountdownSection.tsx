@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { format, parseISO } from 'date-fns'
 import { getCountdowns, addCountdown, deleteCountdown } from '@/lib/api/countdowns'
+import { cached, cache } from '@/lib/home-cache'
 import CountdownCard from './CountdownCard'
 
 type Countdown = { id: string; label: string; target_date: string }
@@ -16,7 +17,7 @@ function formatDate(dateStr: string) {
 
 export default function CountdownSection() {
   const { user } = useAuth()
-  const [items, setItems] = useState<Countdown[]>([])
+  const [items, setItems] = useState<Countdown[]>(() => cached<Countdown[]>('cd:items') ?? [])
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right' | null>(null)
   const [animKey, setAnimKey] = useState(0)
@@ -33,6 +34,7 @@ export default function CountdownSection() {
       const data = await getCountdowns(user.id)
       const list = data ?? []
       setItems(list)
+      cache('cd:items', list)
       // On first load, random start index
       if (!initializedRef.current && list.length > 0) {
         setActiveIndex(Math.floor(Math.random() * list.length))
