@@ -64,6 +64,19 @@
   margin-top: 20px;
 }
 
+.entry-advanced-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.entry-choice-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .entry-status {
   font-family: var(--font-body);
   font-size: 12px;

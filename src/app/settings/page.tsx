@@ -1,33 +1,35 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
-
-function generateThumbnail(url: string): Promise<string> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.crossOrigin = 'anonymous'
-    img.onload = () => {
-      const MAX = 200
-      const scale = Math.min(MAX / img.width, MAX / img.height, 1)
-      const canvas = document.createElement('canvas')
-      canvas.width = img.width * scale
-      canvas.height = img.height * scale
-      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height)
-      resolve(canvas.toDataURL('image/jpeg', 0.8))
-    }
-    img.onerror = () => resolve(url)
-    img.src = url
-  })
-}
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+  upsertGrowthPreferences,
+  type GrowthPreferences,
+} from '@/lib/api/growth-preferences'
+import { getProfile, updateProfile } from '@/lib/api/user-profiles'
 import './settings.css'
 
-type AudioClip = { id: string; label: string; file_path: string }
+function getThumbnailUrl(url: string, width = 400, quality = 60): string {
+  if (!url.includes('/object/public/')) return url
+  return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=${quality}&resize=contain`
+}
+
+type AudioClip = {
+  id: string
+  label: string
+  file_path: string
+}
 
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
+  const { user, signOut } = useAuth()
+  const router = useRouter()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -35,19 +37,24 @@ export default function SettingsPage() {
   const [audioLabel, setAudioLabel] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const [uploadingAudio, setUploadingAudio] = useState(false)
+  const [savingGrowthPrefs, setSavingGrowthPrefs] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [thumbnails, setThumbnails] = useState<Record<string, string>>({})
   const [uploadDeviceType, setUploadDeviceType] = useState<'mobile' | 'desktop' | 'universal'>('universal')
+  const [growthPreferences, setGrowthPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
+    DEFAULT_GROWTH_PREFERENCES
+  )
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
 
-  // Hero greetings state
+  const [nickname, setNickname] = useState('')
+  const [editingNickname, setEditingNickname] = useState(false)
+  const [nicknameInput, setNicknameInput] = useState('')
+
   const [greetings, setGreetings] = useState<string[]>([])
   const [newGreeting, setNewGreeting] = useState('')
 
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
-    // Load greetings from localStorage
     try {
       const stored = localStorage.getItem('hero_greetings')
       setGreetings(stored ? JSON.parse(stored) : DEFAULT_GREETINGS)
@@ -56,28 +63,46 @@ export default function SettingsPage() {
     }
   }, [])
 
-  const loadMedia = useCallback(async () => {
-    try {
-      const [imgs, auds] = await Promise.all([getFocusImages(), getAudioClips()])
-      setImages(imgs)
-      setClips(auds)
-    } catch {
-      setError('加载媒体失败，请刷新重试')
-      setTimeout(() => setError(null), 3000)
-    }
-  }, [])
+  useEffect(() => {
+    if (!user) return
 
-  useEffect(() => { loadMedia() }, [loadMedia])
+    getProfile(user.id)
+      .then((profile) => {
+        if (profile) setNickname(profile.nickname)
+      })
+      .catch((err) => {
+        console.error('加载用户昵称失败:', err)
+      })
+
+    getGrowthPreferences(user.id)
+      .then((prefs) => {
+        setGrowthPreferences({
+          enable_habit_checkins: prefs.enable_habit_checkins,
+          enable_progress_tracking: prefs.enable_progress_tracking,
+          enable_state_tracking: prefs.enable_state_tracking,
+        })
+      })
+      .catch((err) => {
+        console.error('加载成长追踪偏好失败:', err)
+      })
+  }, [user])
+
+  const loadMedia = useCallback(async () => {
+    if (!user) return
+
+    try {
+      const [focusImages, audioClips] = await Promise.all([getFocusImages(user.id), getAudioClips(user.id)])
+      setImages(focusImages)
+      setClips(audioClips)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(`加载媒体失败：${message}`)
+    }
+  }, [user])
 
   useEffect(() => {
-    if (images.length === 0) return
-    images.forEach(img => {
-      if (thumbnails[img.id]) return
-      generateThumbnail(img.file_path).then(dataUrl => {
-        setThumbnails(prev => ({ ...prev, [img.id]: dataUrl }))
-      })
-    })
-  }, [images]) // eslint-disable-line react-hooks/exhaustive-deps
+    loadMedia()
+  }, [loadMedia])
 
   const saveFlomoUrl = () => {
     localStorage.setItem('flomo_api_url', flomoUrl.trim())
@@ -88,31 +113,68 @@ export default function SettingsPage() {
   const addGreeting = () => {
     const text = newGreeting.trim()
     if (!text) return
-    const updated = [...greetings, text]
-    setGreetings(updated)
-    localStorage.setItem('hero_greetings', JSON.stringify(updated))
+
+    const nextGreetings = [...greetings, text]
+    setGreetings(nextGreetings)
+    localStorage.setItem('hero_greetings', JSON.stringify(nextGreetings))
     setNewGreeting('')
   }
 
   const removeGreeting = (index: number) => {
-    const updated = greetings.filter((_, i) => i !== index)
-    setGreetings(updated)
-    localStorage.setItem('hero_greetings', JSON.stringify(updated))
+    const nextGreetings = greetings.filter((_, greetingIndex) => greetingIndex !== index)
+    setGreetings(nextGreetings)
+    localStorage.setItem('hero_greetings', JSON.stringify(nextGreetings))
   }
 
-  const handleGreetingKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
+  const handleGreetingKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
       addGreeting()
     }
   }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const saveNickname = async () => {
+    if (!user || !nicknameInput.trim()) return
+
+    try {
+      await updateProfile(user.id, { nickname: nicknameInput.trim() })
+      setNickname(nicknameInput.trim())
+      setEditingNickname(false)
+    } catch {
+      setError('昵称更新失败')
+    }
+  }
+
+  const handleGrowthPreferenceToggle = async (
+    key: keyof Omit<GrowthPreferences, 'user_id'>,
+    value: boolean
+  ) => {
+    if (!user) return
+
+    const previous = growthPreferences
+    const next = { ...growthPreferences, [key]: value }
+
+    setGrowthPreferences(next)
+    setSavingGrowthPrefs(true)
+
+    try {
+      await upsertGrowthPreferences(user.id, { [key]: value })
+    } catch {
+      setGrowthPreferences(previous)
+      setError('成长追踪设置保存失败')
+      setTimeout(() => setError(null), 3000)
+    } finally {
+      setSavingGrowthPrefs(false)
+    }
+  }
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+
     setUploadingImage(true)
     try {
-      await uploadFocusImage(file, uploadDeviceType)
+      await uploadFocusImage(user.id, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -124,18 +186,19 @@ export default function SettingsPage() {
     }
   }
 
-  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file || !audioLabel.trim()) return
+  const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !audioLabel.trim() || !user) return
+
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(file, audioLabel.trim())
+      await uploadAudioClip(user.id, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
       console.error('音频上传失败:', err)
-      setError('音频上传失败，请重试')
-      setTimeout(() => setError(null), 3000)
+      const message = err instanceof Error ? err.message : JSON.stringify(err)
+      setError(`音频上传失败：${message}`)
     } finally {
       setUploadingAudio(false)
       if (audioInputRef.current) audioInputRef.current.value = ''
@@ -143,6 +206,8 @@ export default function SettingsPage() {
   }
 
   const handleDeleteImage = async (id: string) => {
+    if (!user) return
+
     try {
       await deleteFocusImage(id)
       await loadMedia()
@@ -153,6 +218,8 @@ export default function SettingsPage() {
   }
 
   const handleDeleteClip = async (id: string) => {
+    if (!user) return
+
     try {
       await deleteAudioClip(id)
       await loadMedia()
@@ -167,56 +234,59 @@ export default function SettingsPage() {
       <h1 className="settings-title anim">设置</h1>
 
       {error && (
-        <div className="settings-error anim" style={{ color: '#e55', background: 'rgba(229,85,85,0.08)', border: '1px solid rgba(229,85,85,0.2)', borderRadius: 10, padding: '10px 16px', marginBottom: 16, fontSize: 14 }}>
+        <div
+          className="settings-error anim"
+          style={{
+            color: '#e55',
+            background: 'rgba(229,85,85,0.08)',
+            border: '1px solid rgba(229,85,85,0.2)',
+            borderRadius: 10,
+            padding: '10px 16px',
+            marginBottom: 16,
+            fontSize: 14,
+          }}
+        >
           {error}
         </div>
       )}
 
-      {/* Section 0: Hero Greetings */}
       <section className="settings-section anim d1">
         <div className="float-card glow-honey">
           <div className="sec-head">
             <span className="sec-dot honey" />
-            <span className="sec-name">主页问候语</span>
+            <span className="sec-name">首页问候语</span>
           </div>
           <div className="greeting-list">
-            {greetings.map((g, i) => (
-              <div key={i} className="greeting-item">
-                <span className="greeting-text">{g}</span>
+            {greetings.map((greeting, index) => (
+              <div key={index} className="greeting-item">
+                <span className="greeting-text">{greeting}</span>
                 <button
-                  onClick={() => removeGreeting(i)}
+                  onClick={() => removeGreeting(index)}
                   className="greeting-delete"
                   aria-label="删除问候语"
                 >
-                  ×
+                  x
                 </button>
               </div>
             ))}
-            {greetings.length === 0 && (
-              <p className="settings-empty">没有自定义问候语，将使用默认问候</p>
-            )}
+            {greetings.length === 0 && <p className="settings-empty">没有自定义问候语，将使用默认问候语。</p>}
           </div>
           <div className="greeting-add-row">
             <input
               type="text"
               placeholder="输入新的问候语..."
               value={newGreeting}
-              onChange={e => setNewGreeting(e.target.value)}
+              onChange={(event) => setNewGreeting(event.target.value)}
               onKeyDown={handleGreetingKeyDown}
               className="field-input"
             />
-            <button
-              onClick={addGreeting}
-              className="btn-warm"
-              disabled={!newGreeting.trim()}
-            >
+            <button onClick={addGreeting} className="btn-warm" disabled={!newGreeting.trim()}>
               添加
             </button>
           </div>
         </div>
       </section>
 
-      {/* Section 1: Flomo API */}
       <section className="settings-section anim d2">
         <div className="float-card glow-neutral">
           <div className="sec-head">
@@ -228,7 +298,7 @@ export default function SettingsPage() {
               type="url"
               placeholder="https://flomoapp.com/iwh/..."
               value={flomoUrl}
-              onChange={e => setFlomoUrl(e.target.value)}
+              onChange={(event) => setFlomoUrl(event.target.value)}
               className="field-input"
             />
             <button onClick={saveFlomoUrl} className="btn-warm">
@@ -238,31 +308,94 @@ export default function SettingsPage() {
         </div>
       </section>
 
-      {/* Section 2: Focus Background Images */}
       <section className="settings-section anim d3">
+        <div className="float-card glow-sage">
+          <div className="sec-head">
+            <span className="sec-dot sage" />
+            <span className="sec-name">成长追踪</span>
+          </div>
+          <p className="settings-copy">
+            这些是可选的进阶记录项。开启后，它们会出现在每日记录和分析页里；不开启时，Level Up 依然只用核心专注数据工作。
+          </p>
+          <div className="settings-toggle-list">
+            <label className="settings-toggle-row">
+              <div>
+                <div className="settings-toggle-title">习惯打卡数</div>
+                <div className="settings-toggle-desc">适合已经把习惯追踪纳入生活体系的用户。</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={growthPreferences.enable_habit_checkins}
+                onChange={(event) =>
+                  handleGrowthPreferenceToggle('enable_habit_checkins', event.target.checked)
+                }
+              />
+            </label>
+            <label className="settings-toggle-row">
+              <div>
+                <div className="settings-toggle-title">主线推进</div>
+                <div className="settings-toggle-desc">记录今天是否在最重要的方向上靠近了一点、推进明显，或有突破。</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={growthPreferences.enable_progress_tracking}
+                onChange={(event) =>
+                  handleGrowthPreferenceToggle('enable_progress_tracking', event.target.checked)
+                }
+              />
+            </label>
+            <label className="settings-toggle-row">
+              <div>
+                <div className="settings-toggle-title">状态标签</div>
+                <div className="settings-toggle-desc">给低能量日、稳定日、状态好的一天一个温和的上下文。</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={growthPreferences.enable_state_tracking}
+                onChange={(event) =>
+                  handleGrowthPreferenceToggle('enable_state_tracking', event.target.checked)
+                }
+              />
+            </label>
+          </div>
+          <p className="settings-inline-status">
+            {savingGrowthPrefs ? '正在保存成长追踪设置...' : '你可以在这里决定自己的成长可视化系统需要哪些维度。'}
+          </p>
+        </div>
+      </section>
+
+      <section className="settings-section anim d4">
         <div className="float-card glow-coral">
           <div className="sec-head">
             <span className="sec-dot coral" />
             <span className="sec-name">专注背景图</span>
           </div>
           <div className="image-grid">
-            {images.map(img => (
-              <div key={img.id} className="image-thumb">
-                <img src={thumbnails[img.id] ?? img.file_path} alt="" />
-                <span className="image-thumb-tag">{img.device_type === 'universal' ? '通' : img.device_type === 'mobile' ? '机' : '脑'}</span>
+            {images.map((image) => (
+              <div key={image.id} className="image-thumb">
+                <img src={getThumbnailUrl(image.file_path)} alt="" />
+                <span className="image-thumb-tag">
+                  {image.device_type === 'universal'
+                    ? '通用'
+                    : image.device_type === 'mobile'
+                      ? '手机'
+                      : '电脑'}
+                </span>
                 <button
-                  onClick={() => handleDeleteImage(img.id)}
+                  onClick={() => handleDeleteImage(image.id)}
                   className="image-thumb-delete"
                   aria-label="删除图片"
                 >
-                  ×
+                  x
                 </button>
               </div>
             ))}
             <div className="image-upload-controls">
               <select
                 value={uploadDeviceType}
-                onChange={e => setUploadDeviceType(e.target.value as 'mobile' | 'desktop' | 'universal')}
+                onChange={(event) =>
+                  setUploadDeviceType(event.target.value as 'mobile' | 'desktop' | 'universal')
+                }
                 className="device-type-select"
               >
                 <option value="universal">通用</option>
@@ -271,7 +404,7 @@ export default function SettingsPage() {
               </select>
               <label className="image-upload-trigger">
                 <span style={{ fontSize: 24, lineHeight: 1 }}>+</span>
-                <span>上传图片</span>
+                <span>{uploadingImage ? '上传中...' : '上传图片'}</span>
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -283,13 +416,10 @@ export default function SettingsPage() {
               </label>
             </div>
           </div>
-          {images.length === 0 && (
-            <p className="settings-empty">还没有背景图，点击上方上传</p>
-          )}
+          {images.length === 0 && <p className="settings-empty">还没有背景图，点击上方上传。</p>}
         </div>
       </section>
 
-      {/* Section 3: Audio Clips */}
       <section className="settings-section anim d4">
         <div className="float-card glow-sage">
           <div className="sec-head">
@@ -297,20 +427,22 @@ export default function SettingsPage() {
             <span className="sec-name">音频管理</span>
           </div>
 
-          {/* Upload row */}
           <div className="audio-upload-row">
             <input
               type="text"
               placeholder="音频标题"
               value={audioLabel}
-              onChange={e => setAudioLabel(e.target.value)}
+              onChange={(event) => setAudioLabel(event.target.value)}
               className="field-input"
             />
             <label
               className="btn-outline audio-file-label"
-              style={{ opacity: (!audioLabel.trim() || uploadingAudio) ? 0.5 : 1, pointerEvents: (!audioLabel.trim() || uploadingAudio) ? 'none' : 'auto' }}
+              style={{
+                opacity: !audioLabel.trim() || uploadingAudio ? 0.5 : 1,
+                pointerEvents: !audioLabel.trim() || uploadingAudio ? 'none' : 'auto',
+              }}
             >
-              选择音频文件
+              {uploadingAudio ? '上传中...' : '选择音频文件'}
               <input
                 ref={audioInputRef}
                 type="file"
@@ -321,14 +453,15 @@ export default function SettingsPage() {
             </label>
           </div>
 
-          {/* Audio list */}
           <div className="audio-list">
-            {clips.map(clip => (
+            {clips.map((clip) => (
               <div key={clip.id} className="audio-item">
                 <div className="audio-item-info">
                   <div className="audio-item-icon">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" />
+                      <path d="M9 18V5l12-2v13" />
+                      <circle cx="6" cy="18" r="3" />
+                      <circle cx="18" cy="16" r="3" />
                     </svg>
                   </div>
                   <span className="audio-item-label">{clip.label}</span>
@@ -339,15 +472,70 @@ export default function SettingsPage() {
                   aria-label="删除音频"
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </button>
               </div>
             ))}
-            {clips.length === 0 && (
-              <p className="settings-empty">还没有音频片段</p>
+            {clips.length === 0 && <p className="settings-empty">还没有音频片段。</p>}
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-section anim d4">
+        <div className="float-card glow-neutral">
+          <div className="sec-head">
+            <span className="sec-dot neutral" />
+            <span className="sec-name">账户</span>
+          </div>
+          <p style={{ fontSize: 14, color: 'var(--c-sub)', marginBottom: 16 }}>{user?.email}</p>
+          <div className="nickname-row">
+            <span className="nickname-label">昵称：</span>
+            {editingNickname ? (
+              <div className="nickname-edit-row">
+                <input
+                  className="field-input"
+                  value={nicknameInput}
+                  onChange={(event) => setNicknameInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') saveNickname()
+                  }}
+                  maxLength={20}
+                  placeholder="输入昵称..."
+                />
+                <button className="btn-warm" onClick={saveNickname}>
+                  保存
+                </button>
+                <button className="btn-outline" onClick={() => setEditingNickname(false)}>
+                  取消
+                </button>
+              </div>
+            ) : (
+              <div className="nickname-display">
+                <span>{nickname || '未设置'}</span>
+                <button
+                  className="btn-outline"
+                  onClick={() => {
+                    setNicknameInput(nickname)
+                    setEditingNickname(true)
+                  }}
+                >
+                  修改
+                </button>
+              </div>
             )}
           </div>
+          <button
+            className="btn-outline"
+            style={{ color: '#e55', borderColor: 'rgba(229,85,85,0.3)' }}
+            onClick={async () => {
+              await signOut()
+              router.replace('/auth')
+            }}
+          >
+            退出登录
+          </button>
         </div>
       </section>
     </main>

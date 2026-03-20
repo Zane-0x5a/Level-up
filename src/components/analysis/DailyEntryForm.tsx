@@ -1,64 +1,145 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  getDailyRecord,
+  upsertDailyRecord,
+  type ProgressLevel,
+  type StateLabel,
+} from '@/lib/api/daily-records'
 import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+  type GrowthPreferences,
+} from '@/lib/api/growth-preferences'
 import { sendToFlomo } from '@/lib/flomo'
 
+const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
+  { value: 'slight', label: '靠近了一点' },
+  { value: 'solid', label: '推进明显' },
+  { value: 'breakthrough', label: '有突破' },
+]
+
+const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
+  { value: 'recovering', label: '恢复中' },
+  { value: 'steady', label: '稳住了' },
+  { value: 'good', label: '状态不错' },
+  { value: 'energized', label: '很有能量' },
+]
+
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
+  const { user } = useAuth()
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
   const [focusOut, setFocusOut] = useState(0)
   const [entertainment, setEntertainment] = useState(0)
-  const [ibetter, setIbetter] = useState(0)
+  const [habitCheckins, setHabitCheckins] = useState(0)
+  const [progressLevel, setProgressLevel] = useState<ProgressLevel | null>(null)
+  const [progressNote, setProgressNote] = useState('')
+  const [stateLabel, setStateLabel] = useState<StateLabel | null>(null)
+  const [preferences, setPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
+    DEFAULT_GROWTH_PREFERENCES
+  )
   const [note, setNote] = useState('')
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
-  const loadRecord = useCallback(async () => {
+  const loadPreferences = useCallback(async () => {
+    if (!user) return
     try {
-      const record = await getDailyRecord(date)
+      const data = await getGrowthPreferences(user.id)
+      setPreferences({
+        enable_habit_checkins: data.enable_habit_checkins,
+        enable_progress_tracking: data.enable_progress_tracking,
+        enable_state_tracking: data.enable_state_tracking,
+      })
+    } catch {
+      setPreferences(DEFAULT_GROWTH_PREFERENCES)
+    }
+  }, [user])
+
+  const loadRecord = useCallback(async () => {
+    if (!user) return
+    try {
+      const record = await getDailyRecord(user.id, date)
       if (record) {
         setDayType(record.day_type)
-        setIbetter(record.ibetter_count ?? 0)
+        setHabitCheckins(record.ibetter_count ?? 0)
+        setProgressLevel(record.progress_level ?? null)
+        setProgressNote(record.progress_note ?? '')
+        setStateLabel(record.state_label ?? null)
         setNote(record.note ?? '')
       } else {
         setDayType('study_day')
-        setIbetter(0)
+        setHabitCheckins(0)
+        setProgressLevel(null)
+        setProgressNote('')
+        setStateLabel(null)
         setNote('')
       }
     } catch {
-      // ignore load errors
+      // Ignore load errors and keep current local state.
     }
-  }, [date])
+  }, [date, user])
 
   const loadFocus = useCallback(async () => {
+    if (!user) return
     try {
-      const sessions = await getTodayFocusSessions()
-      let inC = 0, outC = 0, ent = 0
-      for (const s of sessions) {
-        if (s.category === 'in_class') inC += s.duration
-        else if (s.category === 'out_class') outC += s.duration
-        else ent += s.duration
-      }
-      setFocusIn(inC)
-      setFocusOut(outC)
-      setEntertainment(ent)
-    } catch {
-      // ignore
-    }
-  }, [])
+      const sessions = await getTodayFocusSessions(user.id, date)
+      let inClass = 0
+      let outClass = 0
+      let fun = 0
 
-  useEffect(() => { loadRecord() }, [loadRecord])
-  useEffect(() => { loadFocus() }, [loadFocus])
+      for (const session of sessions) {
+        if (session.category === 'in_class') inClass += session.duration
+        else if (session.category === 'out_class') outClass += session.duration
+        else fun += session.duration
+      }
+
+      setFocusIn(inClass)
+      setFocusOut(outClass)
+      setEntertainment(fun)
+    } catch {
+      // Ignore load errors and keep the existing numbers.
+    }
+  }, [date, user])
+
+  useEffect(() => {
+    loadPreferences()
+  }, [loadPreferences])
+
+  useEffect(() => {
+    loadRecord()
+  }, [loadRecord])
+
+  useEffect(() => {
+    loadFocus()
+  }, [loadFocus])
 
   const handleSave = async () => {
+    if (!user) return
+
     setSaving(true)
     setStatus(null)
+
     try {
-      await upsertDailyRecord({ date, day_type: dayType, ibetter_count: ibetter, note })
+      await upsertDailyRecord(user.id, {
+        date,
+        day_type: dayType,
+        ibetter_count: preferences.enable_habit_checkins ? habitCheckins : 0,
+        note,
+        focus_in_class: focusIn,
+        focus_out_class: focusOut,
+        entertainment,
+        progress_level: preferences.enable_progress_tracking ? progressLevel : null,
+        progress_note: preferences.enable_progress_tracking ? progressNote.trim() || null : null,
+        state_label: preferences.enable_state_tracking ? stateLabel : null,
+      })
+
       onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
@@ -71,10 +152,37 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
 
   const handleFlomo = async () => {
     if (!note.trim()) return
+
     setSending(true)
     setStatus(null)
+
     try {
-      const content = `#LevelUp ${date}\n日类型: ${dayType === 'study_day' ? '学习日' : '休假日'}\n课内: ${focusIn.toFixed(1)}h | 课外: ${focusOut.toFixed(1)}h | 娱乐: ${entertainment.toFixed(1)}h\niBetter: ${ibetter}\n\n${note}`
+      const optionalLines = [
+        preferences.enable_habit_checkins ? `习惯打卡数: ${habitCheckins}` : null,
+        preferences.enable_progress_tracking && progressLevel
+          ? `主线推进: ${PROGRESS_LEVEL_OPTIONS.find((option) => option.value === progressLevel)?.label ?? progressLevel}`
+          : null,
+        preferences.enable_progress_tracking && progressNote.trim()
+          ? `最重要的一步: ${progressNote.trim()}`
+          : null,
+        preferences.enable_state_tracking && stateLabel
+          ? `状态标签: ${STATE_LABEL_OPTIONS.find((option) => option.value === stateLabel)?.label ?? stateLabel}`
+          : null,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
+      const content = [
+        `#LevelUp ${date}`,
+        `日类型: ${dayType === 'study_day' ? '学习日' : '休息日'}`,
+        `课内: ${focusIn.toFixed(1)}h | 课外: ${focusOut.toFixed(1)}h | 娱乐: ${entertainment.toFixed(1)}h`,
+        optionalLines,
+        '',
+        note,
+      ]
+        .filter(Boolean)
+        .join('\n')
+
       await sendToFlomo(content)
       setStatus({ type: 'success', msg: '已发送到 flomo' })
       setTimeout(() => setStatus(null), 2000)
@@ -87,96 +195,121 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
 
   return (
     <div className="float-card glow-neutral">
-      {/* Section header */}
       <div className="sec-head">
         <span className="sec-dot sky" />
         <span className="sec-name">每日记录</span>
       </div>
 
-      {/* Date + Day type row */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
         <input
           type="date"
           value={date}
-          onChange={e => setDate(e.target.value)}
+          onChange={(event) => setDate(event.target.value)}
           className="field-input"
           style={{ maxWidth: 180 }}
         />
         <div className="entry-day-pills" style={{ marginBottom: 0 }}>
-          {(['study_day', 'rest_day'] as const).map(t => (
+          {(['study_day', 'rest_day'] as const).map((type) => (
             <button
-              key={t}
-              onClick={() => setDayType(t)}
-              className={`pill${dayType === t ? ' active' : ''}`}
+              key={type}
+              type="button"
+              onClick={() => setDayType(type)}
+              className={`pill${dayType === type ? ' active' : ''}`}
             >
-              {t === 'study_day' ? '学习日' : '休假日'}
+              {type === 'study_day' ? '学习日' : '休息日'}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 4-column input grid */}
       <div className="entry-input-grid">
         <div className="entry-field">
           <label className="entry-field-label">课内投入 (h)</label>
-          <input
-            type="number"
-            min={0}
-            step={0.1}
-            value={focusIn}
-            onChange={e => setFocusIn(parseFloat(e.target.value) || 0)}
-            className="field-input"
-            readOnly
-          />
+          <input type="number" min={0} step={0.1} value={focusIn} className="field-input" readOnly />
         </div>
         <div className="entry-field">
           <label className="entry-field-label">课外投入 (h)</label>
-          <input
-            type="number"
-            min={0}
-            step={0.1}
-            value={focusOut}
-            onChange={e => setFocusOut(parseFloat(e.target.value) || 0)}
-            className="field-input"
-            readOnly
-          />
+          <input type="number" min={0} step={0.1} value={focusOut} className="field-input" readOnly />
         </div>
         <div className="entry-field">
-          <label className="entry-field-label">娱乐消费 (h)</label>
+          <label className="entry-field-label">娱乐消耗 (h)</label>
           <input
             type="number"
             min={0}
             step={0.1}
             value={entertainment}
-            onChange={e => setEntertainment(parseFloat(e.target.value) || 0)}
             className="field-input"
             readOnly
           />
         </div>
-        <div className="entry-field">
-          <label className="entry-field-label">iBetter</label>
-          <input
-            type="number"
-            min={0}
-            value={ibetter}
-            onChange={e => setIbetter(parseInt(e.target.value) || 0)}
-            className="field-input"
-          />
-        </div>
+        {preferences.enable_habit_checkins && (
+          <div className="entry-field">
+            <label className="entry-field-label">习惯打卡数</label>
+            <input
+              type="number"
+              min={0}
+              value={habitCheckins}
+              onChange={(event) => setHabitCheckins(parseInt(event.target.value, 10) || 0)}
+              className="field-input"
+            />
+          </div>
+        )}
       </div>
 
-      {/* Summary textarea */}
+      {preferences.enable_progress_tracking && (
+        <div className="entry-advanced-block">
+          <label className="entry-field-label">今日主线推进</label>
+          <div className="entry-choice-row">
+            {PROGRESS_LEVEL_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setProgressLevel(option.value)}
+                className={`pill${progressLevel === option.value ? ' active' : ''}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <textarea
+            placeholder="今天最重要的一步..."
+            value={progressNote}
+            onChange={(event) => setProgressNote(event.target.value)}
+            rows={2}
+            className="field-textarea"
+          />
+        </div>
+      )}
+
+      {preferences.enable_state_tracking && (
+        <div className="entry-advanced-block">
+          <label className="entry-field-label">今日状态标签</label>
+          <div className="entry-choice-row">
+            {STATE_LABEL_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setStateLabel(option.value)}
+                className={`pill${stateLabel === option.value ? ' active' : ''}`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <textarea
-        placeholder="今日总结..."
+        placeholder="今天的总结、感受或提醒..."
         value={note}
-        onChange={e => setNote(e.target.value)}
+        onChange={(event) => setNote(event.target.value)}
         rows={3}
         className="field-textarea"
       />
 
-      {/* Actions */}
       <div className="entry-actions">
         <button
+          type="button"
           onClick={handleSave}
           disabled={saving}
           className="btn-warm"
@@ -185,16 +318,15 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
           {saving ? '保存中...' : '保存记录'}
         </button>
         <button
+          type="button"
           onClick={handleFlomo}
           disabled={sending || !note.trim()}
           className="btn-outline"
-          style={{ opacity: (sending || !note.trim()) ? 0.5 : 1 }}
+          style={{ opacity: sending || !note.trim() ? 0.5 : 1 }}
         >
-          {sending ? '发送中...' : '发送到 flomo →'}
+          {sending ? '发送中...' : '发送到 flomo ->'}
         </button>
-        {status && (
-          <span className={`entry-status ${status.type}`}>{status.msg}</span>
-        )}
+        {status && <span className={`entry-status ${status.type}`}>{status.msg}</span>}
       </div>
     </div>
   )
