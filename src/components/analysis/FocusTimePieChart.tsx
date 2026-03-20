@@ -9,41 +9,51 @@ type Props = {
 }
 
 const COLORS = ['#d4654a', '#5b9279', '#a3a9b8']
-const LABELS = ['课内投入', '课外投入', '娱乐消费']
 
 export default function FocusTimePieChart({ inClass, outClass, entertainment }: Props) {
   const data = [
-    { name: LABELS[0], value: inClass },
-    { name: LABELS[1], value: outClass },
-    { name: LABELS[2], value: entertainment },
-  ].filter(d => d.value > 0)
+    { name: '课内投入', value: inClass },
+    { name: '课外投入', value: outClass },
+    { name: '娱乐消耗', value: entertainment },
+  ].filter((item) => item.value > 0)
 
   if (data.length === 0) {
     return (
-      <div className="float-card glow-coral">
-        <div className="chart-empty">暂无专注数据</div>
+      <div className="float-card glow-sage">
+        <div className="chart-header">
+          <div>
+            <div className="chart-title">时间结构</div>
+            <div className="chart-subtitle">看看时间被分配到了哪里</div>
+          </div>
+        </div>
+        <div className="chart-empty">还没有足够的数据来展示结构。</div>
       </div>
     )
   }
 
   return (
-    <div className="float-card glow-coral">
-      <ResponsiveContainer width="100%" height={200}>
+    <div className="float-card glow-sage">
+      <div className="chart-header">
+        <div>
+          <div className="chart-title">时间结构</div>
+          <div className="chart-subtitle">当前筛选条件下的投入分布</div>
+        </div>
+      </div>
+      <ResponsiveContainer width="100%" height={220}>
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
             innerRadius={50}
-            outerRadius={80}
+            outerRadius={82}
             dataKey="value"
             stroke="none"
             paddingAngle={3}
           >
-            {data.map((entry, i) => {
-              const colorIdx = LABELS.indexOf(entry.name)
-              return <Cell key={i} fill={COLORS[colorIdx >= 0 ? colorIdx : i]} />
-            })}
+            {data.map((entry, index) => (
+              <Cell key={entry.name} fill={COLORS[index] ?? COLORS[0]} />
+            ))}
           </Pie>
           <Tooltip
             formatter={(value) => `${Number(value).toFixed(1)}h`}
@@ -59,18 +69,12 @@ export default function FocusTimePieChart({ inClass, outClass, entertainment }: 
         </PieChart>
       </ResponsiveContainer>
       <div className="chart-legend">
-        {data.map(d => {
-          const colorIdx = LABELS.indexOf(d.name)
-          return (
-            <span key={d.name} className="chart-legend-item">
-              <span
-                className="chart-legend-dot"
-                style={{ background: COLORS[colorIdx >= 0 ? colorIdx : 0] }}
-              />
-              {d.name} ({d.value.toFixed(1)}h)
-            </span>
-          )
-        })}
+        {data.map((item, index) => (
+          <span key={item.name} className="chart-legend-item">
+            <span className="chart-legend-dot" style={{ background: COLORS[index] ?? COLORS[0] }} />
+            {item.name} ({item.value.toFixed(1)}h)
+          </span>
+        ))}
       </div>
     </div>
   )
