@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
@@ -334,7 +335,13 @@ export default function SettingsPage() {
           <div className="image-grid">
             {images.map((image) => (
               <div key={image.id} className="image-thumb">
-                <img src={getThumbnailUrl(image.file_path)} alt="" />
+                <Image
+                  src={getThumbnailUrl(image.file_path)}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 100vw, 200px"
+                  unoptimized
+                />
                 <span className="image-thumb-tag">
                   {image.device_type === 'universal'
                     ? '通用'
