@@ -3,6 +3,7 @@
 import { useState, useEffect, RefObject } from 'react'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getWeeklyFocusHours } from '@/lib/api/stats'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type Props = {
   onEnter: () => void
@@ -30,9 +31,9 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
     const load = async () => {
       try {
         const [sessions, returns, weekly] = await Promise.all([
-          getTodayFocusSessions(),
-          getTodayReturnCount(),
-          getWeeklyFocusHours(),
+          getTodayFocusSessions(DEFAULT_USER_ID),
+          getTodayReturnCount(DEFAULT_USER_ID),
+          getWeeklyFocusHours(DEFAULT_USER_ID),
         ])
 
         if (cancelled) return

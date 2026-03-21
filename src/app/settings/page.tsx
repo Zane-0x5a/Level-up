@@ -71,7 +71,10 @@ export default function SettingsPage() {
 
   const loadMedia = useCallback(async () => {
     try {
-      const [focusImages, audioClips] = await Promise.all([getFocusImages(), getAudioClips()])
+      const [focusImages, audioClips] = await Promise.all([
+        getFocusImages(DEFAULT_USER_ID),
+        getAudioClips(DEFAULT_USER_ID),
+      ])
       setImages(focusImages)
       setClips(audioClips)
     } catch (err) {
@@ -140,7 +143,7 @@ export default function SettingsPage() {
 
     setUploadingImage(true)
     try {
-      await uploadFocusImage(file, uploadDeviceType)
+      await uploadFocusImage(DEFAULT_USER_ID, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -158,7 +161,7 @@ export default function SettingsPage() {
 
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(file, audioLabel.trim())
+      await uploadAudioClip(DEFAULT_USER_ID, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {

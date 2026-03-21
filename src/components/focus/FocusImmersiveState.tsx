@@ -133,8 +133,8 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
       }
 
       const [images, notes, currentCount] = await Promise.all([
-        getFocusImages(),
-        getStickyNotes(),
+        getFocusImages(userId),
+        getStickyNotes(userId),
         getTodayReturnCount(userId),
       ])
 

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { getAudioClips } from '@/lib/api/audio-clips'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type Clip = { id: string; label: string; file_path: string }
 
@@ -19,7 +20,7 @@ export default function AudioPlayer() {
 
     const load = async () => {
       try {
-        const data = await getAudioClips()
+        const data = await getAudioClips(DEFAULT_USER_ID)
         if (!cancelled) {
           setClips(data)
         }
