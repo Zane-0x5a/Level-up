@@ -154,7 +154,7 @@ test('buildGrowthAssets returns progress-aware asset cards', () => {
 })
 
 test('findRecordByDate only returns a record for the exact requested day', () => {
-  const records = [
+  const records: import('./growth-metrics').GrowthRecord[] = [
     {
       date: '2026-03-20',
       day_type: 'study_day',
@@ -176,7 +176,7 @@ test('findRecordByDate only returns a record for the exact requested day', () =>
 })
 
 test('buildRecentMemory preserves the full archive instead of cutting it to six items', () => {
-  const records = [
+  const records: import('./growth-metrics').GrowthRecord[] = [
     {
       date: '2026-03-07',
       day_type: 'study_day',

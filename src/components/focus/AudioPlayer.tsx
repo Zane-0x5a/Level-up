@@ -1,13 +1,11 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { getAudioClips } from '@/lib/api/audio-clips'
 
 type Clip = { id: string; label: string; file_path: string }
 
 export default function AudioPlayer() {
-  const { user } = useAuth()
   const [clips, setClips] = useState<Clip[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
@@ -17,13 +15,11 @@ export default function AudioPlayer() {
   const loadedRef = useRef(false)
 
   useEffect(() => {
-    if (!user) return
-
     let cancelled = false
 
     const load = async () => {
       try {
-        const data = await getAudioClips(user.id)
+        const data = await getAudioClips()
         if (!cancelled) {
           setClips(data)
         }
@@ -37,7 +33,7 @@ export default function AudioPlayer() {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [])
 
   // Set audio source only on initial clips load or explicit index change
   useEffect(() => {

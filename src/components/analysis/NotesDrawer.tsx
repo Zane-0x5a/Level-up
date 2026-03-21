@@ -6,7 +6,7 @@ import { getProgressLabel, getStateLabel } from '@/lib/analysis/growth-metrics'
 type Record = {
   date: string
   day_type: 'study_day' | 'rest_day'
-  note: string | null
+  note?: string | null
   progress_note?: string | null
   progress_level?: 'slight' | 'solid' | 'breakthrough' | null
   state_label?: 'recovering' | 'steady' | 'good' | 'energized' | null

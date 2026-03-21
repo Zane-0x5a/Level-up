@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
-export async function getStreak(userId: string): Promise<number> {
+export async function getStreak(userId = DEFAULT_USER_ID): Promise<number> {
   const { data, error } = await supabase
     .from('daily_records')
     .select('date')
@@ -32,7 +33,7 @@ export async function getStreak(userId: string): Promise<number> {
   return streak
 }
 
-export async function getTotalFocusHours(userId: string): Promise<number> {
+export async function getTotalFocusHours(userId = DEFAULT_USER_ID): Promise<number> {
   const { data, error } = await supabase
     .from('focus_sessions')
     .select('duration')
@@ -41,7 +42,7 @@ export async function getTotalFocusHours(userId: string): Promise<number> {
   return data.reduce((sum, r) => sum + (r.duration ?? 0), 0)
 }
 
-export async function getWeeklyFocusHours(userId: string): Promise<number> {
+export async function getWeeklyFocusHours(userId = DEFAULT_USER_ID): Promise<number> {
   const now = new Date()
   const weekAgo = new Date(now)
   weekAgo.setDate(weekAgo.getDate() - 7)
@@ -56,7 +57,7 @@ export async function getWeeklyFocusHours(userId: string): Promise<number> {
   return data.reduce((sum, r) => sum + (r.duration ?? 0), 0)
 }
 
-export async function getTotalReturnCount(userId: string): Promise<number> {
+export async function getTotalReturnCount(userId = DEFAULT_USER_ID): Promise<number> {
   const { data, error } = await supabase
     .from('daily_records')
     .select('return_count')

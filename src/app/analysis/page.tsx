@@ -1,10 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { clearDailyNote, getAllDailyRecords, type DailyRecord } from '@/lib/api/daily-records'
 import { getGrowthPreferences, type GrowthPreferences } from '@/lib/api/growth-preferences'
 import { getStreak } from '@/lib/api/stats'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 import {
   buildGrowthAssets,
   buildGrowthEcho,
@@ -37,7 +37,6 @@ const DEFAULT_PREFERENCES: PreferencesState = {
 }
 
 export default function AnalysisPage() {
-  const { user } = useAuth()
   const [records, setRecords] = useState<DailyRecord[]>([])
   const [filter, setFilter] = useState<'all' | 'study_day' | 'rest_day'>('all')
   const [streak, setStreak] = useState(0)
@@ -45,13 +44,12 @@ export default function AnalysisPage() {
 
   useEffect(() => {
     let active = true
-    if (!user) return
 
     ;(async () => {
       const [recordsResult, streakResult, preferencesResult] = await Promise.allSettled([
-        getAllDailyRecords(user.id),
-        getStreak(user.id),
-        getGrowthPreferences(user.id),
+        getAllDailyRecords(DEFAULT_USER_ID),
+        getStreak(DEFAULT_USER_ID),
+        getGrowthPreferences(DEFAULT_USER_ID),
       ])
 
       if (!active) return
@@ -76,15 +74,13 @@ export default function AnalysisPage() {
     return () => {
       active = false
     }
-  }, [user])
+  }, [])
 
   const reload = async () => {
-    if (!user) return
-
     const [recordsResult, streakResult, preferencesResult] = await Promise.allSettled([
-      getAllDailyRecords(user.id),
-      getStreak(user.id),
-      getGrowthPreferences(user.id),
+      getAllDailyRecords(DEFAULT_USER_ID),
+      getStreak(DEFAULT_USER_ID),
+      getGrowthPreferences(DEFAULT_USER_ID),
     ])
 
     if (recordsResult.status === 'fulfilled') {
@@ -190,10 +186,8 @@ export default function AnalysisPage() {
         <NotesDrawer
           records={memories}
           onDeleteNote={async (date) => {
-            if (!user) return
-
             try {
-              await clearDailyNote(user.id, date)
+              await clearDailyNote(DEFAULT_USER_ID, date)
               await reload()
             } catch {
               // Keep the current list if deletion fails.

@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import {
@@ -11,7 +9,7 @@ import {
   upsertGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
-import { getProfile, updateProfile } from '@/lib/api/user-profiles'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -28,8 +26,6 @@ type AudioClip = {
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth()
-  const router = useRouter()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -43,15 +39,10 @@ export default function SettingsPage() {
   const [growthPreferences, setGrowthPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
     DEFAULT_GROWTH_PREFERENCES
   )
-  const imageInputRef = useRef<HTMLInputElement>(null)
-  const audioInputRef = useRef<HTMLInputElement>(null)
-
-  const [nickname, setNickname] = useState('')
-  const [editingNickname, setEditingNickname] = useState(false)
-  const [nicknameInput, setNicknameInput] = useState('')
-
   const [greetings, setGreetings] = useState<string[]>([])
   const [newGreeting, setNewGreeting] = useState('')
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const audioInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
@@ -64,17 +55,7 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    if (!user) return
-
-    getProfile(user.id)
-      .then((profile) => {
-        if (profile) setNickname(profile.nickname)
-      })
-      .catch((err) => {
-        console.error('加载用户昵称失败:', err)
-      })
-
-    getGrowthPreferences(user.id)
+    getGrowthPreferences(DEFAULT_USER_ID)
       .then((prefs) => {
         setGrowthPreferences({
           enable_habit_checkins: prefs.enable_habit_checkins,
@@ -85,23 +66,21 @@ export default function SettingsPage() {
       .catch((err) => {
         console.error('加载成长追踪偏好失败:', err)
       })
-  }, [user])
+  }, [])
 
   const loadMedia = useCallback(async () => {
-    if (!user) return
-
     try {
-      const [focusImages, audioClips] = await Promise.all([getFocusImages(user.id), getAudioClips(user.id)])
+      const [focusImages, audioClips] = await Promise.all([getFocusImages(), getAudioClips()])
       setImages(focusImages)
       setClips(audioClips)
     } catch (err) {
       const message = err instanceof Error ? err.message : JSON.stringify(err)
       setError(`加载媒体失败：${message}`)
     }
-  }, [user])
+  }, [])
 
   useEffect(() => {
-    loadMedia()
+    void loadMedia()
   }, [loadMedia])
 
   const saveFlomoUrl = () => {
@@ -133,24 +112,10 @@ export default function SettingsPage() {
     }
   }
 
-  const saveNickname = async () => {
-    if (!user || !nicknameInput.trim()) return
-
-    try {
-      await updateProfile(user.id, { nickname: nicknameInput.trim() })
-      setNickname(nicknameInput.trim())
-      setEditingNickname(false)
-    } catch {
-      setError('昵称更新失败')
-    }
-  }
-
   const handleGrowthPreferenceToggle = async (
     key: keyof Omit<GrowthPreferences, 'user_id'>,
     value: boolean
   ) => {
-    if (!user) return
-
     const previous = growthPreferences
     const next = { ...growthPreferences, [key]: value }
 
@@ -158,7 +123,7 @@ export default function SettingsPage() {
     setSavingGrowthPrefs(true)
 
     try {
-      await upsertGrowthPreferences(user.id, { [key]: value })
+      await upsertGrowthPreferences(DEFAULT_USER_ID, { [key]: value })
     } catch {
       setGrowthPreferences(previous)
       setError('成长追踪设置保存失败')
@@ -170,11 +135,11 @@ export default function SettingsPage() {
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !user) return
+    if (!file) return
 
     setUploadingImage(true)
     try {
-      await uploadFocusImage(user.id, file, uploadDeviceType)
+      await uploadFocusImage(file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -188,11 +153,11 @@ export default function SettingsPage() {
 
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !audioLabel.trim() || !user) return
+    if (!file || !audioLabel.trim()) return
 
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(user.id, file, audioLabel.trim())
+      await uploadAudioClip(file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
@@ -206,8 +171,6 @@ export default function SettingsPage() {
   }
 
   const handleDeleteImage = async (id: string) => {
-    if (!user) return
-
     try {
       await deleteFocusImage(id)
       await loadMedia()
@@ -218,8 +181,6 @@ export default function SettingsPage() {
   }
 
   const handleDeleteClip = async (id: string) => {
-    if (!user) return
-
     try {
       await deleteAudioClip(id)
       await loadMedia()
@@ -315,13 +276,13 @@ export default function SettingsPage() {
             <span className="sec-name">成长追踪</span>
           </div>
           <p className="settings-copy">
-            这些是可选的进阶记录项。开启后，它们会出现在每日记录和分析页里；不开启时，Level Up 依然只用核心专注数据工作。
+            这些是可选的进阶记录项。开启后，它们会出现在每日记录和分析页里；不启用时，Level Up 依然只用核心专注数据工作。
           </p>
           <div className="settings-toggle-list">
             <label className="settings-toggle-row">
               <div>
                 <div className="settings-toggle-title">习惯打卡数</div>
-                <div className="settings-toggle-desc">适合已经把习惯追踪纳入生活体系的用户。</div>
+                <div className="settings-toggle-desc">适合已经把习惯追踪纳入日常体系的用户。</div>
               </div>
               <input
                 type="checkbox"
@@ -334,7 +295,7 @@ export default function SettingsPage() {
             <label className="settings-toggle-row">
               <div>
                 <div className="settings-toggle-title">主线推进</div>
-                <div className="settings-toggle-desc">记录今天是否在最重要的方向上靠近了一点、推进明显，或有突破。</div>
+                <div className="settings-toggle-desc">记录今天是否在最重要的方向上更进一步。</div>
               </div>
               <input
                 type="checkbox"
@@ -347,7 +308,7 @@ export default function SettingsPage() {
             <label className="settings-toggle-row">
               <div>
                 <div className="settings-toggle-title">状态标签</div>
-                <div className="settings-toggle-desc">给低能量日、稳定日、状态好的一天一个温和的上下文。</div>
+                <div className="settings-toggle-desc">给低能量日、稳住日和状态好的日子加上温和上下文。</div>
               </div>
               <input
                 type="checkbox"
@@ -359,7 +320,7 @@ export default function SettingsPage() {
             </label>
           </div>
           <p className="settings-inline-status">
-            {savingGrowthPrefs ? '正在保存成长追踪设置...' : '你可以在这里决定自己的成长可视化系统需要哪些维度。'}
+            {savingGrowthPrefs ? '正在保存成长追踪设置...' : '你可以在这里决定成长反馈系统包含哪些维度。'}
           </p>
         </div>
       </section>
@@ -480,62 +441,6 @@ export default function SettingsPage() {
             ))}
             {clips.length === 0 && <p className="settings-empty">还没有音频片段。</p>}
           </div>
-        </div>
-      </section>
-
-      <section className="settings-section anim d4">
-        <div className="float-card glow-neutral">
-          <div className="sec-head">
-            <span className="sec-dot neutral" />
-            <span className="sec-name">账户</span>
-          </div>
-          <p style={{ fontSize: 14, color: 'var(--c-sub)', marginBottom: 16 }}>{user?.email}</p>
-          <div className="nickname-row">
-            <span className="nickname-label">昵称：</span>
-            {editingNickname ? (
-              <div className="nickname-edit-row">
-                <input
-                  className="field-input"
-                  value={nicknameInput}
-                  onChange={(event) => setNicknameInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') saveNickname()
-                  }}
-                  maxLength={20}
-                  placeholder="输入昵称..."
-                />
-                <button className="btn-warm" onClick={saveNickname}>
-                  保存
-                </button>
-                <button className="btn-outline" onClick={() => setEditingNickname(false)}>
-                  取消
-                </button>
-              </div>
-            ) : (
-              <div className="nickname-display">
-                <span>{nickname || '未设置'}</span>
-                <button
-                  className="btn-outline"
-                  onClick={() => {
-                    setNicknameInput(nickname)
-                    setEditingNickname(true)
-                  }}
-                >
-                  修改
-                </button>
-              </div>
-            )}
-          </div>
-          <button
-            className="btn-outline"
-            style={{ color: '#e55', borderColor: 'rgba(229,85,85,0.3)' }}
-            onClick={async () => {
-              await signOut()
-              router.replace('/auth')
-            }}
-          >
-            退出登录
-          </button>
         </div>
       </section>
     </main>

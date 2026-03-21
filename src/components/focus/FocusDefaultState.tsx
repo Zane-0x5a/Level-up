@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, RefObject } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getWeeklyFocusHours } from '@/lib/api/stats'
 
@@ -19,7 +18,6 @@ const quietLines = [
 ]
 
 export default function FocusDefaultState({ onEnter, orbRef }: Props) {
-  const { user } = useAuth()
   const [todayHours, setTodayHours] = useState(0)
   const [returnCount, setReturnCount] = useState(0)
   const [lastSession, setLastSession] = useState<{ category: string; duration: number } | null>(null)
@@ -27,16 +25,14 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
   const [quietLine] = useState(() => quietLines[Math.floor(Math.random() * quietLines.length)])
 
   useEffect(() => {
-    if (!user) return
-
     let cancelled = false
 
     const load = async () => {
       try {
         const [sessions, returns, weekly] = await Promise.all([
-          getTodayFocusSessions(user.id),
-          getTodayReturnCount(user.id),
-          getWeeklyFocusHours(user.id),
+          getTodayFocusSessions(),
+          getTodayReturnCount(),
+          getWeeklyFocusHours(),
         ])
 
         if (cancelled) return
@@ -63,7 +59,7 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [])
 
   const formatHours = (h: number) => {
     const hours = Math.floor(h)

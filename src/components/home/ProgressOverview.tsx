@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import {
@@ -9,7 +8,7 @@ import {
   getGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
-import { cached, cache } from '@/lib/home-cache'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type DailyData = {
   focusInClass: number
@@ -20,32 +19,26 @@ type DailyData = {
 }
 
 export default function ProgressOverview() {
-  const { user } = useAuth()
   const [preferences, setPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
     DEFAULT_GROWTH_PREFERENCES
   )
-  const [data, setData] = useState<DailyData>(
-    () =>
-      cached<DailyData>('overview:data') ?? {
-        focusInClass: 0,
-        focusOutClass: 0,
-        entertainment: 0,
-        habitCheckins: 0,
-        returnCount: 0,
-      }
-  )
+  const [data, setData] = useState<DailyData>({
+    focusInClass: 0,
+    focusOutClass: 0,
+    entertainment: 0,
+    habitCheckins: 0,
+    returnCount: 0,
+  })
 
   useEffect(() => {
     async function load() {
-      if (!user) return
-
       try {
         const today = new Date().toISOString().split('T')[0]
         const [record, sessions, returnCount, growthPreferences] = await Promise.all([
-          getDailyRecord(user.id, today),
-          getTodayFocusSessions(user.id),
-          getTodayReturnCount(user.id),
-          getGrowthPreferences(user.id),
+          getDailyRecord(DEFAULT_USER_ID, today),
+          getTodayFocusSessions(DEFAULT_USER_ID),
+          getTodayReturnCount(DEFAULT_USER_ID),
+          getGrowthPreferences(DEFAULT_USER_ID),
         ])
 
         let focusInClass = 0
@@ -73,14 +66,13 @@ export default function ProgressOverview() {
         }
 
         setData(nextData)
-        cache('overview:data', nextData)
       } catch {
         // Keep cached/default values when loading fails.
       }
     }
 
     load()
-  }, [user])
+  }, [])
 
   const metrics = [
     { label: '课内投入', value: data.focusInClass, unit: 'h', highlighted: true },

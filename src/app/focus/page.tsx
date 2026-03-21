@@ -55,7 +55,7 @@ const setStoredFocusState = (nextState: PersistedFocusState) => {
 }
 
 export default function FocusPage() {
-  const persistedState = useSyncExternalStore(
+  const persistedState = useSyncExternalStore<PersistedFocusState>(
     subscribeToFocusState,
     getStoredFocusState,
     () => 'default'
