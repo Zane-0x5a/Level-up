@@ -31,7 +31,6 @@ async function getSupabaseClient() {
   const { supabase } = await import('../supabase.ts')
   return supabase as FocusSessionsClient
 }
-import { DEFAULT_USER_ID } from '../constants.ts'
 
 export async function addFocusSessionWithClient(
   client: FocusSessionsClient,
@@ -117,9 +116,8 @@ export async function correctSubmittedFocusSession(
   )
 }
 
-export async function getTodayFocusSessions(userIdOrDate = DEFAULT_USER_ID, maybeDate?: string) {
-  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
-  const targetDate = maybeDate ?? (userIdOrDate === DEFAULT_USER_ID ? getTodayDate() : userIdOrDate)
+export async function getTodayFocusSessions(userId: string, date?: string) {
+  const targetDate = date ?? getTodayDate()
   const supabase = await getSupabaseClient()
   const focusSessionsTable = supabase.from('focus_sessions') as {
     select: (columns: string) => {
@@ -142,7 +140,7 @@ export async function getTodayFocusSessions(userIdOrDate = DEFAULT_USER_ID, mayb
   return (data as FocusSession[]) ?? []
 }
 
-export async function getTodayReturnCount(userId = DEFAULT_USER_ID): Promise<number> {
+export async function getTodayReturnCount(userId: string): Promise<number> {
   const today = getTodayDate()
   const supabase = await getSupabaseClient()
   const dailyRecordsTable = supabase.from('daily_records') as {

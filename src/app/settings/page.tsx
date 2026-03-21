@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import {
@@ -10,7 +11,6 @@ import {
   upsertGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -27,6 +27,7 @@ type AudioClip = {
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
+  const { user } = useAuth()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -56,7 +57,7 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    getGrowthPreferences(DEFAULT_USER_ID)
+    getGrowthPreferences(user!.id)
       .then((prefs) => {
         setGrowthPreferences({
           enable_habit_checkins: prefs.enable_habit_checkins,
@@ -72,8 +73,8 @@ export default function SettingsPage() {
   const loadMedia = useCallback(async () => {
     try {
       const [focusImages, audioClips] = await Promise.all([
-        getFocusImages(DEFAULT_USER_ID),
-        getAudioClips(DEFAULT_USER_ID),
+        getFocusImages(user!.id),
+        getAudioClips(user!.id),
       ])
       setImages(focusImages)
       setClips(audioClips)
@@ -127,7 +128,7 @@ export default function SettingsPage() {
     setSavingGrowthPrefs(true)
 
     try {
-      await upsertGrowthPreferences(DEFAULT_USER_ID, { [key]: value })
+      await upsertGrowthPreferences(user!.id, { [key]: value })
     } catch {
       setGrowthPreferences(previous)
       setError('成长追踪设置保存失败')
@@ -143,7 +144,7 @@ export default function SettingsPage() {
 
     setUploadingImage(true)
     try {
-      await uploadFocusImage(DEFAULT_USER_ID, file, uploadDeviceType)
+      await uploadFocusImage(user!.id, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -161,7 +162,7 @@ export default function SettingsPage() {
 
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(DEFAULT_USER_ID, file, audioLabel.trim())
+      await uploadAudioClip(user!.id, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
