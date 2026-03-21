@@ -25,6 +25,8 @@
 
   --color-sky: #5b8fb9;
   --color-sky-soft: rgba(91,143,185,0.08);
+  --color-sky-glow: rgba(91,143,185,0.14);
+  --color-sky-glow-lg: rgba(91,143,185,0.2);
 
   --color-rose: #c9515b;
   --color-rose-soft: rgba(201,81,91,0.08);
@@ -121,6 +123,15 @@ body::before {
 }
 .float-card.glow-honey:hover {
   box-shadow: 0 6px 16px rgba(0,0,0,0.03), 0 10px 36px rgba(232,184,109,0.22);
+  transform: translateY(-3px);
+}
+
+/* Sky glow */
+.float-card.glow-sky {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 4px 20px var(--color-sky-glow);
+}
+.float-card.glow-sky:hover {
+  box-shadow: 0 6px 16px rgba(0,0,0,0.03), 0 10px 36px var(--color-sky-glow-lg);
   transform: translateY(-3px);
 }
 

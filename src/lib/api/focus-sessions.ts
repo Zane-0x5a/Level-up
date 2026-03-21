@@ -1,33 +1,160 @@
-import { supabase } from '@/lib/supabase'
+export type FocusSession = {
+  id: string
+  user_id: string
+  category: string
+  duration: number
+  date: string
+  created_at: string
+}
 
-export async function addFocusSession(userId: string, category: string, duration: number) {
-  const { error } = await supabase
-    .from('focus_sessions')
+type FocusSessionsClient = {
+  from: (table: string) => unknown
+}
+
+type SingleRowResult<T> = Promise<{ data: T | null; error: Error | null }>
+type ManyRowsResult<T> = Promise<{ data: T[] | null; error: Error | null }>
+
+type DailyReturnCountRow = {
+  return_count: number | null
+}
+
+type ExistingDailyRecordRow = {
+  id: string
+  return_count: number | null
+}
+
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0]
+}
+
+async function getSupabaseClient() {
+  const { supabase } = await import('../supabase.ts')
+  return supabase as FocusSessionsClient
+}
+import { DEFAULT_USER_ID } from '../constants.ts'
+
+export async function addFocusSessionWithClient(
+  client: FocusSessionsClient,
+  userId: string,
+  category: string,
+  duration: number
+) {
+  const focusSessionsTable = client.from('focus_sessions') as {
+    insert: (payload: {
+      user_id: string
+      category: string
+      duration: number
+      date: string
+    }) => {
+      select: (columns: string) => {
+        single: () => SingleRowResult<FocusSession>
+      }
+    }
+  }
+  const { data, error } = await focusSessionsTable
     .insert({
       user_id: userId,
       category,
       duration,
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDate(),
     })
+    .select('*')
+    .single()
   if (error) throw error
+  return data as FocusSession
 }
 
-export async function getTodayFocusSessions(userId: string, date?: string) {
-  const targetDate = date ?? new Date().toISOString().split('T')[0]
-  const { data, error } = await supabase
-    .from('focus_sessions')
+export async function addFocusSession(
+  userId: string,
+  category: string,
+  duration: number
+) {
+  return addFocusSessionWithClient(
+    await getSupabaseClient(),
+    userId,
+    category,
+    duration
+  )
+}
+
+export async function correctSubmittedFocusSessionWithClient(
+  client: FocusSessionsClient,
+  submittedSessionId: string,
+  category: string,
+  duration: number
+) {
+  const focusSessionsTable = client.from('focus_sessions') as {
+    update: (payload: { category: string; duration: number }) => {
+      eq: (column: string, value: string) => {
+        select: (columns: string) => {
+          single: () => SingleRowResult<FocusSession>
+        }
+      }
+    }
+  }
+  const { data, error } = await focusSessionsTable
+    .update({
+      category,
+      duration,
+    })
+    .eq('id', submittedSessionId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as FocusSession
+}
+
+export async function correctSubmittedFocusSession(
+  submittedSessionId: string,
+  category: string,
+  duration: number
+) {
+  return correctSubmittedFocusSessionWithClient(
+    await getSupabaseClient(),
+    submittedSessionId,
+    category,
+    duration
+  )
+}
+
+export async function getTodayFocusSessions(userIdOrDate = DEFAULT_USER_ID, maybeDate?: string) {
+  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
+  const targetDate = maybeDate ?? (userIdOrDate === DEFAULT_USER_ID ? getTodayDate() : userIdOrDate)
+  const supabase = await getSupabaseClient()
+  const focusSessionsTable = supabase.from('focus_sessions') as {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          order: (
+            column: string,
+            options: { ascending: boolean }
+          ) => ManyRowsResult<FocusSession>
+        }
+      }
+    }
+  }
+  const { data, error } = await focusSessionsTable
     .select('*')
     .eq('user_id', userId)
     .eq('date', targetDate)
     .order('created_at', { ascending: false })
   if (error) throw error
-  return data ?? []
+  return (data as FocusSession[]) ?? []
 }
 
-export async function getTodayReturnCount(userId: string): Promise<number> {
-  const today = new Date().toISOString().split('T')[0]
-  const { data, error } = await supabase
-    .from('daily_records')
+export async function getTodayReturnCount(userId = DEFAULT_USER_ID): Promise<number> {
+  const today = getTodayDate()
+  const supabase = await getSupabaseClient()
+  const dailyRecordsTable = supabase.from('daily_records') as {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          single: () => SingleRowResult<DailyReturnCountRow>
+        }
+      }
+    }
+  }
+  const { data, error } = await dailyRecordsTable
     .select('return_count')
     .eq('user_id', userId)
     .eq('date', today)
@@ -37,22 +164,38 @@ export async function getTodayReturnCount(userId: string): Promise<number> {
 }
 
 export async function incrementReturnCount(userId: string, date: string) {
-  const { data: existing } = await supabase
-    .from('daily_records')
+  const supabase = await getSupabaseClient()
+  const dailyRecordsTable = supabase.from('daily_records') as {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        eq: (column: string, value: string) => {
+          single: () => SingleRowResult<ExistingDailyRecordRow>
+        }
+      }
+    }
+    update: (payload: { return_count: number }) => {
+      eq: (column: string, value: string) => Promise<{ error: Error | null }>
+    }
+    insert: (payload: {
+      user_id: string
+      date: string
+      day_type: 'study_day'
+      return_count: number
+    }) => Promise<{ error: Error | null }>
+  }
+  const { data: existing } = await dailyRecordsTable
     .select('id, return_count')
     .eq('user_id', userId)
     .eq('date', date)
     .single()
 
   if (existing) {
-    const { error } = await supabase
-      .from('daily_records')
+    const { error } = await dailyRecordsTable
       .update({ return_count: (existing.return_count ?? 0) + 1 })
       .eq('id', existing.id)
     if (error) throw error
   } else {
-    const { error } = await supabase
-      .from('daily_records')
+    const { error } = await dailyRecordsTable
       .insert({
         user_id: userId,
         date,

@@ -4,7 +4,7 @@
 
 A personal growth dashboard. Not a new productivity system — a connector for tools I already use.
 
-I track intentions in iBetter, log time in iHour, write notes in flomo. Each does one thing well. Level Up doesn't replace them. It pulls the data together, adds an immersive environment to work in, and makes the patterns visible over time.
+I track habits and intentions in a lightweight check-in system, log time in iHour, and write notes in flomo. Each does one thing well. Level Up doesn't replace them. It pulls the data together, adds an immersive environment to work in, and makes the patterns visible over time.
 
 ## Features
 

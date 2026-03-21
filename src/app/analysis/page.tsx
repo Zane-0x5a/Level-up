@@ -1,170 +1,199 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { getAllDailyRecords, clearDailyNote } from '@/lib/api/daily-records'
-import { getStreak, getTotalFocusHours, getWeeklyFocusHours, getTotalReturnCount } from '@/lib/api/stats'
+import { useEffect, useState } from 'react'
+import { clearDailyNote, getAllDailyRecords, type DailyRecord } from '@/lib/api/daily-records'
+import { getGrowthPreferences, type GrowthPreferences } from '@/lib/api/growth-preferences'
+import { getStreak } from '@/lib/api/stats'
+import { DEFAULT_USER_ID } from '@/lib/constants'
+import {
+  buildGrowthAssets,
+  buildGrowthEcho,
+  buildHeatmapData,
+  buildRecentMemory,
+  buildStabilityData,
+  buildTimeStructureTotals,
+  findRecordByDate,
+  getEffectiveFocus,
+  getProgressLabel,
+  getStateLabel,
+} from '@/lib/analysis/growth-metrics'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
 import DayTypeFilter from '@/components/analysis/DayTypeFilter'
 import FocusTimePieChart from '@/components/analysis/FocusTimePieChart'
 import FocusTimeTrendChart from '@/components/analysis/FocusTimeTrendChart'
+import GrowthAssetsGrid from '@/components/analysis/GrowthAssetsGrid'
+import GrowthEchoCard from '@/components/analysis/GrowthEchoCard'
+import GrowthHeatmap from '@/components/analysis/GrowthHeatmap'
 import NotesDrawer from '@/components/analysis/NotesDrawer'
+import StabilityStrip from '@/components/analysis/StabilityStrip'
 import './analysis.css'
 
-type DailyRecord = {
-  date: string
-  day_type: string
-  focus_in_class: number
-  focus_out_class: number
-  entertainment: number
-  ibetter_count: number
-  return_count: number
-  note: string | null
-}
+type PreferencesState = Omit<GrowthPreferences, 'user_id'>
 
-type Metrics = {
-  streak: number
-  totalHours: number
-  weeklyHours: number
-  totalReturns: number
-  // For trend badges we compare weekly vs previous period
-  weeklyTrend: 'up' | 'down' | 'neutral'
+const DEFAULT_PREFERENCES: PreferencesState = {
+  enable_habit_checkins: false,
+  enable_progress_tracking: false,
+  enable_state_tracking: false,
 }
 
 export default function AnalysisPage() {
-  const { user } = useAuth()
   const [records, setRecords] = useState<DailyRecord[]>([])
   const [filter, setFilter] = useState<'all' | 'study_day' | 'rest_day'>('all')
-  const [metrics, setMetrics] = useState<Metrics>({
-    streak: 0,
-    totalHours: 0,
-    weeklyHours: 0,
-    totalReturns: 0,
-    weeklyTrend: 'neutral',
-  })
+  const [streak, setStreak] = useState(0)
+  const [preferences, setPreferences] = useState<PreferencesState>(DEFAULT_PREFERENCES)
 
-  const load = useCallback(async () => {
-    if (!user) return
-    try {
-      const [data, streak, totalHours, weeklyHours, totalReturns] = await Promise.all([
-        getAllDailyRecords(user.id),
-        getStreak(user.id),
-        getTotalFocusHours(user.id),
-        getWeeklyFocusHours(user.id),
-        getTotalReturnCount(user.id),
+  useEffect(() => {
+    let active = true
+
+    ;(async () => {
+      const [recordsResult, streakResult, preferencesResult] = await Promise.allSettled([
+        getAllDailyRecords(DEFAULT_USER_ID),
+        getStreak(DEFAULT_USER_ID),
+        getGrowthPreferences(DEFAULT_USER_ID),
       ])
-      setRecords(data)
 
-      // Simple trend: if weekly > daily avg of total, it's up
-      const avgDaily = totalHours > 0 && data.length > 0 ? totalHours / data.length : 0
-      const weeklyDaily = weeklyHours / 7
-      const weeklyTrend: 'up' | 'down' | 'neutral' =
-        weeklyDaily > avgDaily * 1.05 ? 'up' :
-        weeklyDaily < avgDaily * 0.95 ? 'down' : 'neutral'
+      if (!active) return
 
-      setMetrics({ streak, totalHours, weeklyHours, totalReturns, weeklyTrend })
-    } catch {
-      // ignore load errors
+      if (recordsResult.status === 'fulfilled') {
+        setRecords(recordsResult.value)
+      }
+
+      if (streakResult.status === 'fulfilled') {
+        setStreak(streakResult.value)
+      }
+
+      if (preferencesResult.status === 'fulfilled') {
+        setPreferences({
+          enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
+          enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
+          enable_state_tracking: preferencesResult.value.enable_state_tracking,
+        })
+      }
+    })()
+
+    return () => {
+      active = false
     }
-  }, [user])
+  }, [])
 
-  useEffect(() => { load() }, [load])
+  const reload = async () => {
+    const [recordsResult, streakResult, preferencesResult] = await Promise.allSettled([
+      getAllDailyRecords(DEFAULT_USER_ID),
+      getStreak(DEFAULT_USER_ID),
+      getGrowthPreferences(DEFAULT_USER_ID),
+    ])
 
-  const filtered = filter === 'all'
-    ? records
-    : records.filter(r => r.day_type === filter)
+    if (recordsResult.status === 'fulfilled') {
+      setRecords(recordsResult.value)
+    }
 
-  // Aggregate focus totals for pie chart
-  const totals = filtered.reduce(
-    (acc, r) => ({
-      inClass: acc.inClass + (r.focus_in_class ?? 0),
-      outClass: acc.outClass + (r.focus_out_class ?? 0),
-      entertainment: acc.entertainment + (r.entertainment ?? 0),
-    }),
-    { inClass: 0, outClass: 0, entertainment: 0 }
-  )
+    if (streakResult.status === 'fulfilled') {
+      setStreak(streakResult.value)
+    }
 
-  // Weekly average habit check-ins: sum of ibetter_count in last 7 days / 7
-  const weekAgo = new Date()
-  weekAgo.setDate(weekAgo.getDate() - 7)
-  const weekStr = weekAgo.toISOString().split('T')[0]
-  const weekRecords = records.filter(r => r.date >= weekStr)
-  const weeklyHabitTotal = weekRecords.reduce((sum, r) => sum + (r.ibetter_count ?? 0), 0)
-  const weeklyHabitAvg = parseFloat((weeklyHabitTotal / 7).toFixed(1))
+    if (preferencesResult.status === 'fulfilled') {
+      setPreferences({
+        enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
+        enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
+        enable_state_tracking: preferencesResult.value.enable_state_tracking,
+      })
+    }
+  }
 
-  // Average daily focus from weekly
-  const avgDailyFocus = metrics.weeklyHours > 0 ? (metrics.weeklyHours / 7) : 0
+  const filteredRecords =
+    filter === 'all' ? records : records.filter((record) => record.day_type === filter)
+
+  const todayRecord = findRecordByDate(records, new Date())
+  const totals = buildTimeStructureTotals(filteredRecords)
+  const assets = buildGrowthAssets(filteredRecords, preferences)
+  const heatmapCells = buildHeatmapData(filteredRecords, preferences, 35)
+  const stabilityPoints = buildStabilityData(filteredRecords, preferences, 14)
+  const memories = buildRecentMemory(filteredRecords)
+  const growthEcho = buildGrowthEcho(todayRecord, preferences)
+  const effectiveFocus = todayRecord ? getEffectiveFocus(todayRecord) : 0
 
   return (
     <main className="analysis-page">
-      {/* Header */}
       <div className="analysis-header anim">
-        <h1 className="analysis-title">反思与分析</h1>
+        <div>
+          <h1 className="analysis-title">成长分析</h1>
+          <p className="analysis-subtitle">
+            把努力、波动与积累都看见，才更容易相信今天没有白费。
+          </p>
+        </div>
         <DayTypeFilter value={filter} onChange={setFilter} />
       </div>
 
-      {/* Section 1: Daily Entry Form */}
       <section className="analysis-section anim d1">
-        <DailyEntryForm onSave={load} />
+        <DailyEntryForm onSave={reload} />
       </section>
 
-      {/* Section 2: Charts */}
+      <section className="analysis-section anim d2">
+        <div className="sec-head">
+          <span className="sec-dot honey" />
+          <span className="sec-name">成长回声</span>
+        </div>
+        <GrowthEchoCard
+          message={growthEcho}
+          effectiveFocus={effectiveFocus}
+          returnCount={todayRecord?.return_count ?? 0}
+          progressLabel={
+            preferences.enable_progress_tracking ? getProgressLabel(todayRecord?.progress_level ?? null) : null
+          }
+          stateLabel={preferences.enable_state_tracking ? getStateLabel(todayRecord?.state_label ?? null) : null}
+        />
+      </section>
+
       <section className="analysis-section anim d2">
         <div className="sec-head">
           <span className="sec-dot coral" />
-          <span className="sec-name">数据概览</span>
+          <span className="sec-name">成长脉冲</span>
         </div>
-        <div className="charts-grid">
+        <div className="analysis-pulse-grid">
+          <FocusTimeTrendChart records={filteredRecords} />
+          <GrowthHeatmap cells={heatmapCells} />
+        </div>
+      </section>
+
+      <section className="analysis-section anim d3">
+        <div className="sec-head">
+          <span className="sec-dot sage" />
+          <span className="sec-name">成长结构</span>
+        </div>
+        <div className="analysis-structure-grid">
           <FocusTimePieChart
             inClass={totals.inClass}
             outClass={totals.outClass}
             entertainment={totals.entertainment}
           />
-          <FocusTimeTrendChart records={filtered} />
+          <StabilityStrip points={stabilityPoints} />
         </div>
       </section>
 
-      {/* Section 3: Key Metrics */}
-      <section className="analysis-section anim d3">
-        <div className="sec-head">
-          <span className="sec-dot sage" />
-          <span className="sec-name">关键指标</span>
-        </div>
-        <div className="metrics-grid">
-          <div className="float-card glow-sage metric-card">
-            <div className="metric-number">{weeklyHabitAvg}<span style={{ fontSize: 18, fontWeight: 500, color: 'var(--color-text-3)' }}>次</span></div>
-            <div className="metric-name">周均习惯打卡数</div>
-            <span className={`trend-badge ${weeklyHabitAvg >= 3 ? 'up' : weeklyHabitAvg >= 1 ? 'neutral' : 'down'}`}>
-              {weeklyHabitAvg >= 3 ? '↑ 良好' : weeklyHabitAvg >= 1 ? '— 一般' : '↓ 需加油'}
-            </span>
-          </div>
-          <div className="float-card glow-sage metric-card">
-            <div className="metric-number">{avgDailyFocus.toFixed(1)}<span style={{ fontSize: 18, fontWeight: 500, color: 'var(--color-text-3)' }}>h</span></div>
-            <div className="metric-name">日均专注时长</div>
-            <span className={`trend-badge ${metrics.weeklyTrend}`}>
-              {metrics.weeklyTrend === 'up' ? '↑ 上升' : metrics.weeklyTrend === 'down' ? '↓ 下降' : '— 稳定'}
-            </span>
-          </div>
-          <div className="float-card glow-sage metric-card">
-            <div className="metric-number">{metrics.totalReturns}</div>
-            <div className="metric-name">总回归次数</div>
-            <span className={`trend-badge ${metrics.totalReturns > 0 ? 'up' : 'neutral'}`}>
-              {metrics.totalReturns > 0 ? '↑ 活跃' : '— 待记录'}
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* Section 4: History */}
       <section className="analysis-section anim d4">
         <div className="sec-head">
           <span className="sec-dot honey" />
-          <span className="sec-name">历史总结</span>
+          <span className="sec-name">成长资产</span>
         </div>
-        <NotesDrawer records={filtered} onDeleteNote={async (date) => {
-          if (!user) return
-          try { await clearDailyNote(user.id, date); await load() } catch { /* ignore */ }
-        }} />
+        <GrowthAssetsGrid assets={assets} streak={streak} />
+      </section>
+
+      <section className="analysis-section anim d4">
+        <div className="sec-head">
+          <span className="sec-dot sky" />
+          <span className="sec-name">成长记忆</span>
+        </div>
+        <NotesDrawer
+          records={memories}
+          onDeleteNote={async (date) => {
+            try {
+              await clearDailyNote(DEFAULT_USER_ID, date)
+              await reload()
+            } catch {
+              // Keep the current list if deletion fails.
+            }
+          }}
+        />
       </section>
     </main>
   )

@@ -4,15 +4,19 @@
 CREATE TABLE daily_records (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
-  date DATE NOT NULL UNIQUE,
+  date DATE NOT NULL,
   day_type TEXT NOT NULL CHECK (day_type IN ('study_day', 'rest_day')),
   focus_in_class FLOAT NOT NULL DEFAULT 0,
   focus_out_class FLOAT NOT NULL DEFAULT 0,
   entertainment FLOAT NOT NULL DEFAULT 0,
   ibetter_count INT NOT NULL DEFAULT 0,
   return_count INT NOT NULL DEFAULT 0,
+  progress_level TEXT CHECK (progress_level IN ('slight', 'solid', 'breakthrough')),
+  progress_note TEXT,
+  state_label TEXT CHECK (state_label IN ('recovering', 'steady', 'good', 'energized')),
   note TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(user_id, date)
 );
 
 -- 倒计时
@@ -55,4 +59,14 @@ CREATE TABLE focus_sessions (
   category TEXT NOT NULL CHECK (category IN ('in_class', 'out_class', 'entertainment')),
   duration FLOAT NOT NULL,  -- 单位：小时
   created_at TIMESTAMPTZ DEFAULT NOW()
+);
+ 
+-- 鎴愰暱杩借釜鍋忓ソ
+CREATE TABLE user_growth_preferences (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  enable_habit_checkins BOOLEAN NOT NULL DEFAULT false,
+  enable_progress_tracking BOOLEAN NOT NULL DEFAULT false,
+  enable_state_tracking BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );

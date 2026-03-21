@@ -189,9 +189,19 @@
 .immersive-bg-image {
   position: absolute;
   inset: 0;
+  background-repeat: no-repeat;
   background-size: cover;
   background-position: center;
-  animation: fadeIn 1s var(--ease-spring) both;
+  opacity: 0;
+  transition: opacity 0.48s ease;
+}
+
+.immersive-bg-image-visible {
+  opacity: 1;
+}
+
+.immersive-bg-image-next {
+  will-change: opacity;
 }
 
 .immersive-bg-fallback {
@@ -565,6 +575,25 @@
   margin-bottom: 28px;
 }
 
+.session-end-duration-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.session-end-duration-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.session-end-duration-caption {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-3);
+}
+
 .session-end-actions {
   display: flex;
   gap: 10px;
@@ -620,6 +649,10 @@
     font-size: 13px;
   }
 
+  .immersive-blob {
+    filter: blur(60px);
+  }
+
   .audio-player {
     bottom: 20px;
     padding: 8px 14px;
@@ -636,5 +669,19 @@
 
   .session-end-pills {
     flex-wrap: wrap;
+  }
+
+  .session-end-duration-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .immersive-bg-image {
+    transition: none;
+  }
+
+  .immersive-blob {
+    animation: none;
   }
 }

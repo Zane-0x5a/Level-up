@@ -1,6 +1,12 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  useSyncExternalStore,
+} from 'react'
 import { useNav } from '@/contexts/NavContext'
 import FocusDefaultState from '@/components/focus/FocusDefaultState'
 import SpaceTransition from '@/components/focus/SpaceTransition'
@@ -9,32 +15,64 @@ import SessionEndPanel from '@/components/focus/SessionEndPanel'
 import './focus.css'
 
 type FocusState = 'default' | 'transitioning' | 'immersive' | 'ending'
+type PersistedFocusState = Exclude<FocusState, 'transitioning'>
 
 const SESSION_KEY = 'focus_state'
+const STORE_EVENT = 'focus-state-change'
+
+const getStoredFocusState = (): PersistedFocusState => {
+  if (typeof window === 'undefined') {
+    return 'default'
+  }
+
+  const saved = sessionStorage.getItem(SESSION_KEY)
+  return saved === 'immersive' || saved === 'ending' ? saved : 'default'
+}
+
+const subscribeToFocusState = (callback: () => void) => {
+  if (typeof window === 'undefined') {
+    return () => undefined
+  }
+
+  const handleChange = () => callback()
+  window.addEventListener('storage', handleChange)
+  window.addEventListener(STORE_EVENT, handleChange)
+
+  return () => {
+    window.removeEventListener('storage', handleChange)
+    window.removeEventListener(STORE_EVENT, handleChange)
+  }
+}
+
+const setStoredFocusState = (nextState: PersistedFocusState) => {
+  if (nextState === 'default') {
+    sessionStorage.removeItem(SESSION_KEY)
+  } else {
+    sessionStorage.setItem(SESSION_KEY, nextState)
+  }
+
+  window.dispatchEvent(new Event(STORE_EVENT))
+}
 
 export default function FocusPage() {
-  const [state, setState] = useState<FocusState>('default')
+  const persistedState = useSyncExternalStore<PersistedFocusState>(
+    subscribeToFocusState,
+    getStoredFocusState,
+    () => 'default'
+  )
+  const [isTransitioning, setIsTransitioning] = useState(false)
   const [exiting, setExiting] = useState(false)
   const { setNavHidden } = useNav()
   const orbRef = useRef<HTMLDivElement>(null)
   const [orbCenter, setOrbCenter] = useState<{ x: number; y: number } | null>(null)
+  const state: FocusState = isTransitioning ? 'transitioning' : persistedState
 
-  // Restore focus state from sessionStorage on mount (avoids hydration mismatch)
-  useEffect(() => {
-    const saved = sessionStorage.getItem(SESSION_KEY)
-    if (saved === 'immersive' || saved === 'ending') {
-      setState(saved as FocusState)
-    }
-  }, [])
-
-  // Sync nav visibility and sessionStorage whenever state changes
+  // Sync nav visibility whenever focus is fullscreen
   useEffect(() => {
     if (state === 'immersive' || state === 'ending') {
       setNavHidden(true)
-      sessionStorage.setItem(SESSION_KEY, state)
     } else {
       setNavHidden(false)
-      sessionStorage.removeItem(SESSION_KEY)
     }
   }, [state, setNavHidden])
 
@@ -51,25 +89,26 @@ export default function FocusPage() {
 
     // After content fades (400ms), start transition
     setTimeout(() => {
-      setState('transitioning')
+      setIsTransitioning(true)
       setExiting(false)
     }, 400)
   }, [])
 
   const handleTransitionComplete = useCallback(() => {
-    setState('immersive')
+    setStoredFocusState('immersive')
+    setIsTransitioning(false)
   }, [])
 
   const handleExit = useCallback(() => {
-    setState('ending')
+    setStoredFocusState('ending')
   }, [])
 
   const handleSessionComplete = useCallback(() => {
-    setState('default')
+    setStoredFocusState('default')
   }, [])
 
   const handleSkip = useCallback(() => {
-    setState('default')
+    setStoredFocusState('default')
   }, [])
 
   return (

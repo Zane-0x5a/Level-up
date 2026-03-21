@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, RefObject } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useState, useEffect, RefObject } from 'react'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getWeeklyFocusHours } from '@/lib/api/stats'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type Props = {
   onEnter: () => void
@@ -19,37 +19,48 @@ const quietLines = [
 ]
 
 export default function FocusDefaultState({ onEnter, orbRef }: Props) {
-  const { user } = useAuth()
   const [todayHours, setTodayHours] = useState(0)
   const [returnCount, setReturnCount] = useState(0)
   const [lastSession, setLastSession] = useState<{ category: string; duration: number } | null>(null)
   const [weeklyHours, setWeeklyHours] = useState(0)
   const [quietLine] = useState(() => quietLines[Math.floor(Math.random() * quietLines.length)])
 
-  const load = useCallback(async () => {
-    if (!user) return
-    try {
-      const [sessions, returns, weekly] = await Promise.all([
-        getTodayFocusSessions(user.id),
-        getTodayReturnCount(user.id),
-        getWeeklyFocusHours(user.id),
-      ])
-      const total = sessions.reduce((s: number, r: { duration: number }) => s + (r.duration ?? 0), 0)
-      setTodayHours(total)
-      setReturnCount(returns)
-      setWeeklyHours(weekly)
-      if (sessions.length > 0) {
-        setLastSession({
-          category: sessions[0].category,
-          duration: sessions[0].duration,
-        })
-      }
-    } catch {
-      // Silently handle — page still works with zero state
-    }
-  }, [user])
+  useEffect(() => {
+    let cancelled = false
 
-  useEffect(() => { load() }, [load])
+    const load = async () => {
+      try {
+        const [sessions, returns, weekly] = await Promise.all([
+          getTodayFocusSessions(DEFAULT_USER_ID),
+          getTodayReturnCount(DEFAULT_USER_ID),
+          getWeeklyFocusHours(DEFAULT_USER_ID),
+        ])
+
+        if (cancelled) return
+
+        const total = sessions.reduce((s: number, r: { duration: number }) => s + (r.duration ?? 0), 0)
+        setTodayHours(total)
+        setReturnCount(returns)
+        setWeeklyHours(weekly)
+        setLastSession(
+          sessions.length > 0
+            ? {
+                category: sessions[0].category,
+                duration: sessions[0].duration,
+              }
+            : null
+        )
+      } catch {
+        // Silently handle — page still works with zero state
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const formatHours = (h: number) => {
     const hours = Math.floor(h)
