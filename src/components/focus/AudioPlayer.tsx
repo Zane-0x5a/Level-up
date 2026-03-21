@@ -1,40 +1,63 @@
 'use client'
 
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getAudioClips } from '@/lib/api/audio-clips'
 
 type Clip = { id: string; label: string; file_path: string }
 
 export default function AudioPlayer() {
+  const { user } = useAuth()
   const [clips, setClips] = useState<Clip[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const loadedRef = useRef(false)
 
-  const load = useCallback(async () => {
-    try {
-      const data = await getAudioClips()
-      setClips(data)
-    } catch {
-      // No audio available
+  useEffect(() => {
+    if (!user) return
+
+    let cancelled = false
+
+    const load = async () => {
+      try {
+        const data = await getAudioClips(user.id)
+        if (!cancelled) {
+          setClips(data)
+        }
+      } catch {
+        // No audio available
+      }
     }
-  }, [])
 
-  useEffect(() => { load() }, [load])
+    void load()
 
-  // Update audio source when index changes
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  // Set audio source only on initial clips load or explicit index change
   useEffect(() => {
     if (!audioRef.current || clips.length === 0) return
     const clip = clips[currentIndex]
     if (!clip) return
+    // On initial load: set src without resetting if already playing
+    if (!loadedRef.current) {
+      loadedRef.current = true
+      audioRef.current.src = clip.file_path
+      audioRef.current.load()
+      return
+    }
+    // On index change: switch track and resume if was playing (read from DOM, not React state)
+    const wasPlaying = !audioRef.current.paused
     audioRef.current.src = clip.file_path
     audioRef.current.load()
-    if (playing) {
+    if (wasPlaying) {
       audioRef.current.play().catch(() => {})
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, clips])
 
   const toggle = useCallback(() => {

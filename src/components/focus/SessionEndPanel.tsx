@@ -1,11 +1,27 @@
 'use client'
 
-import { useState } from 'react'
-import { addFocusSession } from '@/lib/api/focus-sessions'
+import { useEffect, useState } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
+import {
+  addFocusSession,
+  correctSubmittedFocusSession,
+  type FocusSession,
+} from '@/lib/api/focus-sessions'
+import {
+  clearFocusDraft,
+  DEFAULT_FOCUS_DRAFT,
+  getFocusDurationHours,
+  readFocusDraft,
+  writeFocusDraft,
+} from '@/lib/focus-draft'
 
 type Props = {
   onComplete: () => void
   onSkip: () => void
+}
+
+type SessionEndPanelContentProps = Props & {
+  userId: string | null
 }
 
 const CATEGORIES = [
@@ -14,23 +30,175 @@ const CATEGORIES = [
   { value: 'entertainment', label: '娱乐消费' },
 ]
 
-export default function SessionEndPanel({ onComplete, onSkip }: Props) {
-  const [category, setCategory] = useState('in_class')
-  const [duration, setDuration] = useState('')
+const SUBMITTED_SESSION_PREFIX = 'focus-last-submitted-session'
+
+function getInitialDraft(userId: string | null) {
+  return userId ? readFocusDraft(userId) : DEFAULT_FOCUS_DRAFT
+}
+
+function getSubmittedSessionKey(userId: string) {
+  return `${SUBMITTED_SESSION_PREFIX}:${userId}`
+}
+
+function readSubmittedSession(userId: string | null): FocusSession | null {
+  if (!userId || typeof window === 'undefined') {
+    return null
+  }
+
+  try {
+    const raw = window.sessionStorage.getItem(getSubmittedSessionKey(userId))
+    if (!raw) return null
+
+    const parsed = JSON.parse(raw) as Partial<FocusSession>
+    if (
+      typeof parsed.id !== 'string' ||
+      typeof parsed.user_id !== 'string' ||
+      typeof parsed.category !== 'string' ||
+      typeof parsed.duration !== 'number' ||
+      typeof parsed.date !== 'string' ||
+      typeof parsed.created_at !== 'string'
+    ) {
+      return null
+    }
+
+    return parsed as FocusSession
+  } catch {
+    return null
+  }
+}
+
+function writeSubmittedSession(userId: string, session: FocusSession) {
+  if (typeof window === 'undefined') return
+
+  window.sessionStorage.setItem(
+    getSubmittedSessionKey(userId),
+    JSON.stringify(session)
+  )
+}
+
+function clearSubmittedSession(userId: string | null) {
+  if (!userId || typeof window === 'undefined') return
+
+  window.sessionStorage.removeItem(getSubmittedSessionKey(userId))
+}
+
+function getDraftFromDuration(durationHours: number) {
+  const totalMinutes = Math.round(durationHours * 60)
+
+  return {
+    hours: String(Math.floor(totalMinutes / 60)),
+    minutes: String(totalMinutes % 60),
+  }
+}
+
+function formatDuration(durationHours: number) {
+  const { hours, minutes } = getDraftFromDuration(durationHours)
+  const hourValue = Number(hours)
+  const minuteValue = Number(minutes)
+  const parts = []
+
+  if (hourValue > 0) {
+    parts.push(`${hourValue}小时`)
+  }
+
+  if (minuteValue > 0) {
+    parts.push(`${minuteValue}分钟`)
+  }
+
+  return parts.join('') || '0分钟'
+}
+
+function getCategoryLabel(category: string) {
+  return CATEGORIES.find(item => item.value === category)?.label ?? category
+}
+
+function SessionEndPanelContent({
+  userId,
+  onComplete,
+  onSkip,
+}: SessionEndPanelContentProps) {
+  const [category, setCategory] = useState(() => getInitialDraft(userId).category)
+  const [hours, setHours] = useState(() => getInitialDraft(userId).hours)
+  const [minutes, setMinutes] = useState(() => getInitialDraft(userId).minutes)
+  const [submittedSession, setSubmittedSession] = useState<FocusSession | null>(
+    () => readSubmittedSession(userId)
+  )
+  const [isEditingSubmittedSession, setIsEditingSubmittedSession] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const isShowingConfirmation =
+    submittedSession !== null && !isEditingSubmittedSession
+
+  useEffect(() => {
+    if (!userId || submittedSession) return
+
+    writeFocusDraft(userId, { category, hours, minutes })
+  }, [category, hours, minutes, submittedSession, userId])
+
+  const handleDone = () => {
+    clearSubmittedSession(userId)
+    setSubmittedSession(null)
+    setIsEditingSubmittedSession(false)
+    onComplete()
+  }
+
+  const handleSkipPanel = () => {
+    if (userId) {
+      clearFocusDraft(userId)
+    }
+    clearSubmittedSession(userId)
+    setSubmittedSession(null)
+    setIsEditingSubmittedSession(false)
+    onSkip()
+  }
+
+  const handleEditSubmittedSession = () => {
+    if (!submittedSession) return
+
+    const nextDraft = getDraftFromDuration(submittedSession.duration)
+    setCategory(submittedSession.category)
+    setHours(nextDraft.hours)
+    setMinutes(nextDraft.minutes)
+    setError('')
+    setIsEditingSubmittedSession(true)
+  }
+
+  const handleCancelEdit = () => {
+    if (!submittedSession) return
+
+    const nextDraft = getDraftFromDuration(submittedSession.duration)
+    setCategory(submittedSession.category)
+    setHours(nextDraft.hours)
+    setMinutes(nextDraft.minutes)
+    setError('')
+    setIsEditingSubmittedSession(false)
+  }
 
   const handleSubmit = async () => {
-    const hrs = parseFloat(duration)
-    if (!hrs || hrs <= 0) {
+    if (!userId) return
+    const durationHours = getFocusDurationHours({ hours, minutes })
+
+    if (durationHours === null) {
       setError('请输入有效的时长')
       return
     }
+
     setError('')
     setSubmitting(true)
     try {
-      await addFocusSession(category, hrs)
-      onComplete()
+      const nextSession =
+        submittedSession && isEditingSubmittedSession
+          ? await correctSubmittedFocusSession(
+              submittedSession.id,
+              category,
+              durationHours
+            )
+          : await addFocusSession(userId, category, durationHours)
+      clearFocusDraft(userId)
+      writeSubmittedSession(userId, nextSession)
+      setSubmittedSession(nextSession)
+      setIsEditingSubmittedSession(false)
+      setSubmitting(false)
     } catch (err) {
       console.error('专注记录保存失败:', err)
       setError('保存失败，请重试')
@@ -41,59 +209,128 @@ export default function SessionEndPanel({ onComplete, onSkip }: Props) {
   return (
     <div className="session-end-backdrop">
       <div className="session-end-card float-card glow-coral">
-        <div className="session-end-title">记录本次专注</div>
-
-        {/* Category pills */}
-        <div className="session-end-label">专注类型</div>
-        <div className="session-end-pills">
-          {CATEGORIES.map(c => (
-            <button
-              key={c.value}
-              className={`pill${category === c.value ? ' active' : ''}`}
-              onClick={() => setCategory(c.value)}
-            >
-              {c.label}
-            </button>
-          ))}
+        <div className="session-end-title">
+          {isShowingConfirmation ? '已记录本次专注' : isEditingSubmittedSession ? '更正刚刚记录' : '记录本次专注'}
         </div>
 
-        {/* Duration input */}
-        <div className="session-end-duration">
-          <div className="session-end-label">时长（小时）</div>
-          <input
-            type="number"
-            step="0.5"
-            min="0"
-            placeholder="例如 1.5"
-            value={duration}
-            onChange={e => {
-              setDuration(e.target.value)
-              setError('')
-            }}
-            className="field-input"
-          />
-        </div>
+        {isShowingConfirmation && submittedSession ? (
+          <>
+            <div className="session-end-label">刚刚保存的记录</div>
+            <div className="session-end-duration">
+              <div className="session-end-label">{getCategoryLabel(submittedSession.category)}</div>
+              <div className="session-end-label">{formatDuration(submittedSession.duration)}</div>
+            </div>
 
-        {/* Actions */}
-        <div className="session-end-actions">
-          <button
-            className="btn-warm"
-            onClick={handleSubmit}
-            disabled={submitting || !duration}
-          >
-            {submitting ? '保存中...' : '确认记录'}
-          </button>
-          <button
-            className="btn-outline"
-            onClick={onSkip}
-          >
-            跳过
-          </button>
-        </div>
+            <div className="session-end-actions">
+              <button
+                className="btn-warm"
+                onClick={handleDone}
+              >
+                完成
+              </button>
+              <button
+                className="btn-outline"
+                onClick={handleEditSubmittedSession}
+              >
+                更正刚刚记录
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Category pills */}
+            <div className="session-end-label">专注类型</div>
+            <div className="session-end-pills">
+              {CATEGORIES.map(c => (
+                <button
+                  key={c.value}
+                  className={`pill${category === c.value ? ' active' : ''}`}
+                  onClick={() => setCategory(c.value)}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
 
-        {/* Error feedback */}
+            {/* Duration input */}
+            <div className="session-end-duration">
+              <div className="session-end-label">时长</div>
+              <div className="session-end-duration-fields">
+                <label className="session-end-duration-field">
+                  <span className="session-end-duration-caption">小时</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    placeholder="0"
+                    value={hours}
+                    onChange={e => {
+                      setHours(e.target.value)
+                      setError('')
+                    }}
+                    className="field-input"
+                  />
+                </label>
+                <label className="session-end-duration-field">
+                  <span className="session-end-duration-caption">分钟</span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    max="59"
+                    placeholder="30"
+                    value={minutes}
+                    onChange={e => {
+                      setMinutes(e.target.value)
+                      setError('')
+                    }}
+                    className="field-input"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="session-end-actions">
+              <button
+                className="btn-warm"
+                onClick={handleSubmit}
+                disabled={submitting || (!hours.trim() && !minutes.trim())}
+              >
+                {submitting
+                  ? isEditingSubmittedSession
+                    ? '保存更正中...'
+                    : '保存中...'
+                  : isEditingSubmittedSession
+                    ? '保存更正'
+                    : '确认记录'}
+              </button>
+              <button
+                className="btn-outline"
+                onClick={isEditingSubmittedSession ? handleCancelEdit : handleSkipPanel}
+              >
+                {isEditingSubmittedSession ? '返回确认' : '跳过'}
+              </button>
+            </div>
+          </>
+        )}
+
         {error && <div className="session-end-error">{error}</div>}
       </div>
     </div>
+  )
+}
+
+export default function SessionEndPanel(props: Props) {
+  const { user } = useAuth()
+
+  return (
+    <SessionEndPanelContent
+      key={user?.id ?? 'anonymous'}
+      userId={user?.id ?? null}
+      {...props}
+    />
   )
 }
