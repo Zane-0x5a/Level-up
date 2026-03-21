@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════
+   NICKNAME MODAL — Overlay + Card
+   Will be merged into community.css in Task 4
+   ═══════════════════════════════════════ */
+
+.nickname-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(43, 45, 66, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fadeIn 0.3s ease both;
+}
+
+.nickname-modal {
+  width: 90%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  text-align: center;
+}
+
+.nickname-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.nickname-desc {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text-2);
+  margin: 0;
+}
+
+.nickname-modal .field-input {
+  text-align: center;
+  font-size: 16px;
+}
+
+.nickname-modal .btn-warm {
+  align-self: center;
+  min-width: 120px;
+}
+
+.nickname-modal .btn-warm:disabled {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.nickname-error {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--color-rose);
+  padding: 6px 12px;
+  background: var(--color-rose-soft);
+  border-radius: var(--radius-xs);
+}

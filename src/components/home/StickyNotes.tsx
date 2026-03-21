@@ -1,25 +1,30 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getStickyNotes, addStickyNote, deleteStickyNote } from '@/lib/api/sticky-notes'
+import { cached, cache } from '@/lib/home-cache'
 
 type Note = { id: string; content: string }
 
 export default function StickyNotes() {
-  const [notes, setNotes] = useState<Note[]>([])
+  const { user } = useAuth()
+  const [notes, setNotes] = useState<Note[]>(() => cached<Note[]>('notes:list') ?? [])
   const [showInput, setShowInput] = useState(false)
   const [text, setText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
+    if (!user) return
     try {
-      const data = await getStickyNotes()
+      const data = await getStickyNotes(user.id)
       setNotes(data ?? [])
+      cache('notes:list', data ?? [])
     } catch {
       setNotes([])
     }
-  }, [])
+  }, [user])
 
   useEffect(() => { load() }, [load])
 
@@ -31,10 +36,10 @@ export default function StickyNotes() {
   }, [showInput])
 
   const handleAdd = async () => {
-    if (!text.trim() || isSubmitting) return
+    if (!text.trim() || isSubmitting || !user) return
     setIsSubmitting(true)
     try {
-      await addStickyNote(text.trim())
+      await addStickyNote(user.id, text.trim())
       setText('')
       setShowInput(false)
       await load()
@@ -46,6 +51,7 @@ export default function StickyNotes() {
   }
 
   const handleDelete = async (id: string) => {
+    if (!user) return
     try {
       await deleteStickyNote(id)
       await load()

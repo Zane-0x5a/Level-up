@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Sora, Lexend, DM_Mono } from "next/font/google";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { NavProvider } from "@/contexts/NavContext";
 import TopNav from "@/components/TopNav";
 import BottomTabBar from "@/components/BottomTabBar";
+import AuthGuard from "@/components/AuthGuard";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-display" });
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-body" });
@@ -29,15 +31,19 @@ export default function RootLayout({
   return (
     <html lang="zh" className={`h-full ${sora.variable} ${lexend.variable} ${dmMono.variable}`}>
       <body className="antialiased min-h-full">
-        <NavProvider>
-          <TopNav />
-          <BottomTabBar />
+        <AuthProvider>
+          <AuthGuard>
+            <NavProvider>
+              <TopNav />
+              <BottomTabBar />
 
-          {/* Page content */}
-          <div className="page-content">
-            {children}
-          </div>
-        </NavProvider>
+              {/* Page content */}
+              <div className="page-content">
+                {children}
+              </div>
+            </NavProvider>
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );

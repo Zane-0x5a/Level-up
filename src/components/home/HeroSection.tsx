@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getStreak } from '@/lib/api/stats'
+import { cached, cache } from '@/lib/home-cache'
 
 const WEEKDAYS = [
   '\u661F\u671F\u65E5', '\u661F\u671F\u4E00', '\u661F\u671F\u4E8C',
@@ -24,8 +26,9 @@ function splitGreeting(text: string): [string, string] {
 }
 
 export default function HeroSection() {
-  const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
-  const [streak, setStreak] = useState(0)
+  const { user } = useAuth()
+  const [dayType, setDayType] = useState<'study_day' | 'rest_day'>(() => cached<'study_day' | 'rest_day'>('hero:dayType') ?? 'study_day')
+  const [streak, setStreak] = useState(() => cached<number>('hero:streak') ?? 0)
   const [dateStr, setDateStr] = useState('')
   const [todayStr, setTodayStr] = useState('')
   const [greeting, setGreeting] = useState(DEFAULT_GREETINGS[0])
@@ -53,29 +56,33 @@ export default function HeroSection() {
 
   useEffect(() => {
     async function load() {
+      if (!user) return
       try {
         const today = new Date().toISOString().split('T')[0]
         const [record, streakCount] = await Promise.all([
-          getDailyRecord(today),
-          getStreak(),
+          getDailyRecord(user.id, today),
+          getStreak(user.id),
         ])
         if (record?.day_type === 'rest_day') {
           setDayType('rest_day')
         }
         setStreak(streakCount)
+        cache('hero:dayType', record?.day_type === 'rest_day' ? 'rest_day' : 'study_day')
+        cache('hero:streak', streakCount)
       } catch {
         // Silently handle error, keep defaults
       }
     }
     load()
-  }, [])
+  }, [user])
 
   const handleToggleDayType = async () => {
+    if (!user) return
     const newType = dayType === 'study_day' ? 'rest_day' : 'study_day'
     const prevType = dayType
     setDayType(newType)
     try {
-      await upsertDailyRecord({ date: todayStr, day_type: newType })
+      await upsertDailyRecord(user.id, { date: todayStr, day_type: newType })
     } catch {
       setDayType(prevType)
     }
