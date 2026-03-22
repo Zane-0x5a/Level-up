@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import {
   addFocusSession,
   correctSubmittedFocusSession,
@@ -14,6 +13,7 @@ import {
   readFocusDraft,
   writeFocusDraft,
 } from '@/lib/focus-draft'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type Props = {
   onComplete: () => void
@@ -324,11 +324,10 @@ function SessionEndPanelContent({
 }
 
 export default function SessionEndPanel(props: Props) {
-  const { user } = useAuth()
   return (
     <SessionEndPanelContent
-      key={user?.id ?? 'anon'}
-      userId={user?.id ?? null}
+      key={DEFAULT_USER_ID}
+      userId={DEFAULT_USER_ID}
       {...props}
     />
   )

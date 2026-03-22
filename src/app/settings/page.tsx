@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import {
@@ -11,6 +10,7 @@ import {
   upsertGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -27,7 +27,6 @@ type AudioClip = {
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
-  const { user } = useAuth()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -45,6 +44,11 @@ export default function SettingsPage() {
   const [newGreeting, setNewGreeting] = useState('')
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
+  const confirmedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'>>(
+    DEFAULT_GROWTH_PREFERENCES
+  )
+  const queuedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'> | null>(null)
+  const isSavingGrowthPreferencesRef = useRef(false)
 
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
@@ -57,13 +61,16 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    getGrowthPreferences(user!.id)
+    getGrowthPreferences(DEFAULT_USER_ID)
       .then((prefs) => {
-        setGrowthPreferences({
+        const next = {
           enable_habit_checkins: prefs.enable_habit_checkins,
           enable_progress_tracking: prefs.enable_progress_tracking,
           enable_state_tracking: prefs.enable_state_tracking,
-        })
+        }
+
+        setGrowthPreferences(next)
+        confirmedGrowthPreferencesRef.current = next
       })
       .catch((err) => {
         console.error('加载成长追踪偏好失败:', err)
@@ -73,8 +80,8 @@ export default function SettingsPage() {
   const loadMedia = useCallback(async () => {
     try {
       const [focusImages, audioClips] = await Promise.all([
-        getFocusImages(user!.id),
-        getAudioClips(user!.id),
+        getFocusImages(DEFAULT_USER_ID),
+        getAudioClips(DEFAULT_USER_ID),
       ])
       setImages(focusImages)
       setClips(audioClips)
@@ -117,25 +124,40 @@ export default function SettingsPage() {
     }
   }
 
-  const handleGrowthPreferenceToggle = async (
-    key: keyof Omit<GrowthPreferences, 'user_id'>,
-    value: boolean
-  ) => {
-    const previous = growthPreferences
-    const next = { ...growthPreferences, [key]: value }
+  const flushGrowthPreferencesQueue = useCallback(async () => {
+    if (isSavingGrowthPreferencesRef.current) return
 
-    setGrowthPreferences(next)
+    isSavingGrowthPreferencesRef.current = true
     setSavingGrowthPrefs(true)
 
     try {
-      await upsertGrowthPreferences(user!.id, { [key]: value })
+      while (queuedGrowthPreferencesRef.current) {
+        const next = queuedGrowthPreferencesRef.current
+        queuedGrowthPreferencesRef.current = null
+
+        await upsertGrowthPreferences(DEFAULT_USER_ID, next)
+        confirmedGrowthPreferencesRef.current = next
+      }
     } catch {
-      setGrowthPreferences(previous)
+      queuedGrowthPreferencesRef.current = null
+      setGrowthPreferences(confirmedGrowthPreferencesRef.current)
       setError('成长追踪设置保存失败')
       setTimeout(() => setError(null), 3000)
     } finally {
+      isSavingGrowthPreferencesRef.current = false
       setSavingGrowthPrefs(false)
     }
+  }, [])
+
+  const handleGrowthPreferenceToggle = (
+    key: keyof Omit<GrowthPreferences, 'user_id'>,
+    value: boolean
+  ) => {
+    const next = { ...growthPreferences, [key]: value }
+
+    setGrowthPreferences(next)
+    queuedGrowthPreferencesRef.current = next
+    void flushGrowthPreferencesQueue()
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -144,7 +166,7 @@ export default function SettingsPage() {
 
     setUploadingImage(true)
     try {
-      await uploadFocusImage(user!.id, file, uploadDeviceType)
+      await uploadFocusImage(DEFAULT_USER_ID, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -162,7 +184,7 @@ export default function SettingsPage() {
 
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(user!.id, file, audioLabel.trim())
+      await uploadAudioClip(DEFAULT_USER_ID, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
