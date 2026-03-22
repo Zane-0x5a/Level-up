@@ -1,12 +1,12 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages } from '@/lib/api/focus-images'
 import { incrementReturnCount, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getStickyNotes } from '@/lib/api/sticky-notes'
 import ReturnButton from './ReturnButton'
 import AudioPlayer from './AudioPlayer'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 type Props = {
   onExit: () => void
@@ -276,11 +276,10 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
 }
 
 export default function FocusImmersiveState(props: Props) {
-  const { user } = useAuth()
   return (
     <FocusImmersiveStateContent
-      key={user?.id ?? 'anon'}
-      userId={user?.id ?? null}
+      key={DEFAULT_USER_ID}
+      userId={DEFAULT_USER_ID}
       {...props}
     />
   )

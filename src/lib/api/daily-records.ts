@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { DEFAULT_USER_ID } from '@/lib/constants'
 
 export type ProgressLevel = 'slight' | 'solid' | 'breakthrough'
 export type StateLabel = 'recovering' | 'steady' | 'good' | 'energized'
@@ -33,7 +34,9 @@ export type DailyRecordInput = {
   state_label?: StateLabel | null
 }
 
-export async function getDailyRecord(userId: string, date: string): Promise<DailyRecord | null> {
+export async function getDailyRecord(userIdOrDate: string, maybeDate?: string): Promise<DailyRecord | null> {
+  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
+  const date = maybeDate ?? userIdOrDate
   const { data, error } = await supabase
     .from('daily_records')
     .select('*')
@@ -44,7 +47,12 @@ export async function getDailyRecord(userId: string, date: string): Promise<Dail
   return (data as DailyRecord | null) ?? null
 }
 
-export async function upsertDailyRecord(userId: string, record: DailyRecordInput) {
+export async function upsertDailyRecord(
+  userIdOrRecord: string | DailyRecordInput,
+  maybeRecord?: DailyRecordInput
+) {
+  const userId = typeof userIdOrRecord === 'string' ? userIdOrRecord : DEFAULT_USER_ID
+  const record = typeof userIdOrRecord === 'string' ? maybeRecord! : userIdOrRecord
   const { error } = await supabase
     .from('daily_records')
     .upsert(
@@ -54,7 +62,9 @@ export async function upsertDailyRecord(userId: string, record: DailyRecordInput
   if (error) throw error
 }
 
-export async function clearDailyNote(userId: string, date: string) {
+export async function clearDailyNote(userIdOrDate: string, maybeDate?: string) {
+  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
+  const date = maybeDate ?? userIdOrDate
   const { error } = await supabase
     .from('daily_records')
     .update({ note: null })
@@ -63,7 +73,7 @@ export async function clearDailyNote(userId: string, date: string) {
   if (error) throw error
 }
 
-export async function getAllDailyRecords(userId: string) {
+export async function getAllDailyRecords(userId = DEFAULT_USER_ID) {
   const { data, error } = await supabase
     .from('daily_records')
     .select('*')

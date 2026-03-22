@@ -13,9 +13,18 @@ interface Props {
   onNewMessage?: (message: Message) => void
 }
 
+interface CheckinDialogState {
+  date: string
+  dayType: string
+  focusMinutes: number
+  noteSnippet?: string
+}
+
 export default function ChatInput({ channelId, userId, replyTo, onClearReply, onNewMessage }: Props) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
+  const [checkinDialog, setCheckinDialog] = useState<CheckinDialogState | null>(null)
+  const [includeNote, setIncludeNote] = useState(false)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const imageInputRef = useRef<HTMLInputElement>(null)
 
@@ -57,6 +66,7 @@ export default function ChatInput({ channelId, userId, replyTo, onClearReply, on
   }
 
   const handleCheckin = async () => {
+    if (sending) return
     setSending(true)
     try {
       const today = new Date().toISOString().split('T')[0]
@@ -64,14 +74,33 @@ export default function ChatInput({ channelId, userId, replyTo, onClearReply, on
         getDailyRecord(userId, today),
         getTodayFocusSessions(userId),
       ])
-      const focusMinutes = sessions.reduce((sum: number, s: any) => sum + (s.duration ?? 0), 0)
-      const msg = await sendCheckinMessage(channelId, userId, {
+      const focusMinutes = Math.round(sessions.reduce((sum: number, s: any) => sum + (s.duration ?? 0), 0) / 60)
+      setCheckinDialog({
         date: today,
-        day_type: record?.day_type ?? 'study_day',
-        focus_minutes: focusMinutes,
-        note_snippet: record?.note ? record.note.slice(0, 50) : undefined,
+        dayType: record?.day_type ?? 'study_day',
+        focusMinutes,
+        noteSnippet: record?.note ? record.note.slice(0, 50) : undefined,
+      })
+      setIncludeNote(false)
+    } catch (err) {
+      console.error('获取打卡数据失败:', err)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handleCheckinConfirm = async () => {
+    if (!checkinDialog) return
+    setSending(true)
+    try {
+      const msg = await sendCheckinMessage(channelId, userId, {
+        date: checkinDialog.date,
+        day_type: checkinDialog.dayType,
+        focus_minutes: checkinDialog.focusMinutes,
+        note_snippet: includeNote ? checkinDialog.noteSnippet : undefined,
       })
       onNewMessage?.(msg)
+      setCheckinDialog(null)
     } catch (err) {
       console.error('打卡失败:', err)
     } finally {
@@ -81,7 +110,48 @@ export default function ChatInput({ channelId, userId, replyTo, onClearReply, on
 
   return (
     <div className="chat-input-area">
-      {replyTo && (
+      {checkinDialog && (
+        <div className="checkin-privacy-overlay" onClick={() => setCheckinDialog(null)}>
+          <div className="checkin-privacy-dialog" onClick={e => e.stopPropagation()}>
+            <h3 className="checkin-privacy-title">分享打卡</h3>
+            <div className="checkin-privacy-preview">
+              <div className="checkin-privacy-row">
+                <span className="checkin-privacy-label">专注时长</span>
+                <span className="checkin-privacy-val">
+                  {Math.floor(checkinDialog.focusMinutes / 60)}h
+                  {checkinDialog.focusMinutes % 60 > 0 ? `${checkinDialog.focusMinutes % 60}m` : ''}
+                </span>
+              </div>
+              <div className="checkin-privacy-row">
+                <span className="checkin-privacy-label">日类型</span>
+                <span className="checkin-privacy-val">
+                  {checkinDialog.dayType === 'rest_day' ? '假期' : '上学日'}
+                </span>
+              </div>
+            </div>
+            {checkinDialog.noteSnippet && (
+              <label className="checkin-privacy-toggle">
+                <input
+                  type="checkbox"
+                  checked={includeNote}
+                  onChange={e => setIncludeNote(e.target.checked)}
+                />
+                <span>附带今日总结</span>
+                {includeNote && (
+                  <p className="checkin-privacy-note-preview">{checkinDialog.noteSnippet}{checkinDialog.noteSnippet.length >= 50 ? '…' : ''}</p>
+                )}
+              </label>
+            )}
+            <div className="checkin-privacy-actions">
+              <button className="checkin-privacy-cancel" onClick={() => setCheckinDialog(null)}>取消</button>
+              <button className="checkin-privacy-confirm" onClick={handleCheckinConfirm} disabled={sending}>
+                {sending ? '发送中...' : '发布打卡'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
         <div className="chat-reply-bar">
           <span>回复 {replyTo.content?.slice(0, 30) ?? '消息'}</span>
           <button onClick={onClearReply}>×</button>
