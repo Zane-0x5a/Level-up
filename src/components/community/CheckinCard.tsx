@@ -1,5 +1,10 @@
 'use client'
 
+import {
+  formatCheckinFocusMinutes,
+  getCheckinDayLabel,
+} from '@/lib/checkin-share'
+
 interface CheckinData {
   date?: string
   day_type?: string
@@ -12,29 +17,27 @@ interface Props {
 }
 
 export default function CheckinCard({ data }: Props) {
-  const dayLabel = data.day_type === 'rest_day' ? '假期' : '上学日'
-  const hours = data.focus_minutes ? Math.floor(data.focus_minutes / 60) : 0
-  const mins = data.focus_minutes ? data.focus_minutes % 60 : 0
-
   return (
     <div className="checkin-card">
       <div className="checkin-header">
-        <span className="checkin-icon">📋</span>
-        <span className="checkin-date">{data.date ?? '今日'} 打卡</span>
+        <span className="checkin-icon">📝</span>
+        <span className="checkin-date">{data.date ?? '今天'} 打卡</span>
       </div>
       <div className="checkin-stats">
         <div className="checkin-stat">
-          <span className="checkin-stat-val">{hours}h{mins > 0 ? `${mins}m` : ''}</span>
+          <span className="checkin-stat-val">
+            {formatCheckinFocusMinutes(data.focus_minutes ?? 0)}
+          </span>
           <span className="checkin-stat-label">专注时长</span>
         </div>
         <div className="checkin-stat">
-          <span className="checkin-stat-val">{dayLabel}</span>
-          <span className="checkin-stat-label">日类型</span>
+          <span className="checkin-stat-val">
+            {getCheckinDayLabel(data.day_type)}
+          </span>
+          <span className="checkin-stat-label">日期类型</span>
         </div>
       </div>
-      {data.note_snippet && (
-        <div className="checkin-note">{data.note_snippet}</div>
-      )}
+      {data.note_snippet && <div className="checkin-note">{data.note_snippet}</div>}
     </div>
   )
 }

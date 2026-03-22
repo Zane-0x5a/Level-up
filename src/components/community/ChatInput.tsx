@@ -4,6 +4,11 @@ import { useRef, useState } from 'react'
 import { getDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions, type FocusSession } from '@/lib/api/focus-sessions'
 import {
+  formatCheckinFocusMinutes,
+  getCheckinDayLabel,
+  getCheckinFocusMinutes,
+} from '@/lib/checkin-share'
+import {
   sendCheckinMessage,
   sendImageMessage,
   sendTextMessage,
@@ -88,17 +93,11 @@ export default function ChatInput({
         getDailyRecord(userId, today),
         getTodayFocusSessions(userId),
       ])
-      const focusMinutes = Math.round(
-        sessions.reduce(
-          (sum: number, session: FocusSession) => sum + (session.duration ?? 0),
-          0
-        ) / 60
-      )
 
       setCheckinDialog({
         date: today,
         dayType: record?.day_type ?? 'study_day',
-        focusMinutes,
+        focusMinutes: getCheckinFocusMinutes(sessions as FocusSession[]),
         noteSnippet: record?.note ? record.note.slice(0, 50) : undefined,
       })
       setIncludeNote(false)
@@ -123,7 +122,7 @@ export default function ChatInput({
       onNewMessage?.(message)
       setCheckinDialog(null)
     } catch (err) {
-      console.error('打卡失败:', err)
+      console.error('打卡发送失败:', err)
     } finally {
       setSending(false)
     }
@@ -139,16 +138,13 @@ export default function ChatInput({
               <div className="checkin-privacy-row">
                 <span className="checkin-privacy-label">专注时长</span>
                 <span className="checkin-privacy-val">
-                  {Math.floor(checkinDialog.focusMinutes / 60)}h
-                  {checkinDialog.focusMinutes % 60 > 0
-                    ? `${checkinDialog.focusMinutes % 60}m`
-                    : ''}
+                  {formatCheckinFocusMinutes(checkinDialog.focusMinutes)}
                 </span>
               </div>
               <div className="checkin-privacy-row">
                 <span className="checkin-privacy-label">日期类型</span>
                 <span className="checkin-privacy-val">
-                  {checkinDialog.dayType === 'rest_day' ? '休息日' : '学习日'}
+                  {getCheckinDayLabel(checkinDialog.dayType)}
                 </span>
               </div>
             </div>
