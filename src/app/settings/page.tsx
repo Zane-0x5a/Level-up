@@ -44,6 +44,11 @@ export default function SettingsPage() {
   const [newGreeting, setNewGreeting] = useState('')
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
+  const confirmedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'>>(
+    DEFAULT_GROWTH_PREFERENCES
+  )
+  const queuedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'> | null>(null)
+  const isSavingGrowthPreferencesRef = useRef(false)
 
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
@@ -58,11 +63,14 @@ export default function SettingsPage() {
   useEffect(() => {
     getGrowthPreferences(DEFAULT_USER_ID)
       .then((prefs) => {
-        setGrowthPreferences({
+        const next = {
           enable_habit_checkins: prefs.enable_habit_checkins,
           enable_progress_tracking: prefs.enable_progress_tracking,
           enable_state_tracking: prefs.enable_state_tracking,
-        })
+        }
+
+        setGrowthPreferences(next)
+        confirmedGrowthPreferencesRef.current = next
       })
       .catch((err) => {
         console.error('加载成长追踪偏好失败:', err)
@@ -116,25 +124,40 @@ export default function SettingsPage() {
     }
   }
 
-  const handleGrowthPreferenceToggle = async (
-    key: keyof Omit<GrowthPreferences, 'user_id'>,
-    value: boolean
-  ) => {
-    const previous = growthPreferences
-    const next = { ...growthPreferences, [key]: value }
+  const flushGrowthPreferencesQueue = useCallback(async () => {
+    if (isSavingGrowthPreferencesRef.current) return
 
-    setGrowthPreferences(next)
+    isSavingGrowthPreferencesRef.current = true
     setSavingGrowthPrefs(true)
 
     try {
-      await upsertGrowthPreferences(DEFAULT_USER_ID, { [key]: value })
+      while (queuedGrowthPreferencesRef.current) {
+        const next = queuedGrowthPreferencesRef.current
+        queuedGrowthPreferencesRef.current = null
+
+        await upsertGrowthPreferences(DEFAULT_USER_ID, next)
+        confirmedGrowthPreferencesRef.current = next
+      }
     } catch {
-      setGrowthPreferences(previous)
+      queuedGrowthPreferencesRef.current = null
+      setGrowthPreferences(confirmedGrowthPreferencesRef.current)
       setError('成长追踪设置保存失败')
       setTimeout(() => setError(null), 3000)
     } finally {
+      isSavingGrowthPreferencesRef.current = false
       setSavingGrowthPrefs(false)
     }
+  }, [])
+
+  const handleGrowthPreferenceToggle = (
+    key: keyof Omit<GrowthPreferences, 'user_id'>,
+    value: boolean
+  ) => {
+    const next = { ...growthPreferences, [key]: value }
+
+    setGrowthPreferences(next)
+    queuedGrowthPreferencesRef.current = next
+    void flushGrowthPreferencesQueue()
   }
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

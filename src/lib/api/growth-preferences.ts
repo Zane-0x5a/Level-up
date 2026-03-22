@@ -1,5 +1,3 @@
-import { supabase } from '@/lib/supabase'
-
 export type GrowthPreferences = {
   user_id: string
   enable_habit_checkins: boolean
@@ -15,6 +13,27 @@ export const DEFAULT_GROWTH_PREFERENCES: Omit<GrowthPreferences, 'user_id'> = {
 
 function getStorageKey(userId: string) {
   return `growth_preferences:${userId}`
+}
+
+type GrowthPreferencesClient = {
+  from: (table: string) => unknown
+}
+
+type GrowthPreferencesTable = {
+  select: (columns: string) => {
+    eq: (column: string, value: string) => {
+      maybeSingle: () => Promise<{ data: GrowthPreferences | null; error: Error | null }>
+    }
+  }
+  upsert: (
+    payload: GrowthPreferences & { updated_at: string },
+    options: { onConflict: string }
+  ) => Promise<{ error: Error | null }>
+}
+
+async function getSupabaseClient() {
+  const { supabase } = await import('../supabase.ts')
+  return supabase as GrowthPreferencesClient
 }
 
 function readLocalPreferences(userId: string): GrowthPreferences {
@@ -70,8 +89,15 @@ function writeLocalPreferences(
 }
 
 export async function getGrowthPreferences(userId: string): Promise<GrowthPreferences> {
-  const { data, error } = await supabase
-    .from('user_growth_preferences')
+  return getGrowthPreferencesWithClient(await getSupabaseClient(), userId)
+}
+
+export async function getGrowthPreferencesWithClient(
+  client: GrowthPreferencesClient,
+  userId: string
+): Promise<GrowthPreferences> {
+  const growthPreferencesTable = client.from('user_growth_preferences') as GrowthPreferencesTable
+  const { data, error } = await growthPreferencesTable
     .select('*')
     .eq('user_id', userId)
     .maybeSingle()
@@ -91,19 +117,39 @@ export async function upsertGrowthPreferences(
   userId: string,
   preferences: Partial<Omit<GrowthPreferences, 'user_id'>>
 ) {
-  writeLocalPreferences(userId, preferences)
+  return upsertGrowthPreferencesWithClient(await getSupabaseClient(), userId, preferences)
+}
 
-  const { error } = await supabase
-    .from('user_growth_preferences')
+export async function upsertGrowthPreferencesWithClient(
+  client: GrowthPreferencesClient,
+  userId: string,
+  preferences: Partial<Omit<GrowthPreferences, 'user_id'>>
+) {
+  const existing = await getGrowthPreferencesWithClient(client, userId)
+  const next = {
+    enable_habit_checkins: existing.enable_habit_checkins,
+    enable_progress_tracking: existing.enable_progress_tracking,
+    enable_state_tracking: existing.enable_state_tracking,
+    ...preferences,
+  }
+
+  writeLocalPreferences(userId, next)
+
+  const growthPreferencesTable = client.from('user_growth_preferences') as GrowthPreferencesTable
+  const { error } = await growthPreferencesTable
     .upsert(
       {
         user_id: userId,
-        ...DEFAULT_GROWTH_PREFERENCES,
-        ...preferences,
+        ...next,
         updated_at: new Date().toISOString(),
       },
       { onConflict: 'user_id' }
     )
 
   if (error && typeof window === 'undefined') throw error
+
+  return {
+    user_id: userId,
+    ...next,
+  }
 }
