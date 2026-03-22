@@ -37,3 +37,15 @@ create policy "users update own growth preferences"
   using (auth.uid() = user_id);
 
 create index if not exists idx_daily_records_user_date on daily_records(user_id, date desc);
+
+drop policy if exists "admins can delete any message" on messages;
+create policy "admins can delete any message"
+  on messages for delete
+  using (
+    exists (
+      select 1
+      from user_profiles
+      where user_profiles.user_id = auth.uid()
+        and user_profiles.is_admin = true
+    )
+  );

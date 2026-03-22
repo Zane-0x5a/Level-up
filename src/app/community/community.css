@@ -1099,7 +1099,7 @@
   user-select: none;
 }
 
-.checkin-privacy-toggle input[type="checkbox"] {
+.checkin-privacy-toggle input[type='checkbox'] {
   accent-color: var(--color-accent);
   width: 16px;
   height: 16px;

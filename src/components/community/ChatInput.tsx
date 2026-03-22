@@ -89,7 +89,10 @@ export default function ChatInput({
         getTodayFocusSessions(userId),
       ])
       const focusMinutes = Math.round(
-        sessions.reduce((sum: number, session: FocusSession) => sum + (session.duration ?? 0), 0) / 60
+        sessions.reduce(
+          (sum: number, session: FocusSession) => sum + (session.duration ?? 0),
+          0
+        ) / 60
       )
 
       setCheckinDialog({
@@ -137,7 +140,9 @@ export default function ChatInput({
                 <span className="checkin-privacy-label">专注时长</span>
                 <span className="checkin-privacy-val">
                   {Math.floor(checkinDialog.focusMinutes / 60)}h
-                  {checkinDialog.focusMinutes % 60 > 0 ? `${checkinDialog.focusMinutes % 60}m` : ''}
+                  {checkinDialog.focusMinutes % 60 > 0
+                    ? `${checkinDialog.focusMinutes % 60}m`
+                    : ''}
                 </span>
               </div>
               <div className="checkin-privacy-row">
