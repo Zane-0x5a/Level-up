@@ -404,6 +404,7 @@
   bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
+  width: max-content;
   max-width: 320px;
   text-align: center;
   font-family: var(--font-body);
@@ -645,6 +646,7 @@
 
   .immersive-sticky {
     bottom: 100px;
+    width: max-content;
     max-width: 260px;
     font-size: 13px;
   }
