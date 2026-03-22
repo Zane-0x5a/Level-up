@@ -5,6 +5,7 @@ import * as focusSessionsApi from './focus-sessions.ts'
 const {
   addFocusSessionWithClient,
   correctSubmittedFocusSessionWithClient,
+  getTodayFocusSessionsWithClient,
 } = focusSessionsApi
 
 const TODAY = new Date().toISOString().split('T')[0]
@@ -21,6 +22,12 @@ type RecordedCall =
       payload: Record<string, unknown>
       column: string
       value: string
+    }
+  | {
+      type: 'select'
+      table: string
+      userId: string
+      date: string
     }
 
 type FakeClientOptions = {
@@ -72,6 +79,31 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
                     return {
                       async single() {
                         return { data: updatedSession, error: null }
+                      },
+                    }
+                  },
+                }
+              },
+            }
+          },
+          select() {
+            return {
+              eq(column: string, value: string) {
+                assert.equal(column, 'user_id')
+
+                return {
+                  eq(nextColumn: string, nextValue: string) {
+                    assert.equal(nextColumn, 'date')
+                    calls.push({
+                      type: 'select',
+                      table,
+                      userId: value,
+                      date: nextValue,
+                    })
+
+                    return {
+                      order() {
+                        return Promise.resolve({ data: [insertedSession], error: null })
                       },
                     }
                   },
@@ -146,5 +178,19 @@ test('correctSubmittedFocusSessionWithClient updates only the targeted session i
     },
     column: 'id',
     value: 'session-1',
+  })
+})
+
+test('getTodayFocusSessionsWithClient reads sessions for the explicit user id and requested date', async () => {
+  const { calls, client } = createFocusSessionClient()
+
+  const result = await getTodayFocusSessionsWithClient(client, 'user-42', '2026-03-20')
+
+  assert.equal(result.length, 1)
+  assert.deepEqual(calls.at(-1), {
+    type: 'select',
+    table: 'focus_sessions',
+    userId: 'user-42',
+    date: '2026-03-20',
   })
 })

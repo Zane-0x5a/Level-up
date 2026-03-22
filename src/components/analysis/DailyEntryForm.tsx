@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import {
   getDailyRecord,
   upsertDailyRecord,
@@ -14,7 +15,6 @@ import {
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
 import { sendToFlomo } from '@/lib/flomo'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 
 const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
   { value: 'slight', label: '靠近了一点' },
@@ -30,6 +30,7 @@ const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
 ]
 
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
+  const { user } = useAuth()
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
@@ -48,8 +49,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
   const loadPreferences = useCallback(async () => {
+    if (!user) return
     try {
-      const data = await getGrowthPreferences(DEFAULT_USER_ID)
+      const data = await getGrowthPreferences(user.id)
       setPreferences({
         enable_habit_checkins: data.enable_habit_checkins,
         enable_progress_tracking: data.enable_progress_tracking,
@@ -58,11 +60,12 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       setPreferences(DEFAULT_GROWTH_PREFERENCES)
     }
-  }, [])
+  }, [user])
 
   const loadRecord = useCallback(async () => {
+    if (!user) return
     try {
-      const record = await getDailyRecord(DEFAULT_USER_ID, date)
+      const record = await getDailyRecord(user.id, date)
       if (record) {
         setDayType(record.day_type)
         setHabitCheckins(record.ibetter_count ?? 0)
@@ -81,11 +84,12 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       // Ignore load errors and keep current local state.
     }
-  }, [date])
+  }, [date, user])
 
   const loadFocus = useCallback(async () => {
+    if (!user) return
     try {
-      const sessions = await getTodayFocusSessions(DEFAULT_USER_ID, date)
+      const sessions = await getTodayFocusSessions(user.id, date)
       let inClass = 0
       let outClass = 0
       let fun = 0
@@ -102,7 +106,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     } catch {
       // Ignore load errors and keep the existing numbers.
     }
-  }, [date])
+  }, [date, user])
 
   useEffect(() => {
     loadPreferences()
@@ -117,11 +121,12 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }, [loadFocus])
 
   const handleSave = async () => {
+    if (!user) return
     setSaving(true)
     setStatus(null)
 
     try {
-      await upsertDailyRecord(DEFAULT_USER_ID, {
+      await upsertDailyRecord(user.id, {
         date,
         day_type: dayType,
         ibetter_count: preferences.enable_habit_checkins ? habitCheckins : 0,

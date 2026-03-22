@@ -1,6 +1,3 @@
-import { supabase } from '@/lib/supabase'
-import { DEFAULT_USER_ID } from '@/lib/constants'
-
 export type ProgressLevel = 'slight' | 'solid' | 'breakthrough'
 export type StateLabel = 'recovering' | 'steady' | 'good' | 'energized'
 
@@ -34,48 +31,102 @@ export type DailyRecordInput = {
   state_label?: StateLabel | null
 }
 
-export async function getDailyRecord(userIdOrDate: string, maybeDate?: string): Promise<DailyRecord | null> {
-  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
-  const date = maybeDate ?? userIdOrDate
-  const { data, error } = await supabase
-    .from('daily_records')
+type DailyRecordsClient = {
+  from: (table: string) => unknown
+}
+
+type DailyRecordsTable = {
+  select: (columns: string) => {
+    eq: (column: string, value: string) => {
+      eq: (column: string, value: string) => {
+        single: () => Promise<{ data: DailyRecord | null; error: { code?: string } | null }>
+      }
+      order: (
+        column: string,
+        options: { ascending: boolean }
+      ) => Promise<{ data: DailyRecord[] | null; error: Error | null }>
+    }
+  }
+  upsert: (
+    payload: DailyRecordInput & { user_id: string },
+    options: { onConflict: string }
+  ) => Promise<{ error: Error | null }>
+  update: (payload: { note: null }) => {
+    eq: (column: string, value: string) => {
+      eq: (column: string, value: string) => Promise<{ error: Error | null }>
+    }
+  }
+}
+
+async function getSupabaseClient() {
+  const { supabase } = await import('../supabase.ts')
+  return supabase as DailyRecordsClient
+}
+
+export async function getDailyRecord(userId: string, date: string): Promise<DailyRecord | null> {
+  return getDailyRecordWithClient(await getSupabaseClient(), userId, date)
+}
+
+export async function getDailyRecordWithClient(
+  client: DailyRecordsClient,
+  userId: string,
+  date: string
+): Promise<DailyRecord | null> {
+  const dailyRecordsTable = client.from('daily_records') as DailyRecordsTable
+  const { data, error } = await dailyRecordsTable
     .select('*')
     .eq('user_id', userId)
     .eq('date', date)
     .single()
+
   if (error && error.code !== 'PGRST116') throw error
   return (data as DailyRecord | null) ?? null
 }
 
-export async function upsertDailyRecord(
-  userIdOrRecord: string | DailyRecordInput,
-  maybeRecord?: DailyRecordInput
+export async function upsertDailyRecord(userId: string, record: DailyRecordInput) {
+  return upsertDailyRecordWithClient(await getSupabaseClient(), userId, record)
+}
+
+export async function upsertDailyRecordWithClient(
+  client: DailyRecordsClient,
+  userId: string,
+  record: DailyRecordInput
 ) {
-  const userId = typeof userIdOrRecord === 'string' ? userIdOrRecord : DEFAULT_USER_ID
-  const record = typeof userIdOrRecord === 'string' ? maybeRecord! : userIdOrRecord
-  const { error } = await supabase
-    .from('daily_records')
-    .upsert(
-      { ...record, user_id: userId },
-      { onConflict: 'user_id,date' }
-    )
+  const dailyRecordsTable = client.from('daily_records') as DailyRecordsTable
+  const { error } = await dailyRecordsTable.upsert(
+    { ...record, user_id: userId },
+    { onConflict: 'user_id,date' }
+  )
   if (error) throw error
 }
 
-export async function clearDailyNote(userIdOrDate: string, maybeDate?: string) {
-  const userId = maybeDate ? userIdOrDate : DEFAULT_USER_ID
-  const date = maybeDate ?? userIdOrDate
-  const { error } = await supabase
-    .from('daily_records')
+export async function clearDailyNote(userId: string, date: string) {
+  return clearDailyNoteWithClient(await getSupabaseClient(), userId, date)
+}
+
+export async function clearDailyNoteWithClient(
+  client: DailyRecordsClient,
+  userId: string,
+  date: string
+) {
+  const dailyRecordsTable = client.from('daily_records') as DailyRecordsTable
+  const { error } = await dailyRecordsTable
     .update({ note: null })
     .eq('user_id', userId)
     .eq('date', date)
   if (error) throw error
 }
 
-export async function getAllDailyRecords(userId = DEFAULT_USER_ID) {
-  const { data, error } = await supabase
-    .from('daily_records')
+export async function getAllDailyRecords(userId: string) {
+  return getAllDailyRecordsWithClient(await getSupabaseClient(), userId)
+}
+
+export async function getAllDailyRecordsWithClient(
+  client: DailyRecordsClient,
+  userId: string
+) {
+  const dailyRecordsTable = client.from('daily_records') as DailyRecordsTable
+  const { data, error } = await dailyRecordsTable
     .select('*')
     .eq('user_id', userId)
     .order('date', { ascending: false })

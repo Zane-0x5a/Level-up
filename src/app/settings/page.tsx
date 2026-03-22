@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } from '@/lib/api/focus-images'
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import {
@@ -10,7 +11,6 @@ import {
   upsertGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
-import { DEFAULT_USER_ID } from '@/lib/constants'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -27,6 +27,7 @@ type AudioClip = {
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
+  const { user } = useAuth()
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -61,7 +62,9 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    getGrowthPreferences(DEFAULT_USER_ID)
+    if (!user) return
+
+    getGrowthPreferences(user.id)
       .then((prefs) => {
         const next = {
           enable_habit_checkins: prefs.enable_habit_checkins,
@@ -75,13 +78,15 @@ export default function SettingsPage() {
       .catch((err) => {
         console.error('加载成长追踪偏好失败:', err)
       })
-  }, [])
+  }, [user])
 
   const loadMedia = useCallback(async () => {
+    if (!user) return
+
     try {
       const [focusImages, audioClips] = await Promise.all([
-        getFocusImages(DEFAULT_USER_ID),
-        getAudioClips(DEFAULT_USER_ID),
+        getFocusImages(user.id),
+        getAudioClips(user.id),
       ])
       setImages(focusImages)
       setClips(audioClips)
@@ -89,7 +94,7 @@ export default function SettingsPage() {
       const message = err instanceof Error ? err.message : JSON.stringify(err)
       setError(`加载媒体失败：${message}`)
     }
-  }, [])
+  }, [user])
 
   useEffect(() => {
     void loadMedia()
@@ -125,7 +130,7 @@ export default function SettingsPage() {
   }
 
   const flushGrowthPreferencesQueue = useCallback(async () => {
-    if (isSavingGrowthPreferencesRef.current) return
+    if (!user || isSavingGrowthPreferencesRef.current) return
 
     isSavingGrowthPreferencesRef.current = true
     setSavingGrowthPrefs(true)
@@ -135,7 +140,7 @@ export default function SettingsPage() {
         const next = queuedGrowthPreferencesRef.current
         queuedGrowthPreferencesRef.current = null
 
-        await upsertGrowthPreferences(DEFAULT_USER_ID, next)
+        await upsertGrowthPreferences(user.id, next)
         confirmedGrowthPreferencesRef.current = next
       }
     } catch {
@@ -147,7 +152,7 @@ export default function SettingsPage() {
       isSavingGrowthPreferencesRef.current = false
       setSavingGrowthPrefs(false)
     }
-  }, [])
+  }, [user])
 
   const handleGrowthPreferenceToggle = (
     key: keyof Omit<GrowthPreferences, 'user_id'>,
@@ -162,11 +167,11 @@ export default function SettingsPage() {
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
 
     setUploadingImage(true)
     try {
-      await uploadFocusImage(DEFAULT_USER_ID, file, uploadDeviceType)
+      await uploadFocusImage(user.id, file, uploadDeviceType)
       await loadMedia()
     } catch (err) {
       console.error('图片上传失败:', err)
@@ -180,11 +185,11 @@ export default function SettingsPage() {
 
   const handleAudioUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file || !audioLabel.trim()) return
+    if (!file || !audioLabel.trim() || !user) return
 
     setUploadingAudio(true)
     try {
-      await uploadAudioClip(DEFAULT_USER_ID, file, audioLabel.trim())
+      await uploadAudioClip(user.id, file, audioLabel.trim())
       setAudioLabel('')
       await loadMedia()
     } catch (err) {
