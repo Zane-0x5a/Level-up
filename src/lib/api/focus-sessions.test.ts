@@ -7,6 +7,8 @@ const {
   correctSubmittedFocusSessionWithClient,
 } = focusSessionsApi
 
+const TODAY = new Date().toISOString().split('T')[0]
+
 type RecordedCall =
   | {
       type: 'insert'
@@ -33,8 +35,8 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
-    date: '2026-03-21',
-    created_at: '2026-03-21T08:00:00.000Z',
+    date: TODAY,
+    created_at: `${TODAY}T08:00:00.000Z`,
   }
   const updatedSession = options.updatedSession ?? {
     ...insertedSession,
@@ -89,8 +91,8 @@ test('addFocusSessionWithClient returns the inserted focus session row', async (
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
-    date: '2026-03-21',
-    created_at: '2026-03-21T08:00:00.000Z',
+    date: TODAY,
+    created_at: `${TODAY}T08:00:00.000Z`,
   }
   const { calls, client } = createFocusSessionClient({ insertedSession })
 
@@ -105,7 +107,7 @@ test('addFocusSessionWithClient returns the inserted focus session row', async (
       user_id: 'user-1',
       category: 'in_class',
       duration: 1.5,
-      date: '2026-03-21',
+      date: TODAY,
     },
   })
 })
@@ -121,8 +123,8 @@ test('correctSubmittedFocusSessionWithClient updates only the targeted session i
     user_id: 'user-1',
     category: 'out_class',
     duration: 2,
-    date: '2026-03-21',
-    created_at: '2026-03-21T08:00:00.000Z',
+    date: TODAY,
+    created_at: `${TODAY}T08:00:00.000Z`,
   }
   const { calls, client } = createFocusSessionClient({ updatedSession })
 
