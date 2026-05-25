@@ -678,6 +678,80 @@
   }
 }
 
+/* ── Mobile landscape: "desktop clock" mode ──
+   Typography 主导，orb 退到右下小角作为"回归按钮"，符合横放手机当桌面钟的 use case。
+   只命中真正的"短高度横屏"（手机横放 / 小屏平板横屏），桌面浏览器宽屏不触发。 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .focus-immersive {
+    padding: 16px 24px;
+  }
+
+  /* sticky note 升级为画面 typography 主体（居中偏上，大字号） */
+  .immersive-sticky {
+    top: 50%;
+    bottom: auto;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    font-size: 28px;
+    line-height: 1.4;
+    max-width: 70vw;
+    width: auto;
+    color: rgba(255, 255, 255, 0.78);
+  }
+
+  /* 中央 immersive-content 不再居中放大，让位给 sticky note；orb 缩到右下 */
+  .immersive-content {
+    position: absolute;
+    top: auto;
+    left: auto;
+    bottom: 24px;
+    right: 24px;
+    transform: none;
+    width: auto;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  /* orb 缩到 ~80px (保持圆形不变形 — 不破坏 breathing orb 品牌视觉语言) */
+  .return-orb-wrapper {
+    transform: scale(0.45);
+    transform-origin: bottom right;
+  }
+
+  /* 回归次数 capsule 移到左上角作为环境数据 */
+  .return-count-capsule {
+    position: fixed;
+    top: 16px;
+    left: 16px;
+    bottom: auto;
+    right: auto;
+    transform: none;
+    font-size: 12px;
+    padding: 4px 10px;
+  }
+
+  /* AudioPlayer 移到左下角 */
+  .audio-player {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: auto;
+    top: auto;
+    margin: 0;
+    max-width: 200px;
+  }
+
+  /* 退出按钮位置不变，缩小一点 */
+  .immersive-exit {
+    top: 12px;
+    right: 12px;
+    font-size: 16px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .immersive-bg-image {
     transition: none;
