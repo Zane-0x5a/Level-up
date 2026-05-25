@@ -15,6 +15,12 @@ import {
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
 import { sendToFlomo } from '@/lib/flomo'
+import {
+  DEFAULT_DAILY_ENTRY_DRAFT,
+  clearDailyEntryDraft,
+  readDailyEntryDraft,
+  writeDailyEntryDraft,
+} from '@/lib/daily-entry-draft'
 
 const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
   { value: 'slight', label: '靠近了一点' },
@@ -74,12 +80,24 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         setStateLabel(record.state_label ?? null)
         setNote(record.note ?? '')
       } else {
-        setDayType('study_day')
-        setHabitCheckins(0)
-        setProgressLevel(null)
-        setProgressNote('')
-        setStateLabel(null)
-        setNote('')
+        setDayType(DEFAULT_DAILY_ENTRY_DRAFT.dayType)
+        setHabitCheckins(DEFAULT_DAILY_ENTRY_DRAFT.habitCheckins)
+        setProgressLevel(DEFAULT_DAILY_ENTRY_DRAFT.progressLevel)
+        setProgressNote(DEFAULT_DAILY_ENTRY_DRAFT.progressNote)
+        setStateLabel(DEFAULT_DAILY_ENTRY_DRAFT.stateLabel)
+        setNote(DEFAULT_DAILY_ENTRY_DRAFT.note)
+      }
+
+      // Restore draft on top — represents the user's latest unsaved intent
+      // and wins over whatever the server returned.
+      const draft = readDailyEntryDraft(user.id, date)
+      if (draft) {
+        setDayType(draft.dayType)
+        setHabitCheckins(draft.habitCheckins)
+        setProgressLevel(draft.progressLevel)
+        setProgressNote(draft.progressNote)
+        setStateLabel(draft.stateLabel)
+        setNote(draft.note)
       }
     } catch {
       // Ignore load errors and keep current local state.
@@ -120,6 +138,34 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     loadFocus()
   }, [loadFocus])
 
+  // Persist the in-progress form as a localStorage draft per (userId, date).
+  // Debounced 300ms; cleared on successful save.
+  useEffect(() => {
+    if (!user) return
+
+    const handle = setTimeout(() => {
+      writeDailyEntryDraft(user.id, date, {
+        dayType,
+        habitCheckins,
+        note,
+        progressLevel,
+        progressNote,
+        stateLabel,
+      })
+    }, 300)
+
+    return () => clearTimeout(handle)
+  }, [
+    user,
+    date,
+    dayType,
+    habitCheckins,
+    note,
+    progressLevel,
+    progressNote,
+    stateLabel,
+  ])
+
   const handleSave = async () => {
     if (!user) return
     setSaving(true)
@@ -139,6 +185,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         state_label: preferences.enable_state_tracking ? stateLabel : null,
       })
 
+      clearDailyEntryDraft(user.id, date)
       onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
