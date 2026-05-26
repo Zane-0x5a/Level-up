@@ -50,6 +50,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
     DEFAULT_GROWTH_PREFERENCES
   )
   const [note, setNote] = useState('')
+  const [isHydrated, setIsHydrated] = useState(false)
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -103,6 +104,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       }
     } catch {
       // Ignore load errors and keep current local state.
+    } finally {
+      // Only after hydration finishes can we safely persist drafts —
+      // otherwise the initial default values would race the async load
+      // and overwrite a previously-saved draft with empty fields.
+      setIsHydrated(true)
     }
   }, [date, user])
 
@@ -133,6 +139,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }, [loadPreferences])
 
   useEffect(() => {
+    setIsHydrated(false)
     loadRecord()
   }, [loadRecord])
 
@@ -141,9 +148,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }, [loadFocus])
 
   // Persist the in-progress form as a localStorage draft per (userId, date).
-  // Debounced 300ms; cleared on successful save.
+  // Debounced 300ms; cleared on successful save. Skip until loadRecord
+  // finishes — otherwise the default empty state on mount would race the
+  // async load and overwrite a previously-saved draft.
   useEffect(() => {
-    if (!user) return
+    if (!user || !isHydrated) return
 
     const handle = setTimeout(() => {
       writeDailyEntryDraft(user.id, date, {
@@ -160,6 +169,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }, [
     user,
     date,
+    isHydrated,
     dayType,
     habitCheckins,
     note,
