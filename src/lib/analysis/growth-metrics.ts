@@ -122,32 +122,6 @@ export function findRecordByDate(
   return records.find((record) => record.date === dateKey) ?? null
 }
 
-export function buildGrowthEcho(
-  record: GrowthRecord | null,
-  preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES
-): string {
-  if (!record) {
-    return '今天还没有留下成长记录，先完成一段专注也很好。'
-  }
-
-  const effectiveFocus = getEffectiveFocus(record)
-  const progressLabel = preferences.enable_progress_tracking ? getProgressLabel(record.progress_level) : null
-  const stateLabel = preferences.enable_state_tracking ? getStateLabel(record.state_label) : null
-  const returnCount = record.return_count ?? 0
-  const parts: string[] = []
-
-  if (effectiveFocus > 0) parts.push(`今天已经投入 ${effectiveFocus.toFixed(1)}h`)
-  if (progressLabel) parts.push(`主线${progressLabel}`)
-  if (returnCount > 0) parts.push(`把自己拉回来了 ${returnCount} 次`)
-  if (stateLabel) parts.push(`整体状态是“${stateLabel}”`)
-
-  if (parts.length === 0) {
-    return '今天先留下一点成长证据就很好，不必急着追求完美。'
-  }
-
-  return `${parts.join('，')}。`
-}
-
 export function buildGrowthAssets(
   records: GrowthRecord[],
   preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES

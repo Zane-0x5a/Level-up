@@ -166,13 +166,25 @@
   padding: 24px 28px;
 }
 
-.growth-echo-message {
+.growth-echo-narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin-bottom: 16px;
+}
+
+.growth-echo-line {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.6;
   letter-spacing: -0.01em;
   color: var(--color-text);
+}
+
+.growth-echo-line:last-child {
+  color: var(--color-text-2);
+  font-style: italic;
 }
 
 .growth-echo-chips {
@@ -763,8 +775,8 @@
     padding: 20px 18px;
   }
 
-  .growth-echo-message {
-    font-size: 16px;
+  .growth-echo-line {
+    font-size: 15px;
   }
 
   .growth-echo-chips {

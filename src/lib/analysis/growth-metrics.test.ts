@@ -2,7 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   buildGrowthAssets,
-  buildGrowthEcho,
   buildRecentMemory,
   buildStabilityData,
   findRecordByDate,
@@ -47,26 +46,6 @@ test('getGrowthEvidenceScore combines focus, notes, and optional modules', () =>
   )
 
   assert.equal(score, 7)
-})
-
-test('buildGrowthEcho turns a record into positive feedback language', () => {
-  const echo = buildGrowthEcho(
-    {
-      date: '2026-03-20',
-      day_type: 'study_day',
-      focus_in_class: 2,
-      focus_out_class: 2,
-      entertainment: 0.5,
-      return_count: 3,
-      progress_level: 'breakthrough',
-      state_label: 'good',
-    },
-    preferences
-  )
-
-  assert.match(echo, /投入 4\.0h/)
-  assert.match(echo, /主线有突破/)
-  assert.match(echo, /拉回来了 3 次/)
 })
 
 test('buildStabilityData marks days with enough evidence as baseline reached', () => {

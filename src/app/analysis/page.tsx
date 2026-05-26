@@ -9,16 +9,13 @@ import {
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
 import { getStreak } from '@/lib/api/stats'
+import { buildGrowthEcho } from '@/lib/analysis/echo'
 import {
   buildGrowthAssets,
-  buildGrowthEcho,
   buildRecentMemory,
   buildStabilityData,
   buildTimeStructureTotals,
   findRecordByDate,
-  getEffectiveFocus,
-  getProgressLabel,
-  getStateLabel,
 } from '@/lib/analysis/growth-metrics'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
 import DayTypeFilter from '@/components/analysis/DayTypeFilter'
@@ -114,8 +111,7 @@ export default function AnalysisPage() {
   const assets = buildGrowthAssets(filteredRecords, preferences)
   const stabilityPoints = buildStabilityData(filteredRecords, preferences, 14)
   const memories = buildRecentMemory(filteredRecords)
-  const growthEcho = buildGrowthEcho(todayRecord, preferences)
-  const effectiveFocus = todayRecord ? getEffectiveFocus(todayRecord) : 0
+  const growthEcho = buildGrowthEcho(records, new Date(), preferences)
 
   return (
     <main className="analysis-page">
@@ -138,15 +134,7 @@ export default function AnalysisPage() {
           <span className="sec-dot honey" />
           <span className="sec-name">成长回声</span>
         </div>
-        <GrowthEchoCard
-          message={growthEcho}
-          effectiveFocus={effectiveFocus}
-          returnCount={todayRecord?.return_count ?? 0}
-          progressLabel={
-            preferences.enable_progress_tracking ? getProgressLabel(todayRecord?.progress_level ?? null) : null
-          }
-          stateLabel={preferences.enable_state_tracking ? getStateLabel(todayRecord?.state_label ?? null) : null}
-        />
+        <GrowthEchoCard echo={growthEcho} />
       </section>
 
       <section className="analysis-section anim d2">
