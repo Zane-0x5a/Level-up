@@ -16,6 +16,15 @@ type Props = {
   days?: number
 }
 
+type TooltipPosition = {
+  x: number
+  y: number
+  placement: 'top' | 'bottom'
+}
+
+const TOOLTIP_WIDTH = 240
+const TOOLTIP_GAP = 8
+
 const WEEKDAY_LABELS = ['日', '一', '二', '三', '四', '五', '六']
 
 function formatDateLabel(key: string): string {
@@ -35,7 +44,9 @@ function describeCellValue(cell: HeatmapCell, dimension: HeatmapDimension): stri
 export default function GrowthHeatmap({ records, preferences, days = 90 }: Props) {
   const [dimension, setDimension] = useState<HeatmapDimension>('overview')
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [tooltipPos, setTooltipPos] = useState<TooltipPosition | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLDivElement>(null)
 
   const data = useMemo(
     () => buildHeatmap(records, dimension, preferences, days),
@@ -54,6 +65,7 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
       if (!node) return
       if (event.target instanceof Node && node.contains(event.target)) return
       setSelectedDate(null)
+      setTooltipPos(null)
     }
     document.addEventListener('mousedown', handle)
     document.addEventListener('touchstart', handle)
@@ -63,9 +75,38 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
     }
   }, [selectedDate])
 
-  const handleCellActivate = (cell: HeatmapCell) => {
+  const handleCellActivate = (
+    cell: HeatmapCell,
+    event: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     if (!cell.isInWindow) return
-    setSelectedDate((current) => (current === cell.date ? null : cell.date))
+    if (selectedDate === cell.date) {
+      setSelectedDate(null)
+      setTooltipPos(null)
+      return
+    }
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const cellRect = event.currentTarget.getBoundingClientRect()
+    const canvasRect = canvas.getBoundingClientRect()
+
+    const cellCenterX = cellRect.left + cellRect.width / 2 - canvasRect.left
+    const cellTop = cellRect.top - canvasRect.top
+    const cellBottom = cellRect.bottom - canvasRect.top
+
+    const placement: 'top' | 'bottom' =
+      cellRect.top + cellRect.height / 2 - canvasRect.top > canvasRect.height / 2
+        ? 'top'
+        : 'bottom'
+
+    const halfWidth = TOOLTIP_WIDTH / 2
+    const x = Math.max(halfWidth, Math.min(canvasRect.width - halfWidth, cellCenterX))
+    const y = placement === 'bottom' ? cellBottom + TOOLTIP_GAP : cellTop - TOOLTIP_GAP
+
+    setSelectedDate(cell.date)
+    setTooltipPos({ x, y, placement })
   }
 
   return (
@@ -93,6 +134,7 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
               onClick={() => {
                 setDimension(key)
                 setSelectedDate(null)
+                setTooltipPos(null)
               }}
             >
               {config.label}
@@ -101,7 +143,11 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
         })}
       </div>
 
-      <div className="heatmap-canvas" style={{ ['--heatmap-weeks' as string]: data.weekCount }}>
+      <div
+        className="heatmap-canvas"
+        ref={canvasRef}
+        style={{ ['--heatmap-weeks' as string]: data.weekCount }}
+      >
         <div className="heatmap-months" aria-hidden="true">
           {data.months.map((month) => (
             <span
@@ -150,7 +196,7 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
                   key={cell.date}
                   type="button"
                   className={classes}
-                  onClick={() => handleCellActivate(cell)}
+                  onClick={(event) => handleCellActivate(cell, event)}
                   aria-label={`${formatDateLabel(cell.date)} ${describeCellValue(cell, dimension)}`}
                 />
               )
@@ -158,8 +204,16 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
           </div>
         </div>
 
-        {selectedCell && (
-          <div className="heatmap-tooltip" role="status">
+        {selectedCell && tooltipPos && (
+          <div
+            className={`heatmap-tooltip placement-${tooltipPos.placement}`}
+            role="status"
+            style={{
+              left: `${tooltipPos.x}px`,
+              top: `${tooltipPos.y}px`,
+              width: `${TOOLTIP_WIDTH}px`,
+            }}
+          >
             <div className="heatmap-tooltip-date">
               {formatDateLabel(selectedCell.date)}
               {selectedCell.record?.day_type === 'rest_day' ? ' · 休息日' : ''}
