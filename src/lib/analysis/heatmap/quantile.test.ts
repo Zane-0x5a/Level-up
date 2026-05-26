@@ -36,11 +36,25 @@ test('mapToIntensity returns 0 when value is 0', () => {
 })
 
 test('mapToIntensity uses log fallback when distribution has fewer than 30 entries', () => {
+  // log scaled to actual max — value at max saturates to intensity 4
   const small = [1, 2, 3]
-  // log(1 + 0.4) / log(13) ≈ 0.131 -> intensity 1
-  assert.equal(mapToIntensity(0.4, small), 1)
-  // log(1 + 12) / log(13) === 1 -> intensity 4
-  assert.equal(mapToIntensity(12, small), 4)
+  assert.equal(mapToIntensity(3, small), 4)
+  // mid value lands in mid bucket: log(2)/log(4) ≈ 0.5 → intensity 3
+  assert.equal(mapToIntensity(1, small), 3)
+})
+
+test('mapToIntensity log fallback handles single-value distribution without saturating', () => {
+  // single-value distribution: value === max → intensity 4 (still meaningful)
+  assert.equal(mapToIntensity(5, [5]), 4)
+  // a smaller value than the only seen max → log scales it down properly
+  assert.equal(mapToIntensity(1, [10]), 2)
+})
+
+test('mapToIntensity log fallback collapses to 4 when distribution max is 0', () => {
+  // edge case: distribution somehow contains only zeros (mapToIntensity rejects
+  // non-positive values, so a sorted distribution from build-heatmap never
+  // contains 0 — but defend in depth)
+  assert.equal(mapToIntensity(1, []), 4)
 })
 
 test('mapToIntensity uses quantile mapping for large distributions', () => {

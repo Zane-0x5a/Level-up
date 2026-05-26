@@ -1,6 +1,18 @@
 import { getEffectiveFocus } from '../growth-metrics.ts'
 import type { EchoContext, Observation } from './types.ts'
 
+function toDateKey(date: Date): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function dateFromKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 function averageFocus(records: readonly { focus_in_class: number; focus_out_class: number }[]): number {
   if (records.length === 0) return 0
   const total = records.reduce(
@@ -14,10 +26,10 @@ function pickRecentWindow(
   ctx: EchoContext,
   windowDays: number,
 ): readonly ReturnType<typeof ctx.records.slice>[number][] {
-  const cursor = new Date(ctx.todayDate)
+  const cursor = dateFromKey(ctx.todayDate)
   const windowStart = new Date(cursor)
   windowStart.setDate(cursor.getDate() - windowDays)
-  const startKey = windowStart.toISOString().split('T')[0]
+  const startKey = toDateKey(windowStart)
   return ctx.records.filter(
     (record) => record.date < ctx.todayDate && record.date >= startKey,
   )

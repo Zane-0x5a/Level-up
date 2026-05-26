@@ -152,44 +152,51 @@ function SessionEndPanelContent({
     if (autoCommitRanRef.current) return
     autoCommitRanRef.current = true
 
-    let cancelled = false
     void (async () => {
       const elapsedMs = consumeFocusTimer()
       if (elapsedMs === null) {
-        if (!cancelled) setAutoCommitting(false)
+        setAutoCommitting(false)
+        return
+      }
+
+      // Cross-tab guard: if another tab already wrote the submitted session
+      // for this user (e.g., user has /focus open in two tabs and exited in
+      // tab A), don't double-insert.
+      if (readSubmittedSession(userId)) {
+        const existing = readSubmittedSession(userId)
+        if (existing) {
+          setSubmittedSession(existing)
+          setIsEditingSubmittedSession(false)
+        }
+        setAutoCommitting(false)
         return
       }
 
       try {
         const lastCategory = await getLastFocusCategory(userId).catch(() => null)
-        if (cancelled) return
         const draft = readFocusDraft(userId)
         const finalCategory =
           lastCategory ?? draft.category ?? DEFAULT_FOCUS_DRAFT.category
         const durationHours = elapsedMs / (1000 * 60 * 60)
         const session = await addFocusSession(userId, finalCategory, durationHours)
-        if (cancelled) return
         clearFocusDraft(userId)
         writeSubmittedSession(userId, session)
         setSubmittedSession(session)
         setIsEditingSubmittedSession(false)
         setAutoCommitting(false)
       } catch {
-        if (cancelled) return
+        // Auto-commit failed (network / RLS / migration drift). Pre-fill the
+        // duration & category so the user can manually confirm — the timer
+        // is already consumed at this point.
         const prefilled = getDraftFromDuration(elapsedMs / (1000 * 60 * 60))
         setHours(prefilled.hours)
         setMinutes(prefilled.minutes)
         const lastCategory = await getLastFocusCategory(userId).catch(() => null)
-        if (cancelled) return
         if (lastCategory) setCategory(lastCategory)
         setError('自动记录失败，请手动确认或更正')
         setAutoCommitting(false)
       }
     })()
-
-    return () => {
-      cancelled = true
-    }
   }, [userId])
 
   const handleDone = () => {

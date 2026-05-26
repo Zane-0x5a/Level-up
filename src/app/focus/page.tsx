@@ -78,6 +78,11 @@ const subscribeToFocusState = (callback: () => void) => {
 const setStoredFocusState = (nextState: PersistedFocusState) => {
   if (nextState === 'default') {
     window.localStorage.removeItem(STORAGE_KEY)
+    // Keep the timer's lifecycle in lockstep with focus-state. Without this,
+    // exiting an immersive session would leave focus-timer-start behind, and
+    // the next entry would fall through the "timer already exists" branch in
+    // FocusImmersiveState and resume from a stale baseline.
+    clearFocusTimer()
   } else {
     const entry: PersistedEntry = { state: nextState, setAt: Date.now() }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entry))

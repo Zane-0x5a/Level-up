@@ -1,5 +1,4 @@
 const QUANTILE_FALLBACK_THRESHOLD = 30
-const LOG_FALLBACK_BASE = Math.log(13)
 
 export type Intensity = 0 | 1 | 2 | 3 | 4
 
@@ -41,7 +40,14 @@ export function mapToIntensity(
   if (value <= 0) return 0
 
   if (sortedDistribution.length < QUANTILE_FALLBACK_THRESHOLD) {
-    return intensityFromUnitInterval(Math.log(1 + value) / LOG_FALLBACK_BASE)
+    // Log fallback scaled against the actual max in the distribution rather
+    // than a hardcoded constant — otherwise a single value (max=1) saturates
+    // every non-zero cell to the same intensity, and a much larger max swamps
+    // mid-range values into the lowest bucket.
+    const max = sortedDistribution[sortedDistribution.length - 1] ?? value
+    const denominator = Math.log(1 + max)
+    if (denominator <= 0) return 4
+    return intensityFromUnitInterval(Math.log(1 + value) / denominator)
   }
 
   return intensityFromUnitInterval(quantileRank(sortedDistribution, value))
