@@ -62,6 +62,8 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         enable_habit_checkins: data.enable_habit_checkins,
         enable_progress_tracking: data.enable_progress_tracking,
         enable_state_tracking: data.enable_state_tracking,
+        enable_focus_timer: data.enable_focus_timer,
+        enable_motion_detection: data.enable_motion_detection,
       })
     } catch {
       setPreferences(DEFAULT_GROWTH_PREFERENCES)

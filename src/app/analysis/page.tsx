@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { clearDailyNote, getAllDailyRecords, type DailyRecord } from '@/lib/api/daily-records'
-import { getGrowthPreferences, type GrowthPreferences } from '@/lib/api/growth-preferences'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+  type GrowthPreferences,
+} from '@/lib/api/growth-preferences'
 import { getStreak } from '@/lib/api/stats'
 import {
   buildGrowthAssets,
@@ -30,11 +34,7 @@ import './analysis.css'
 
 type PreferencesState = Omit<GrowthPreferences, 'user_id'>
 
-const DEFAULT_PREFERENCES: PreferencesState = {
-  enable_habit_checkins: false,
-  enable_progress_tracking: false,
-  enable_state_tracking: false,
-}
+const DEFAULT_PREFERENCES: PreferencesState = DEFAULT_GROWTH_PREFERENCES
 
 export default function AnalysisPage() {
   const { user } = useAuth()
@@ -69,6 +69,8 @@ export default function AnalysisPage() {
           enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
           enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
           enable_state_tracking: preferencesResult.value.enable_state_tracking,
+          enable_focus_timer: preferencesResult.value.enable_focus_timer,
+          enable_motion_detection: preferencesResult.value.enable_motion_detection,
         })
       }
     })()
@@ -99,6 +101,8 @@ export default function AnalysisPage() {
         enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
         enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
         enable_state_tracking: preferencesResult.value.enable_state_tracking,
+        enable_focus_timer: preferencesResult.value.enable_focus_timer,
+        enable_motion_detection: preferencesResult.value.enable_motion_detection,
       })
     }
   }

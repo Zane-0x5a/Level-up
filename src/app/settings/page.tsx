@@ -70,6 +70,8 @@ export default function SettingsPage() {
           enable_habit_checkins: prefs.enable_habit_checkins,
           enable_progress_tracking: prefs.enable_progress_tracking,
           enable_state_tracking: prefs.enable_state_tracking,
+          enable_focus_timer: prefs.enable_focus_timer,
+          enable_motion_detection: prefs.enable_motion_detection,
         }
 
         setGrowthPreferences(next)
@@ -297,6 +299,48 @@ export default function SettingsPage() {
             <button onClick={saveFlomoUrl} className="btn-warm">
               {flomoSaved ? '已保存' : '保存'}
             </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-section anim d3">
+        <div className="float-card glow-coral">
+          <div className="sec-head">
+            <span className="sec-dot coral" />
+            <span className="sec-name">专注计时器</span>
+          </div>
+          <p className="settings-copy">
+            进入专注空间后自动计时；退出时根据计时长度自动写入记录。可在确认页"更正刚刚记录"修改。
+          </p>
+          <div className="settings-toggle-list">
+            <label className="settings-toggle-row">
+              <div>
+                <div className="settings-toggle-title">自动计时</div>
+                <div className="settings-toggle-desc">关闭后保持原有手动填写的流程。</div>
+              </div>
+              <input
+                type="checkbox"
+                checked={growthPreferences.enable_focus_timer}
+                onChange={(event) =>
+                  handleGrowthPreferenceToggle('enable_focus_timer', event.target.checked)
+                }
+              />
+            </label>
+            <label className="settings-toggle-row">
+              <div>
+                <div className="settings-toggle-title">加速度感应</div>
+                <div className="settings-toggle-desc">
+                  移动端拿起 / 放下手机时显示已专注时长；首次需授权 iOS Motion 权限。
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={growthPreferences.enable_motion_detection}
+                onChange={(event) =>
+                  handleGrowthPreferenceToggle('enable_motion_detection', event.target.checked)
+                }
+              />
+            </label>
           </div>
         </div>
       </section>

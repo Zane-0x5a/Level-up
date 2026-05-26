@@ -392,6 +392,23 @@
   pointer-events: none;
 }
 
+/* Elapsed time readout — visible on hover (desktop) or after device pickup (mobile) */
+.return-time-display {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.55);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+  white-space: nowrap;
+  pointer-events: none;
+  animation: fadeIn 0.15s ease;
+}
+
 @keyframes toastFloat {
   0% { opacity: 1; transform: translateX(-50%) translateY(0); }
   70% { opacity: 1; transform: translateX(-50%) translateY(-24px); }

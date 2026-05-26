@@ -5,6 +5,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getFocusImages } from '@/lib/api/focus-images'
 import { incrementReturnCount, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getStickyNotes } from '@/lib/api/sticky-notes'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+  type GrowthPreferences,
+} from '@/lib/api/growth-preferences'
+import { readFocusTimerStart, startFocusTimer } from '@/lib/focus-timer'
+import { attachMotionListener, createMotionDetector } from '@/lib/motion-detector'
 import ReturnButton from './ReturnButton'
 import AudioPlayer from './AudioPlayer'
 
@@ -74,6 +81,10 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
   const [isBgTransitioning, setIsBgTransitioning] = useState(false)
   const [returnCount, setReturnCount] = useState(0)
   const [showToast, setShowToast] = useState(false)
+  const [prefs, setPrefs] = useState<Omit<GrowthPreferences, 'user_id'> | null>(
+    () => (userId ? null : DEFAULT_GROWTH_PREFERENCES)
+  )
+  const [motionActive, setMotionActive] = useState(false)
   const toastTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const bgTransitionTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const bgTransitionFrameRef = useRef<number | null>(null)
@@ -186,6 +197,44 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
   }, [load])
 
   useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    getGrowthPreferences(userId)
+      .then(loaded => {
+        if (cancelled) return
+        setPrefs({
+          enable_habit_checkins: loaded.enable_habit_checkins,
+          enable_progress_tracking: loaded.enable_progress_tracking,
+          enable_state_tracking: loaded.enable_state_tracking,
+          enable_focus_timer: loaded.enable_focus_timer,
+          enable_motion_detection: loaded.enable_motion_detection,
+        })
+      })
+      .catch(() => {
+        if (!cancelled) setPrefs(DEFAULT_GROWTH_PREFERENCES)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (!prefs?.enable_focus_timer) return
+    if (readFocusTimerStart() === null) {
+      startFocusTimer()
+    }
+  }, [prefs])
+
+  useEffect(() => {
+    if (!prefs?.enable_motion_detection) return
+    const detector = createMotionDetector({
+      onPickup: () => setMotionActive(true),
+      onPutdown: () => setMotionActive(false),
+    })
+    return attachMotionListener(detector)
+  }, [prefs])
+
+  useEffect(() => {
     isMountedRef.current = true
 
     return () => {
@@ -261,6 +310,8 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
           onReturn={handleReturn}
           returnCount={returnCount}
           showToast={showToast}
+          motionActive={motionActive}
+          timerEnabled={prefs?.enable_focus_timer ?? false}
         />
       </div>
 
