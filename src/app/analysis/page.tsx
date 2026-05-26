@@ -12,7 +12,6 @@ import { getStreak } from '@/lib/api/stats'
 import {
   buildGrowthAssets,
   buildGrowthEcho,
-  buildHeatmapData,
   buildRecentMemory,
   buildStabilityData,
   buildTimeStructureTotals,
@@ -113,7 +112,6 @@ export default function AnalysisPage() {
   const todayRecord = findRecordByDate(records, new Date())
   const totals = buildTimeStructureTotals(filteredRecords)
   const assets = buildGrowthAssets(filteredRecords, preferences)
-  const heatmapCells = buildHeatmapData(filteredRecords, preferences, 35)
   const stabilityPoints = buildStabilityData(filteredRecords, preferences, 14)
   const memories = buildRecentMemory(filteredRecords)
   const growthEcho = buildGrowthEcho(todayRecord, preferences)
@@ -158,7 +156,7 @@ export default function AnalysisPage() {
         </div>
         <div className="analysis-pulse-grid">
           <FocusTimeTrendChart records={filteredRecords} />
-          <GrowthHeatmap cells={heatmapCells} />
+          <GrowthHeatmap records={filteredRecords} preferences={preferences} />
         </div>
       </section>
 
