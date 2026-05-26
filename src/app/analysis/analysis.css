@@ -166,13 +166,25 @@
   padding: 24px 28px;
 }
 
-.growth-echo-message {
+.growth-echo-narrative {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   margin-bottom: 16px;
+}
+
+.growth-echo-line {
+  margin: 0;
   font-family: var(--font-display);
-  font-size: 18px;
-  line-height: 1.55;
+  font-size: 17px;
+  line-height: 1.6;
   letter-spacing: -0.01em;
   color: var(--color-text);
+}
+
+.growth-echo-line:last-child {
+  color: var(--color-text-2);
+  font-style: italic;
 }
 
 .growth-echo-chips {
@@ -202,44 +214,217 @@
   color: var(--color-text);
 }
 
-.growth-heatmap-card {
+.heatmap-card {
   display: flex;
   flex-direction: column;
 }
 
-.growth-heatmap-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+.heatmap-chips {
+  display: flex;
+  flex-wrap: wrap;
   gap: 6px;
+  margin: 4px 0 14px;
 }
 
-.growth-heatmap-cell {
-  aspect-ratio: 1;
-  border-radius: 8px;
+.heatmap-chip {
+  appearance: none;
+  border: 1px solid rgba(43, 45, 66, 0.10);
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-2);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.heatmap-chip:hover {
   background: rgba(43, 45, 66, 0.06);
+  color: var(--color-text);
 }
 
-.growth-heatmap-cell.intensity-1 {
-  background: rgba(91, 143, 185, 0.18);
+.heatmap-chip.active {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: #fff;
 }
 
-.growth-heatmap-cell.intensity-2 {
-  background: rgba(91, 143, 185, 0.34);
+.heatmap-chip.active.tone-coral { background: rgba(212, 101, 74, 0.92); border-color: rgba(212, 101, 74, 0.92); }
+.heatmap-chip.active.tone-sage { background: rgba(91, 146, 121, 0.92); border-color: rgba(91, 146, 121, 0.92); }
+.heatmap-chip.active.tone-honey { background: rgba(206, 153, 80, 0.95); border-color: rgba(206, 153, 80, 0.95); }
+.heatmap-chip.active.tone-sky { background: rgba(91, 143, 185, 0.95); border-color: rgba(91, 143, 185, 0.95); }
+.heatmap-chip.active.tone-rose { background: rgba(192, 96, 132, 0.92); border-color: rgba(192, 96, 132, 0.92); }
+
+.heatmap-canvas {
+  position: relative;
 }
 
-.growth-heatmap-cell.intensity-3 {
-  background: rgba(232, 184, 109, 0.34);
+.heatmap-months {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: repeat(var(--heatmap-weeks, 13), minmax(0, 1fr));
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--color-text-3);
+  margin-bottom: 6px;
+  padding-left: 22px;
 }
 
-.growth-heatmap-cell.intensity-4 {
-  background: rgba(212, 101, 74, 0.42);
+.heatmap-month-label {
+  grid-row: 1;
+  white-space: nowrap;
 }
 
-.growth-heatmap-legend {
+.heatmap-body {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 4px;
+}
+
+.heatmap-weekdays {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  align-items: center;
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--color-text-3);
+  text-align: right;
+  padding-right: 2px;
+}
+
+.heatmap-weekday {
+  line-height: 1;
+}
+
+.heatmap-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  grid-template-columns: repeat(var(--heatmap-weeks, 13), minmax(0, 1fr));
+  gap: 3px;
+}
+
+.heatmap-cell {
+  appearance: none;
+  aspect-ratio: 1;
+  border: none;
+  border-radius: 3px;
+  background: rgba(43, 45, 66, 0.06);
+  cursor: pointer;
+  padding: 0;
+  transition: outline-color 0.2s, transform 0.1s;
+}
+
+.heatmap-cell.placeholder {
+  visibility: hidden;
+  cursor: default;
+}
+
+.heatmap-cell.legend-cell {
+  width: 12px;
+  height: 12px;
+  aspect-ratio: auto;
+}
+
+.heatmap-cell:hover:not(.placeholder) {
+  outline: 1px solid rgba(43, 45, 66, 0.25);
+  outline-offset: 1px;
+}
+
+.heatmap-cell.today {
+  outline: 1px solid var(--color-coral);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 1px rgba(212, 101, 74, 0.18);
+}
+
+.heatmap-cell.selected {
+  outline: 1.5px solid rgba(43, 45, 66, 0.6);
+  outline-offset: 1px;
+  transform: scale(1.05);
+}
+
+.heatmap-cell.intensity-0 { background: rgba(43, 45, 66, 0.06); }
+
+.heatmap-cell.tone-coral.intensity-1 { background: rgba(212, 101, 74, 0.18); }
+.heatmap-cell.tone-coral.intensity-2 { background: rgba(212, 101, 74, 0.40); }
+.heatmap-cell.tone-coral.intensity-3 { background: rgba(212, 101, 74, 0.65); }
+.heatmap-cell.tone-coral.intensity-4 { background: rgba(212, 101, 74, 0.90); }
+
+.heatmap-cell.tone-sage.intensity-1 { background: rgba(91, 146, 121, 0.18); }
+.heatmap-cell.tone-sage.intensity-2 { background: rgba(91, 146, 121, 0.40); }
+.heatmap-cell.tone-sage.intensity-3 { background: rgba(91, 146, 121, 0.65); }
+.heatmap-cell.tone-sage.intensity-4 { background: rgba(91, 146, 121, 0.90); }
+
+.heatmap-cell.tone-honey.intensity-1 { background: rgba(206, 153, 80, 0.18); }
+.heatmap-cell.tone-honey.intensity-2 { background: rgba(206, 153, 80, 0.42); }
+.heatmap-cell.tone-honey.intensity-3 { background: rgba(206, 153, 80, 0.66); }
+.heatmap-cell.tone-honey.intensity-4 { background: rgba(206, 153, 80, 0.92); }
+
+.heatmap-cell.tone-sky.intensity-1 { background: rgba(91, 143, 185, 0.18); }
+.heatmap-cell.tone-sky.intensity-2 { background: rgba(91, 143, 185, 0.40); }
+.heatmap-cell.tone-sky.intensity-3 { background: rgba(91, 143, 185, 0.65); }
+.heatmap-cell.tone-sky.intensity-4 { background: rgba(91, 143, 185, 0.90); }
+
+.heatmap-cell.tone-rose.intensity-1 { background: rgba(192, 96, 132, 0.18); }
+.heatmap-cell.tone-rose.intensity-2 { background: rgba(192, 96, 132, 0.42); }
+.heatmap-cell.tone-rose.intensity-3 { background: rgba(192, 96, 132, 0.66); }
+.heatmap-cell.tone-rose.intensity-4 { background: rgba(192, 96, 132, 0.92); }
+
+.heatmap-tooltip {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(43, 45, 66, 0.10);
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-text);
+  box-shadow: 0 6px 20px rgba(43, 45, 66, 0.08);
+}
+
+.heatmap-tooltip-date {
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: var(--color-text);
+}
+
+.heatmap-tooltip-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.heatmap-tooltip-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--color-text-2);
+}
+
+.heatmap-tooltip-label {
+  color: var(--color-text-3);
+  font-weight: 600;
+}
+
+.heatmap-tooltip-value {
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.heatmap-tooltip-empty {
+  color: var(--color-text-3);
+  font-style: italic;
+}
+
+.heatmap-legend {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 4px;
   margin-top: 12px;
   font-family: var(--font-body);
   font-size: 11px;
@@ -590,8 +775,8 @@
     padding: 20px 18px;
   }
 
-  .growth-echo-message {
-    font-size: 16px;
+  .growth-echo-line {
+    font-size: 15px;
   }
 
   .growth-echo-chips {

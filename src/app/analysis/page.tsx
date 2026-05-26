@@ -3,19 +3,19 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { clearDailyNote, getAllDailyRecords, type DailyRecord } from '@/lib/api/daily-records'
-import { getGrowthPreferences, type GrowthPreferences } from '@/lib/api/growth-preferences'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+  type GrowthPreferences,
+} from '@/lib/api/growth-preferences'
 import { getStreak } from '@/lib/api/stats'
+import { buildGrowthEcho } from '@/lib/analysis/echo'
 import {
   buildGrowthAssets,
-  buildGrowthEcho,
-  buildHeatmapData,
   buildRecentMemory,
   buildStabilityData,
   buildTimeStructureTotals,
   findRecordByDate,
-  getEffectiveFocus,
-  getProgressLabel,
-  getStateLabel,
 } from '@/lib/analysis/growth-metrics'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
 import DayTypeFilter from '@/components/analysis/DayTypeFilter'
@@ -30,11 +30,7 @@ import './analysis.css'
 
 type PreferencesState = Omit<GrowthPreferences, 'user_id'>
 
-const DEFAULT_PREFERENCES: PreferencesState = {
-  enable_habit_checkins: false,
-  enable_progress_tracking: false,
-  enable_state_tracking: false,
-}
+const DEFAULT_PREFERENCES: PreferencesState = DEFAULT_GROWTH_PREFERENCES
 
 export default function AnalysisPage() {
   const { user } = useAuth()
@@ -69,6 +65,8 @@ export default function AnalysisPage() {
           enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
           enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
           enable_state_tracking: preferencesResult.value.enable_state_tracking,
+          enable_focus_timer: preferencesResult.value.enable_focus_timer,
+          enable_motion_detection: preferencesResult.value.enable_motion_detection,
         })
       }
     })()
@@ -99,6 +97,8 @@ export default function AnalysisPage() {
         enable_habit_checkins: preferencesResult.value.enable_habit_checkins,
         enable_progress_tracking: preferencesResult.value.enable_progress_tracking,
         enable_state_tracking: preferencesResult.value.enable_state_tracking,
+        enable_focus_timer: preferencesResult.value.enable_focus_timer,
+        enable_motion_detection: preferencesResult.value.enable_motion_detection,
       })
     }
   }
@@ -109,11 +109,9 @@ export default function AnalysisPage() {
   const todayRecord = findRecordByDate(records, new Date())
   const totals = buildTimeStructureTotals(filteredRecords)
   const assets = buildGrowthAssets(filteredRecords, preferences)
-  const heatmapCells = buildHeatmapData(filteredRecords, preferences, 35)
   const stabilityPoints = buildStabilityData(filteredRecords, preferences, 14)
   const memories = buildRecentMemory(filteredRecords)
-  const growthEcho = buildGrowthEcho(todayRecord, preferences)
-  const effectiveFocus = todayRecord ? getEffectiveFocus(todayRecord) : 0
+  const growthEcho = buildGrowthEcho(records, new Date(), preferences)
 
   return (
     <main className="analysis-page">
@@ -136,15 +134,7 @@ export default function AnalysisPage() {
           <span className="sec-dot honey" />
           <span className="sec-name">成长回声</span>
         </div>
-        <GrowthEchoCard
-          message={growthEcho}
-          effectiveFocus={effectiveFocus}
-          returnCount={todayRecord?.return_count ?? 0}
-          progressLabel={
-            preferences.enable_progress_tracking ? getProgressLabel(todayRecord?.progress_level ?? null) : null
-          }
-          stateLabel={preferences.enable_state_tracking ? getStateLabel(todayRecord?.state_label ?? null) : null}
-        />
+        <GrowthEchoCard echo={growthEcho} />
       </section>
 
       <section className="analysis-section anim d2">
@@ -154,7 +144,7 @@ export default function AnalysisPage() {
         </div>
         <div className="analysis-pulse-grid">
           <FocusTimeTrendChart records={filteredRecords} />
-          <GrowthHeatmap cells={heatmapCells} />
+          <GrowthHeatmap records={filteredRecords} preferences={preferences} />
         </div>
       </section>
 

@@ -33,8 +33,8 @@ export async function getMessages(channelId: string, before?: string): Promise<M
   return (data ?? []).reverse()
 }
 
-export async function sendTextMessage(channelId: string, userId: string, content: string, replyTo?: string): Promise<void> {
-  const { error } = await supabase
+export async function sendTextMessage(channelId: string, userId: string, content: string, replyTo?: string): Promise<Message> {
+  const { data, error } = await supabase
     .from('messages')
     .insert({
       channel_id: channelId,
@@ -43,10 +43,13 @@ export async function sendTextMessage(channelId: string, userId: string, content
       message_type: 'text',
       reply_to: replyTo ?? null,
     })
+    .select()
+    .single()
   if (error) throw error
+  return data as Message
 }
 
-export async function sendImageMessage(channelId: string, userId: string, file: File): Promise<void> {
+export async function sendImageMessage(channelId: string, userId: string, file: File): Promise<Message> {
   const ext = file.name.split('.').pop() || 'png'
   const safeName = `${Date.now()}.${ext}`
   const filePath = `${userId}/${safeName}`
@@ -60,7 +63,7 @@ export async function sendImageMessage(channelId: string, userId: string, file: 
     .from('chat-images')
     .getPublicUrl(filePath)
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('messages')
     .insert({
       channel_id: channelId,
@@ -68,7 +71,10 @@ export async function sendImageMessage(channelId: string, userId: string, file: 
       message_type: 'image',
       image_url: urlData.publicUrl,
     })
+    .select()
+    .single()
   if (error) throw error
+  return data as Message
 }
 
 export async function sendCheckinMessage(
@@ -105,7 +111,8 @@ export async function getMessageById(id: string): Promise<Message | null> {
 
 export function subscribeToChannel(
   channelId: string,
-  onNewMessage: (message: Message) => void
+  onNewMessage: (message: Message) => void,
+  onDelete?: (messageId: string) => void,
 ): RealtimeChannel {
   return supabase
     .channel(`channel-${channelId}`)
@@ -136,6 +143,21 @@ export function subscribeToChannel(
           return
         }
         onNewMessage(msg)
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: 'messages',
+        filter: `channel_id=eq.${channelId}`,
+      },
+      (payload) => {
+        const deletedId = (payload.old as { id?: string })?.id
+        if (deletedId) {
+          onDelete?.(deletedId)
+        }
       }
     )
     .subscribe()

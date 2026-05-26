@@ -4,6 +4,11 @@ import { useState, useEffect, RefObject } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { getWeeklyFocusHours } from '@/lib/api/stats'
+import {
+  DEFAULT_GROWTH_PREFERENCES,
+  getGrowthPreferences,
+} from '@/lib/api/growth-preferences'
+import { requestMotionPermission } from '@/lib/motion-detector'
 
 type Props = {
   onEnter: () => void
@@ -25,6 +30,9 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
   const [lastSession, setLastSession] = useState<{ category: string; duration: number } | null>(null)
   const [weeklyHours, setWeeklyHours] = useState(0)
   const [quietLine] = useState(() => quietLines[Math.floor(Math.random() * quietLines.length)])
+  const [enableMotion, setEnableMotion] = useState(
+    DEFAULT_GROWTH_PREFERENCES.enable_motion_detection
+  )
 
   useEffect(() => {
     if (!user) return
@@ -32,10 +40,11 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
 
     const load = async () => {
       try {
-        const [sessions, returns, weekly] = await Promise.all([
+        const [sessions, returns, weekly, prefs] = await Promise.all([
           getTodayFocusSessions(user.id),
           getTodayReturnCount(user.id),
           getWeeklyFocusHours(user.id),
+          getGrowthPreferences(user.id),
         ])
 
         if (cancelled) return
@@ -52,6 +61,7 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
               }
             : null
         )
+        setEnableMotion(prefs.enable_motion_detection)
       } catch {
         // Silently handle — page still works with zero state
       }
@@ -63,6 +73,15 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
       cancelled = true
     }
   }, [user])
+
+  const handleStart = () => {
+    if (enableMotion) {
+      // Fire inside the user gesture so iOS DeviceMotionEvent.requestPermission
+      // counts as authorized. Result is intentionally not awaited.
+      void requestMotionPermission()
+    }
+    onEnter()
+  }
 
   const formatHours = (h: number) => {
     const hours = Math.floor(h)
@@ -119,7 +138,7 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
           <div className="focus-orb-ring-inner" />
           <button
             className="focus-orb"
-            onClick={onEnter}
+            onClick={handleStart}
             aria-label="进入专注空间"
           >
             <span className="focus-orb-text">开始专注</span>

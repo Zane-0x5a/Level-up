@@ -116,6 +116,35 @@ export async function correctSubmittedFocusSession(
   )
 }
 
+export async function getLastFocusCategory(userId: string): Promise<string | null> {
+  return getLastFocusCategoryWithClient(await getSupabaseClient(), userId)
+}
+
+export async function getLastFocusCategoryWithClient(
+  client: FocusSessionsClient,
+  userId: string,
+): Promise<string | null> {
+  const focusSessionsTable = client.from('focus_sessions') as {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        order: (
+          column: string,
+          options: { ascending: boolean }
+        ) => {
+          limit: (n: number) => ManyRowsResult<Pick<FocusSession, 'category'>>
+        }
+      }
+    }
+  }
+  const { data, error } = await focusSessionsTable
+    .select('category')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  if (error || !data || data.length === 0) return null
+  return data[0].category ?? null
+}
+
 export async function getTodayFocusSessions(userId: string, date?: string) {
   return getTodayFocusSessionsWithClient(await getSupabaseClient(), userId, date)
 }

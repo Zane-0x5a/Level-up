@@ -3,12 +3,16 @@ export type GrowthPreferences = {
   enable_habit_checkins: boolean
   enable_progress_tracking: boolean
   enable_state_tracking: boolean
+  enable_focus_timer: boolean
+  enable_motion_detection: boolean
 }
 
 export const DEFAULT_GROWTH_PREFERENCES: Omit<GrowthPreferences, 'user_id'> = {
   enable_habit_checkins: false,
   enable_progress_tracking: false,
   enable_state_tracking: false,
+  enable_focus_timer: true,
+  enable_motion_detection: true,
 }
 
 function getStorageKey(userId: string) {
@@ -84,6 +88,8 @@ function writeLocalPreferences(
       enable_habit_checkins: next.enable_habit_checkins,
       enable_progress_tracking: next.enable_progress_tracking,
       enable_state_tracking: next.enable_state_tracking,
+      enable_focus_timer: next.enable_focus_timer,
+      enable_motion_detection: next.enable_motion_detection,
     })
   )
 }
@@ -130,6 +136,8 @@ export async function upsertGrowthPreferencesWithClient(
     enable_habit_checkins: existing.enable_habit_checkins,
     enable_progress_tracking: existing.enable_progress_tracking,
     enable_state_tracking: existing.enable_state_tracking,
+    enable_focus_timer: existing.enable_focus_timer,
+    enable_motion_detection: existing.enable_motion_detection,
     ...preferences,
   }
 

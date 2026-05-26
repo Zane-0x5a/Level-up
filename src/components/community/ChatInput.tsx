@@ -50,7 +50,8 @@ export default function ChatInput({
 
     setSending(true)
     try {
-      await sendTextMessage(channelId, userId, trimmed, replyTo?.id)
+      const msg = await sendTextMessage(channelId, userId, trimmed, replyTo?.id)
+      onNewMessage?.(msg)
       setText('')
       onClearReply?.()
       inputRef.current?.focus()
@@ -74,7 +75,8 @@ export default function ChatInput({
 
     setSending(true)
     try {
-      await sendImageMessage(channelId, userId, file)
+      const msg = await sendImageMessage(channelId, userId, file)
+      onNewMessage?.(msg)
     } catch (err) {
       console.error('图片发送失败:', err)
     } finally {

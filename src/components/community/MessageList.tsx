@@ -63,33 +63,29 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
 
   // Realtime subscription
   useEffect(() => {
-    const channel = subscribeToChannel(channelId, (newMsg) => {
-      setMessages(prev => {
-        const idx = prev.findIndex(m => m.id === newMsg.id)
-        if (idx !== -1) {
-          // Replace existing entry (e.g. checkin with stale null data now has full data)
-          const updated = [...prev]
-          updated[idx] = newMsg
-          return updated
+    const channel = subscribeToChannel(
+      channelId,
+      (newMsg) => {
+        setMessages(prev => {
+          const idx = prev.findIndex(m => m.id === newMsg.id)
+          if (idx !== -1) {
+            // Replace existing entry (e.g. checkin with stale null data now has full data)
+            const updated = [...prev]
+            updated[idx] = newMsg
+            return updated
+          }
+          return [...prev, newMsg]
+        })
+        if (isNearBottom.current) {
+          setTimeout(() => {
+            if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+          }, 50)
         }
-        return [...prev, newMsg]
-      })
-      if (isNearBottom.current) {
-        setTimeout(() => {
-          if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
-        }, 50)
-      }
-    })
-
-    channel.on('postgres_changes', {
-      event: 'DELETE',
-      schema: 'public',
-      table: 'messages',
-      filter: `channel_id=eq.${channelId}`,
-    }, (payload) => {
-      const deletedId = payload.old.id
-      setMessages(prev => prev.filter(m => m.id !== deletedId))
-    })
+      },
+      (deletedId) => {
+        setMessages(prev => prev.filter(m => m.id !== deletedId))
+      },
+    )
 
     realtimeRef.current = channel
 

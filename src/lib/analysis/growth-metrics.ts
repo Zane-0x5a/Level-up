@@ -18,12 +18,6 @@ export type GrowthPreferencesLite = {
   enable_state_tracking: boolean
 }
 
-export type HeatmapCell = {
-  date: string
-  score: number
-  isActive: boolean
-}
-
 export type StabilityPoint = {
   date: string
   reachedBaseline: boolean
@@ -128,32 +122,6 @@ export function findRecordByDate(
   return records.find((record) => record.date === dateKey) ?? null
 }
 
-export function buildGrowthEcho(
-  record: GrowthRecord | null,
-  preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES
-): string {
-  if (!record) {
-    return '今天还没有留下成长记录，先完成一段专注也很好。'
-  }
-
-  const effectiveFocus = getEffectiveFocus(record)
-  const progressLabel = preferences.enable_progress_tracking ? getProgressLabel(record.progress_level) : null
-  const stateLabel = preferences.enable_state_tracking ? getStateLabel(record.state_label) : null
-  const returnCount = record.return_count ?? 0
-  const parts: string[] = []
-
-  if (effectiveFocus > 0) parts.push(`今天已经投入 ${effectiveFocus.toFixed(1)}h`)
-  if (progressLabel) parts.push(`主线${progressLabel}`)
-  if (returnCount > 0) parts.push(`把自己拉回来了 ${returnCount} 次`)
-  if (stateLabel) parts.push(`整体状态是“${stateLabel}”`)
-
-  if (parts.length === 0) {
-    return '今天先留下一点成长证据就很好，不必急着追求完美。'
-  }
-
-  return `${parts.join('，')}。`
-}
-
 export function buildGrowthAssets(
   records: GrowthRecord[],
   preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES
@@ -179,51 +147,32 @@ export function buildGrowthAssets(
   return assets
 }
 
-export function buildHeatmapData(
-  records: GrowthRecord[],
-  preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES,
-  days = 35,
-  endDate = new Date()
-): HeatmapCell[] {
-  const recordMap = new Map(records.map((record) => [record.date, record]))
-  const cells: HeatmapCell[] = []
-  const cursor = new Date(endDate)
-
-  cursor.setHours(0, 0, 0, 0)
-
-  for (let index = days - 1; index >= 0; index -= 1) {
-    const day = new Date(cursor)
-    day.setDate(cursor.getDate() - index)
-    const key = toDateKey(day)
-    const record = recordMap.get(key)
-    const score = record ? Math.min(getGrowthEvidenceScore(record, preferences), 4) : 0
-
-    cells.push({
-      date: key,
-      score,
-      isActive: score > 0,
-    })
-  }
-
-  return cells
-}
-
 export function buildStabilityData(
   records: GrowthRecord[],
   preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES,
   days = 14,
   endDate = new Date()
 ): StabilityPoint[] {
-  return buildHeatmapData(records, preferences, days, endDate).map((cell) => {
-    const record = findRecordByDate(records, cell.date)
-    const hasEvidence = cell.score > 0
+  const recordMap = new Map(records.map((record) => [record.date, record]))
+  const cursor = new Date(endDate)
+  cursor.setHours(0, 0, 0, 0)
 
-    return {
-      date: cell.date,
-      hasEvidence,
+  const points: StabilityPoint[] = []
+  for (let index = days - 1; index >= 0; index -= 1) {
+    const day = new Date(cursor)
+    day.setDate(cursor.getDate() - index)
+    const key = toDateKey(day)
+    const record = recordMap.get(key) ?? null
+    const score = record ? getGrowthEvidenceScore(record, preferences) : 0
+
+    points.push({
+      date: key,
+      hasEvidence: score > 0,
       reachedBaseline: record ? reachesGrowthBaseline(record, preferences) : false,
-    }
-  })
+    })
+  }
+
+  return points
 }
 
 export function buildTimeStructureTotals(records: GrowthRecord[]) {

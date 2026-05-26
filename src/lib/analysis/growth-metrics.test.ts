@@ -2,8 +2,6 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   buildGrowthAssets,
-  buildGrowthEcho,
-  buildHeatmapData,
   buildRecentMemory,
   buildStabilityData,
   findRecordByDate,
@@ -48,52 +46,6 @@ test('getGrowthEvidenceScore combines focus, notes, and optional modules', () =>
   )
 
   assert.equal(score, 7)
-})
-
-test('buildGrowthEcho turns a record into positive feedback language', () => {
-  const echo = buildGrowthEcho(
-    {
-      date: '2026-03-20',
-      day_type: 'study_day',
-      focus_in_class: 2,
-      focus_out_class: 2,
-      entertainment: 0.5,
-      return_count: 3,
-      progress_level: 'breakthrough',
-      state_label: 'good',
-    },
-    preferences
-  )
-
-  assert.match(echo, /投入 4\.0h/)
-  assert.match(echo, /主线有突破/)
-  assert.match(echo, /拉回来了 3 次/)
-})
-
-test('buildHeatmapData fills missing days with zero-score cells', () => {
-  const cells = buildHeatmapData(
-    [
-      {
-        date: '2026-03-19',
-        day_type: 'study_day',
-        focus_in_class: 1,
-        focus_out_class: 1,
-        entertainment: 0,
-      },
-    ],
-    preferences,
-    3,
-    new Date('2026-03-20T00:00:00Z')
-  )
-
-  assert.deepEqual(
-    cells.map((cell) => [cell.date, cell.score]),
-    [
-      ['2026-03-18', 0],
-      ['2026-03-19', 2],
-      ['2026-03-20', 0],
-    ]
-  )
 })
 
 test('buildStabilityData marks days with enough evidence as baseline reached', () => {

@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   addFocusSession,
   correctSubmittedFocusSession,
+  getLastFocusCategory,
   type FocusSession,
 } from '@/lib/api/focus-sessions'
 import {
@@ -14,6 +15,11 @@ import {
   readFocusDraft,
   writeFocusDraft,
 } from '@/lib/focus-draft'
+import {
+  FOCUS_TIMER_MIN_FOCUS_MS,
+  consumeFocusTimer,
+  readFocusElapsed,
+} from '@/lib/focus-timer'
 
 type Props = {
   onComplete: () => void
@@ -126,6 +132,12 @@ function SessionEndPanelContent({
   const [isEditingSubmittedSession, setIsEditingSubmittedSession] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [autoCommitting, setAutoCommitting] = useState(() => {
+    if (!userId || readSubmittedSession(userId)) return false
+    const elapsed = readFocusElapsed()
+    return elapsed !== null && elapsed >= FOCUS_TIMER_MIN_FOCUS_MS
+  })
+  const autoCommitRanRef = useRef(false)
   const isShowingConfirmation =
     submittedSession !== null && !isEditingSubmittedSession
 
@@ -134,6 +146,58 @@ function SessionEndPanelContent({
 
     writeFocusDraft(userId, { category, hours, minutes })
   }, [category, hours, minutes, submittedSession, userId])
+
+  useEffect(() => {
+    if (!userId) return
+    if (autoCommitRanRef.current) return
+    autoCommitRanRef.current = true
+
+    void (async () => {
+      const elapsedMs = consumeFocusTimer()
+      if (elapsedMs === null) {
+        setAutoCommitting(false)
+        return
+      }
+
+      // Cross-tab guard: if another tab already wrote the submitted session
+      // for this user (e.g., user has /focus open in two tabs and exited in
+      // tab A), don't double-insert.
+      if (readSubmittedSession(userId)) {
+        const existing = readSubmittedSession(userId)
+        if (existing) {
+          setSubmittedSession(existing)
+          setIsEditingSubmittedSession(false)
+        }
+        setAutoCommitting(false)
+        return
+      }
+
+      try {
+        const lastCategory = await getLastFocusCategory(userId).catch(() => null)
+        const draft = readFocusDraft(userId)
+        const finalCategory =
+          lastCategory ?? draft.category ?? DEFAULT_FOCUS_DRAFT.category
+        const durationHours = elapsedMs / (1000 * 60 * 60)
+        const session = await addFocusSession(userId, finalCategory, durationHours)
+        clearFocusDraft(userId)
+        writeSubmittedSession(userId, session)
+        setSubmittedSession(session)
+        setIsEditingSubmittedSession(false)
+        setAutoCommitting(false)
+      } catch {
+        // Auto-commit failed (network / RLS / migration drift). Pre-fill the
+        // duration & category so the user can manually confirm — the timer
+        // is already consumed at this point.
+        const prefilled = getDraftFromDuration(elapsedMs / (1000 * 60 * 60))
+        setHours(prefilled.hours)
+        setMinutes(prefilled.minutes)
+        const lastCategory = await getLastFocusCategory(userId).catch(() => null)
+        if (lastCategory) setCategory(lastCategory)
+        setError('自动记录失败，请手动确认或更正')
+        setAutoCommitting(false)
+      }
+    })()
+  }, [userId])
 
   const handleDone = () => {
     clearSubmittedSession(userId)
@@ -210,10 +274,20 @@ function SessionEndPanelContent({
     <div className="session-end-backdrop">
       <div className="session-end-card float-card glow-coral">
         <div className="session-end-title">
-          {isShowingConfirmation ? '已记录本次专注' : isEditingSubmittedSession ? '更正刚刚记录' : '记录本次专注'}
+          {autoCommitting
+            ? '正在记录本次专注'
+            : isShowingConfirmation
+              ? '已记录本次专注'
+              : isEditingSubmittedSession
+                ? '更正刚刚记录'
+                : '记录本次专注'}
         </div>
 
-        {isShowingConfirmation && submittedSession ? (
+        {autoCommitting ? (
+          <div className="session-end-label" style={{ marginBottom: 16 }}>
+            正在根据计时器写入这次的专注记录...
+          </div>
+        ) : isShowingConfirmation && submittedSession ? (
           <>
             <div className="session-end-label">刚刚保存的记录</div>
             <div className="session-end-duration">
