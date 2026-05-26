@@ -308,7 +308,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 32px;
   opacity: 0;
   animation: fadeIn 0.6s ease 0.2s forwards;
 }
@@ -362,9 +362,10 @@
 
 /* Return count capsule */
 .return-count-capsule {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
   align-items: center;
-  gap: 6px;
+  justify-items: center;
   padding: 6px 16px;
   border-radius: 100px;
   background: rgba(255,255,255,0.08);
@@ -375,6 +376,30 @@
   font-size: 12px;
   font-weight: 600;
   color: rgba(255,255,255,0.6);
+  transition: width 0.35s ease;
+}
+
+.return-capsule-layer {
+  grid-row: 1;
+  grid-column: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.return-capsule-layer.time {
+  font-family: var(--font-mono, monospace);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,0.85);
+}
+
+.return-capsule-layer.hidden {
+  opacity: 0;
+  transform: translateY(2px);
+  pointer-events: none;
 }
 
 /* +1 toast */
@@ -392,22 +417,7 @@
   pointer-events: none;
 }
 
-/* Elapsed time readout — visible on hover (desktop) or after device pickup (mobile) */
-.return-time-display {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: var(--font-mono, monospace);
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.55);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
-  white-space: nowrap;
-  pointer-events: none;
-  animation: fadeIn 0.15s ease;
-}
+/* Elapsed time readout — superseded by capsule cross-fade layer (.return-capsule-layer.time) */
 
 @keyframes toastFloat {
   0% { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -415,14 +425,17 @@
   100% { opacity: 0; transform: translateX(-50%) translateY(-36px); }
 }
 
-/* Sticky note in immersive */
+/* Sticky note in immersive — vertically centered between the count capsule
+   (sits below the centered orb at ~50vh + 90px(orb radius) + 32px(gap) = 50vh + 122px)
+   and the audio player (top edge at ~100vh - 76px).
+   Midpoint = (50vh + 122 + 100vh - 76) / 2 = 75vh + 23px. */
 .immersive-sticky {
-  position: absolute;
-  bottom: 140px;
+  position: fixed;
+  top: calc(75vh + 23px);
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   width: max-content;
-  max-width: 320px;
+  max-width: min(560px, 80vw);
   text-align: center;
   font-family: var(--font-body);
   font-size: 14px;
@@ -432,6 +445,7 @@
   text-shadow: 0 1px 8px rgba(0,0,0,0.3);
   opacity: 0;
   animation: fadeIn 1s ease 0.6s forwards;
+  pointer-events: none;
 }
 
 /* ── Audio Player ── */
@@ -732,10 +746,29 @@
     justify-content: flex-end;
   }
 
-  /* orb 缩到 ~80px (保持圆形不变形 — 不破坏 breathing orb 品牌视觉语言) */
+  /* orb 缩到 ~80px,但不在 wrapper 上做 transform —
+     transform 会让后代 position:fixed 失效（capsule 跑到 wrapper 内部坐标系）。
+     用直接覆盖内部元素尺寸的方式实现。 */
   .return-orb-wrapper {
-    transform: scale(0.45);
-    transform-origin: bottom right;
+    gap: 4px;
+  }
+
+  .return-orb-wrapper .focus-orb-wrapper {
+    width: 72px;
+    height: 72px;
+  }
+
+  .return-orb-wrapper .return-orb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .return-orb-wrapper .return-orb-text {
+    font-size: 12px;
+  }
+
+  .return-orb-wrapper .return-orb-ring {
+    inset: -6px;
   }
 
   /* 回归次数 capsule 移到左上角作为环境数据 */
@@ -750,7 +783,8 @@
     padding: 4px 10px;
   }
 
-  /* AudioPlayer 移到左下角 */
+  /* AudioPlayer 移到左下角，桌面钟模式只保留 play + 标题，
+     藏掉进度条和上一首/下一首避免横屏宽度被内部固定尺寸撑爆 */
   .audio-player {
     position: fixed;
     bottom: 16px;
@@ -758,7 +792,18 @@
     right: auto;
     top: auto;
     margin: 0;
-    max-width: 200px;
+    max-width: calc(50vw - 32px);
+    padding: 6px 12px;
+    gap: 8px;
+  }
+
+  .audio-player .audio-progress-area,
+  .audio-player .audio-nav-btn {
+    display: none;
+  }
+
+  .audio-player .audio-track-title {
+    max-width: 96px;
   }
 
   /* 退出按钮位置不变，缩小一点 */

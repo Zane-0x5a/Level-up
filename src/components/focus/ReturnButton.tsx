@@ -81,15 +81,20 @@ export default function ReturnButton({
         >
           <span className="return-orb-text">回归</span>
         </button>
-        {shouldShowTime && elapsedMs !== null && (
-          <div className="return-time-display" aria-hidden="true">
-            {formatElapsed(elapsedMs)}
-          </div>
-        )}
       </div>
 
       <div className="return-count-capsule">
-        今日回归 {returnCount} 次
+        <span
+          className={`return-capsule-layer count${shouldShowTime && elapsedMs !== null ? ' hidden' : ''}`}
+        >
+          今日回归 {returnCount} 次
+        </span>
+        <span
+          className={`return-capsule-layer time${shouldShowTime && elapsedMs !== null ? '' : ' hidden'}`}
+          aria-hidden={!(shouldShowTime && elapsedMs !== null)}
+        >
+          {formatElapsed(elapsedMs ?? 0)}
+        </span>
       </div>
     </div>
   )

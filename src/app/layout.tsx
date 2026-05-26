@@ -6,6 +6,7 @@ import { NavProvider } from "@/contexts/NavContext";
 import TopNav from "@/components/TopNav";
 import BottomTabBar from "@/components/BottomTabBar";
 import AuthGuard from "@/components/AuthGuard";
+import FocusSessionGuard from "@/components/FocusSessionGuard";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-display" });
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-body" });
@@ -34,6 +35,7 @@ export default function RootLayout({
         <AuthProvider>
           <AuthGuard>
             <NavProvider>
+              <FocusSessionGuard />
               <TopNav />
               <BottomTabBar />
 
