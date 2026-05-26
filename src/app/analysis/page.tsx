@@ -13,9 +13,7 @@ import { buildGrowthEcho } from '@/lib/analysis/echo'
 import {
   buildGrowthAssets,
   buildRecentMemory,
-  buildStabilityData,
   buildTimeStructureTotals,
-  findRecordByDate,
 } from '@/lib/analysis/growth-metrics'
 import DailyEntryForm from '@/components/analysis/DailyEntryForm'
 import DayTypeFilter from '@/components/analysis/DayTypeFilter'
@@ -25,7 +23,6 @@ import GrowthAssetsGrid from '@/components/analysis/GrowthAssetsGrid'
 import GrowthEchoCard from '@/components/analysis/GrowthEchoCard'
 import GrowthHeatmap from '@/components/analysis/GrowthHeatmap'
 import NotesDrawer from '@/components/analysis/NotesDrawer'
-import StabilityStrip from '@/components/analysis/StabilityStrip'
 import './analysis.css'
 
 type PreferencesState = Omit<GrowthPreferences, 'user_id'>
@@ -106,10 +103,8 @@ export default function AnalysisPage() {
   const filteredRecords =
     filter === 'all' ? records : records.filter((record) => record.day_type === filter)
 
-  const todayRecord = findRecordByDate(records, new Date())
   const totals = buildTimeStructureTotals(filteredRecords)
   const assets = buildGrowthAssets(filteredRecords, preferences)
-  const stabilityPoints = buildStabilityData(filteredRecords, preferences, 14)
   const memories = buildRecentMemory(filteredRecords)
   const growthEcho = buildGrowthEcho(records, new Date(), preferences)
 
@@ -153,14 +148,11 @@ export default function AnalysisPage() {
           <span className="sec-dot sage" />
           <span className="sec-name">成长结构</span>
         </div>
-        <div className="analysis-structure-grid">
-          <FocusTimePieChart
-            inClass={totals.inClass}
-            outClass={totals.outClass}
-            entertainment={totals.entertainment}
-          />
-          <StabilityStrip points={stabilityPoints} />
-        </div>
+        <FocusTimePieChart
+          inClass={totals.inClass}
+          outClass={totals.outClass}
+          entertainment={totals.entertainment}
+        />
       </section>
 
       <section className="analysis-section anim d4">

@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import {
   buildGrowthAssets,
   buildRecentMemory,
-  buildStabilityData,
   findRecordByDate,
   getEffectiveFocus,
   getGrowthEvidenceScore,
@@ -46,36 +45,6 @@ test('getGrowthEvidenceScore combines focus, notes, and optional modules', () =>
   )
 
   assert.equal(score, 7)
-})
-
-test('buildStabilityData marks days with enough evidence as baseline reached', () => {
-  const data = buildStabilityData(
-    [
-      {
-        date: '2026-03-20',
-        day_type: 'study_day',
-        focus_in_class: 1,
-        focus_out_class: 1,
-        entertainment: 0.5,
-      },
-      {
-        date: '2026-03-19',
-        day_type: 'rest_day',
-        focus_in_class: 0,
-        focus_out_class: 0,
-        entertainment: 2,
-        note: '只是休息，但也留了总结',
-      },
-    ],
-    preferences,
-    2,
-    new Date('2026-03-20T00:00:00Z')
-  )
-
-  assert.deepEqual(
-    data.map((item) => item.reachedBaseline),
-    [false, true]
-  )
 })
 
 test('buildGrowthAssets returns progress-aware asset cards', () => {

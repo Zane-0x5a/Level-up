@@ -18,12 +18,6 @@ export type GrowthPreferencesLite = {
   enable_state_tracking: boolean
 }
 
-export type StabilityPoint = {
-  date: string
-  reachedBaseline: boolean
-  hasEvidence: boolean
-}
-
 export type GrowthAsset = {
   label: string
   value: string
@@ -107,13 +101,6 @@ export function hasGrowthEvidence(
   return getGrowthEvidenceScore(record, preferences) > 0
 }
 
-export function reachesGrowthBaseline(
-  record: GrowthRecord,
-  preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES
-): boolean {
-  return getGrowthEvidenceScore(record, preferences) >= 2
-}
-
 export function findRecordByDate(
   records: readonly GrowthRecord[],
   targetDate: string | Date = new Date()
@@ -145,34 +132,6 @@ export function buildGrowthAssets(
   }
 
   return assets
-}
-
-export function buildStabilityData(
-  records: GrowthRecord[],
-  preferences: GrowthPreferencesLite = DEFAULT_GROWTH_PREFERENCES,
-  days = 14,
-  endDate = new Date()
-): StabilityPoint[] {
-  const recordMap = new Map(records.map((record) => [record.date, record]))
-  const cursor = new Date(endDate)
-  cursor.setHours(0, 0, 0, 0)
-
-  const points: StabilityPoint[] = []
-  for (let index = days - 1; index >= 0; index -= 1) {
-    const day = new Date(cursor)
-    day.setDate(cursor.getDate() - index)
-    const key = toDateKey(day)
-    const record = recordMap.get(key) ?? null
-    const score = record ? getGrowthEvidenceScore(record, preferences) : 0
-
-    points.push({
-      date: key,
-      hasEvidence: score > 0,
-      reachedBaseline: record ? reachesGrowthBaseline(record, preferences) : false,
-    })
-  }
-
-  return points
 }
 
 export function buildTimeStructureTotals(records: GrowthRecord[]) {
