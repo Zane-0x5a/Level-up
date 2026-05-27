@@ -9,12 +9,6 @@ type Props = {
 export default function GrowthEchoCard({ echo }: Props) {
   return (
     <div className="float-card glow-honey growth-echo-card">
-      <div className="chart-header">
-        <div>
-          <div className="chart-title">今日回声</div>
-          <div className="chart-subtitle">把数据放回身体的语言里</div>
-        </div>
-      </div>
       <div className="growth-echo-narrative">
         {echo.narrative.map((line, index) => (
           <p key={`${index}-${line}`} className="growth-echo-line">

@@ -74,10 +74,7 @@
 }
 .hero-greeting em {
   font-style: normal;
-  background: linear-gradient(135deg, var(--color-coral), var(--color-honey));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-coral);
 }
 .hero-tag {
   display: inline-flex;
