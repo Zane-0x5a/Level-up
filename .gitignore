@@ -28,6 +28,35 @@
 .claude/
 AGENTS.md
 CLAUDE.md
+.claude.json
+
+# Local-only agent / superpowers / dogma scratch
+.codex-work/
+.dogma-evidence/
+.dogma-state.json
+.dogma-state.json.patch
+.playwright-mcp/
+.playwright-cli/
+.superpowers/
+.factory/
+.qoder/
+.trae/
+.contracts-frozen.md
+.contracts-provisional.md
+.manifesto.md
+.mechanism.md
+.vows.md
+dogma-seed.ts
+skills-lock.json
+
+# Local-only docs (Remotion design + on-device frontend reviews)
+docs/superpowers/
+docs/frontend-review/
+
+# Local dev logs / scratch screenshots
+dev.log
+dev-run.log
+/*.png
 
 # debug
 npm-debug.log*
@@ -45,3 +74,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 design-previews/
+.worktrees/
+output/
+
+# Local Remotion workspace artifacts
+remotion/
