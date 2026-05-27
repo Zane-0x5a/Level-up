@@ -15,6 +15,8 @@ export default function TopNav() {
   const pathname = usePathname()
   const { navHidden } = useNav()
 
+  if (pathname === '/auth') return null
+
   return (
     <nav className={`top-nav${navHidden ? ' hidden' : ''}`}>
       <div className="nav-brand">Level <span>Up</span></div>

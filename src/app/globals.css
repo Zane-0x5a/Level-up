@@ -289,6 +289,9 @@ body::before {
 .sec-dot.sky {
   background: var(--color-sky);
 }
+.sec-dot.neutral {
+  background: var(--color-text-3);
+}
 .sec-name {
   font-family: var(--font-display);
   font-size: 15px;

@@ -229,18 +229,7 @@ export default function SettingsPage() {
       <h1 className="settings-title anim">设置</h1>
 
       {error && (
-        <div
-          className="settings-error anim"
-          style={{
-            color: '#e55',
-            background: 'rgba(229,85,85,0.08)',
-            border: '1px solid rgba(229,85,85,0.2)',
-            borderRadius: 10,
-            padding: '10px 16px',
-            marginBottom: 16,
-            fontSize: 14,
-          }}
-        >
+        <div className="settings-error anim">
           {error}
         </div>
       )}
@@ -285,7 +274,7 @@ export default function SettingsPage() {
       <section className="settings-section anim d2">
         <div className="float-card glow-neutral">
           <div className="sec-head">
-            <span className="sec-dot sky" />
+            <span className="sec-dot neutral" />
             <span className="sec-name">Flomo 配置</span>
           </div>
           <div className="flomo-row">
@@ -304,13 +293,13 @@ export default function SettingsPage() {
       </section>
 
       <section className="settings-section anim d3">
-        <div className="float-card glow-coral">
+        <div className="float-card glow-sage">
           <div className="sec-head">
-            <span className="sec-dot coral" />
+            <span className="sec-dot sage" />
             <span className="sec-name">专注计时器</span>
           </div>
           <p className="settings-copy">
-            进入专注空间后自动计时；退出时根据计时长度自动写入记录。可在确认页"更正刚刚记录"修改。
+            进入专注空间后自动计时；退出时根据计时长度自动写入记录。可在确认页&ldquo;更正刚刚记录&rdquo;修改。
           </p>
           <div className="settings-toggle-list">
             <label className="settings-toggle-row">
@@ -402,9 +391,9 @@ export default function SettingsPage() {
       </section>
 
       <section className="settings-section anim d4">
-        <div className="float-card glow-coral">
+        <div className="float-card glow-honey">
           <div className="sec-head">
-            <span className="sec-dot coral" />
+            <span className="sec-dot honey" />
             <span className="sec-name">专注背景图</span>
           </div>
           <div className="image-grid">
@@ -464,9 +453,9 @@ export default function SettingsPage() {
       </section>
 
       <section className="settings-section anim d4">
-        <div className="float-card glow-sage">
+        <div className="float-card glow-honey">
           <div className="sec-head">
-            <span className="sec-dot sage" />
+            <span className="sec-dot honey" />
             <span className="sec-name">音频管理</span>
           </div>
 

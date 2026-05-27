@@ -111,12 +111,7 @@ export default function AnalysisPage() {
   return (
     <main className="analysis-page">
       <div className="analysis-header anim">
-        <div>
-          <h1 className="analysis-title">成长分析</h1>
-          <p className="analysis-subtitle">
-            把努力、波动与积累都看见，才更容易相信今天没有白费。
-          </p>
-        </div>
+        <h1 className="analysis-title">成长分析</h1>
         <DayTypeFilter value={filter} onChange={setFilter} />
       </div>
 
@@ -126,7 +121,7 @@ export default function AnalysisPage() {
 
       <section className="analysis-section anim d2">
         <div className="sec-head">
-          <span className="sec-dot honey" />
+          <span className="sec-dot neutral" />
           <span className="sec-name">成长回声</span>
         </div>
         <GrowthEchoCard echo={growthEcho} />
@@ -134,7 +129,7 @@ export default function AnalysisPage() {
 
       <section className="analysis-section anim d2">
         <div className="sec-head">
-          <span className="sec-dot coral" />
+          <span className="sec-dot neutral" />
           <span className="sec-name">成长脉冲</span>
         </div>
         <div className="analysis-pulse-grid">
@@ -145,7 +140,7 @@ export default function AnalysisPage() {
 
       <section className="analysis-section anim d3">
         <div className="sec-head">
-          <span className="sec-dot sage" />
+          <span className="sec-dot neutral" />
           <span className="sec-name">成长结构</span>
         </div>
         <FocusTimePieChart
@@ -157,7 +152,7 @@ export default function AnalysisPage() {
 
       <section className="analysis-section anim d4">
         <div className="sec-head">
-          <span className="sec-dot honey" />
+          <span className="sec-dot neutral" />
           <span className="sec-name">成长资产</span>
         </div>
         <GrowthAssetsGrid assets={assets} streak={streak} />
@@ -165,7 +160,7 @@ export default function AnalysisPage() {
 
       <section className="analysis-section anim d4">
         <div className="sec-head">
-          <span className="sec-dot sky" />
+          <span className="sec-dot neutral" />
           <span className="sec-name">成长记忆</span>
         </div>
         <NotesDrawer

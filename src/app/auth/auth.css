@@ -1,9 +1,16 @@
 .auth-page {
   min-height: 100vh;
+  margin-top: -82px;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .auth-page {
+    margin-top: 0;
+  }
 }
 
 .auth-card {

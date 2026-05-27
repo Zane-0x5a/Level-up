@@ -18,6 +18,16 @@
   margin-bottom: 36px;
 }
 
+.settings-error {
+  font-size: 14px;
+  color: var(--color-rose);
+  background: var(--color-rose-soft);
+  border: 1px solid rgba(201, 81, 91, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 10px 16px;
+  margin-bottom: 16px;
+}
+
 /* ── Section spacing ── */
 .settings-section {
   margin-bottom: 24px;
@@ -320,8 +330,8 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: var(--color-sage-soft);
-  color: var(--color-sage);
+  background: var(--color-honey-soft);
+  color: var(--color-honey);
   display: flex;
   align-items: center;
   justify-content: center;
