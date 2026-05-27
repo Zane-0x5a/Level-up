@@ -198,7 +198,6 @@ export default function CountdownSection() {
                       id={currentItem.id}
                       label={currentItem.label}
                       targetDate={currentItem.target_date}
-                      index={activeIndex}
                       animate={direction !== null}
                     />
                   </div>

@@ -16,6 +16,7 @@ export default function BottomTabBar() {
   const { navHidden } = useNav()
 
   if (navHidden) return null
+  if (pathname === '/auth') return null
 
   return (
     <nav className="bottom-tab-bar">

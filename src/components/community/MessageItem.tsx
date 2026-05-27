@@ -93,7 +93,7 @@ export default function MessageItem({ message, profile, isOwn, isAdmin, replyMes
         )}
         {message.message_type === 'checkin' && message.checkin_data && (
           <div className="msg-checkin-card">
-            <CheckinCard data={message.checkin_data as any} />
+            <CheckinCard data={message.checkin_data as Parameters<typeof CheckinCard>[0]['data']} />
           </div>
         )}
 

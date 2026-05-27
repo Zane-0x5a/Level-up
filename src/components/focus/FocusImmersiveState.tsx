@@ -248,6 +248,17 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onExit()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onExit])
+
   const handleReturn = useCallback(async () => {
     if (!userId) return
     try {

@@ -36,8 +36,8 @@ export default function AuthPage() {
         await signUp(email, password, inviteCode)
         router.replace('/')
       }
-    } catch (err: any) {
-      setError(err.message || '操作失败')
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : '操作失败')
     } finally {
       setSubmitting(false)
     }
@@ -54,37 +54,45 @@ export default function AuthPage() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {actualMode !== 'reset' && (
-            <label>
+            <label htmlFor="auth-email">
               邮箱
               <input
+                id="auth-email"
                 className="field-input"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </label>
           )}
 
-          <label>
+          <label htmlFor="auth-password">
             {actualMode === 'reset' ? '新密码' : '密码'}
             <input
+              id="auth-password"
               className="field-input"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
+              autoComplete={
+                actualMode === 'login' ? 'current-password' : 'new-password'
+              }
               required
             />
           </label>
 
           {actualMode === 'register' && (
-            <label>
+            <label htmlFor="auth-invite">
               邀请码
               <input
+                id="auth-invite"
                 className="field-input"
                 type="text"
                 value={inviteCode}
                 onChange={e => setInviteCode(e.target.value)}
+                autoComplete="one-time-code"
                 required
               />
             </label>
@@ -104,7 +112,10 @@ export default function AuthPage() {
         {actualMode !== 'reset' && (
           <div className="auth-toggle">
             {mode === 'login' ? '没有账户？' : '已有账户？'}
-            <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}>
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+            >
               {mode === 'login' ? '注册' : '登录'}
             </button>
           </div>

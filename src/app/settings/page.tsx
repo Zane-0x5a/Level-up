@@ -310,7 +310,7 @@ export default function SettingsPage() {
             <span className="sec-name">专注计时器</span>
           </div>
           <p className="settings-copy">
-            进入专注空间后自动计时；退出时根据计时长度自动写入记录。可在确认页"更正刚刚记录"修改。
+            进入专注空间后自动计时；退出时根据计时长度自动写入记录。可在确认页&ldquo;更正刚刚记录&rdquo;修改。
           </p>
           <div className="settings-toggle-list">
             <label className="settings-toggle-row">
