@@ -1,5 +1,6 @@
 'use client'
 
+import { ClipboardCheck } from 'lucide-react'
 import {
   formatCheckinFocusMinutes,
   getCheckinDayLabel,
@@ -20,7 +21,7 @@ export default function CheckinCard({ data }: Props) {
   return (
     <div className="checkin-card">
       <div className="checkin-header">
-        <span className="checkin-icon">📝</span>
+        <span className="checkin-icon"><ClipboardCheck size={16} strokeWidth={2} /></span>
         <span className="checkin-date">{data.date ?? '今天'} 打卡</span>
       </div>
       <div className="checkin-stats">

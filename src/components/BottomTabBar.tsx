@@ -2,13 +2,14 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Home, Target, BarChart3, Settings } from 'lucide-react'
 import { useNav } from '@/contexts/NavContext'
 
 const tabs = [
-  { href: '/', label: '首页', icon: '🏠' },
-  { href: '/focus', label: '专注', icon: '🎯' },
-  { href: '/analysis', label: '分析', icon: '📊' },
-  { href: '/settings', label: '设置', icon: '⚙️' },
+  { href: '/', label: '首页', Icon: Home },
+  { href: '/focus', label: '专注', Icon: Target },
+  { href: '/analysis', label: '分析', Icon: BarChart3 },
+  { href: '/settings', label: '设置', Icon: Settings },
 ]
 
 export default function BottomTabBar() {
@@ -20,7 +21,7 @@ export default function BottomTabBar() {
 
   return (
     <nav className="bottom-tab-bar">
-      {tabs.map(({ href, label, icon }) => {
+      {tabs.map(({ href, label, Icon }) => {
         const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href)
         return (
           <Link
@@ -28,7 +29,7 @@ export default function BottomTabBar() {
             href={href}
             className={`tab-item${isActive ? ' active' : ''}`}
           >
-            <span className="tab-icon">{icon}</span>
+            <span className="tab-icon"><Icon size={20} strokeWidth={2} /></span>
             <span className="tab-label">{label}</span>
           </Link>
         )

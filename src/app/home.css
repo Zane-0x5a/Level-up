@@ -5,16 +5,23 @@
    Row 3: Community Entry Card
    ═══════════════════════════════════════ */
 
-/* Layout container — fills viewport, 2 main rows + 1 auto row */
+/* Layout container — flex column pinned to the viewport height. Row 1 sizes to
+   content; row 2 flexes to fill the rest, giving both row-2 columns a shared,
+   bounded height. Because the height is bounded (not min-height), overflow is
+   contained inside the notes list rather than stretching the page. A min-height
+   floor keeps it usable on very short viewports. No fixed pixel heights → robust
+   across zoom and window sizes. */
 .home-layout {
-  display: grid;
-  grid-template-rows: minmax(auto, 1fr) minmax(auto, 1fr) auto;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   padding: 20px 0 40px;
-  min-height: calc(100vh - 82px);
+  height: calc(100vh - 82px);
+  min-height: 540px;
 }
 
-/* Row 1: Hero + Countdown — equal halves */
+/* Row 1: Hero + Countdown — equal halves, equal heights (countdown grows with
+   hero's breathing room instead of pinning to its own minimum). */
 .home-row1 {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -24,7 +31,7 @@
 
 .grid-hero {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .grid-countdown {
@@ -32,28 +39,75 @@
   flex-direction: column;
 }
 
-/* Row 2: Overview + Notes — 3fr 2fr */
+/* Row 2: two equal-height columns that fill the remaining viewport height.
+   Left column stacks overview + community; right column is the notes sidebar.
+   Both columns stretch to the same height so their bottoms align. */
 .home-row2 {
+  flex: 1;
+  min-height: 0;
   display: grid;
   grid-template-columns: 3fr 2fr;
-  gap: 20px;
+  column-gap: 44px;
+  align-items: stretch;
 }
-/* Row 2 children: stretch cards to fill available height */
-.home-row2 > div {
+/* Left column: overview fills available height, community sits below it */
+.ga-left {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+  min-height: 0;
+}
+/* Each cell wrapper AND the component root inside it are flex columns that
+   fill their parent, so cards can stretch to full height. (Overview/Notes
+   components render a root <div> wrapping a section heading + the card.) */
+.ga-left > div,
+.ga-notes,
+.ga-overview > div,
+.ga-community > div,
+.ga-notes > div {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* Component root inside the notes cell grows to fill it (it scrolls inside).
+   The overview component root grows to fill but never shrinks below its content
+   (it has no internal scroll, so compressing it would overflow — see edge case). */
+.ga-notes > div {
+  flex: 1;
+}
+.ga-overview > div {
+  flex: 1 0 auto;
+}
+/* Overview cell grows to absorb the left column's slack but won't compress its
+   content; the notes column is the element that gives under tight heights. */
+.ga-overview {
+  flex: 1 0 auto;
 }
 .home-row2 .float-card {
-  flex: 1;
   display: flex;
   flex-direction: column;
+}
+/* Overview + notes cards fill the height handed down from their cell. The
+   notes list scrolls inside the card while the "add" button stays pinned;
+   height is shared with the left column, so the two columns' bottoms align at
+   any viewport size — no magic max-height. */
+.ga-overview .float-card,
+.ga-notes .float-card {
+  flex: 1;
+  min-height: 0;
+}
+/* Community card is a horizontal bar (icon · text · arrow), overriding the
+   column flow applied to row-2 cards above. */
+.ga-community .float-card {
+  flex-direction: row;
 }
 
 /* ═══════════════════════════════════════
    Hero — left-aligned, vertically centered
    ═══════════════════════════════════════ */
 .hero {
-  padding: 28px 0 32px;
+  padding: 44px 0 48px;
   text-align: left;
 }
 .hero-date {
@@ -62,15 +116,16 @@
   font-weight: 500;
   color: var(--color-text-3);
   letter-spacing: 0.06em;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 .hero-greeting {
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: 42px;
   font-weight: 800;
   color: var(--color-text);
-  margin-bottom: 22px;
+  margin-bottom: 28px;
   letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 .hero-greeting em {
   font-style: normal;
@@ -473,8 +528,11 @@
 }
 
 .cd-empty-icon {
-  font-size: 28px;
-  opacity: 0.3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-3);
+  opacity: 0.4;
 }
 
 .cd-empty-text {
@@ -558,6 +616,18 @@
 }
 
 /* Notes */
+
+/* Notes card: the notes list is the scroll region; the add button stays
+   pinned below it. Height comes from the grid cell (see .ga-notes). */
+.note-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
 .note-item {
   display: flex;
   align-items: flex-start;
@@ -659,14 +729,11 @@
 }
 
 /* ═══════════════════════════════════════
-   Row 3: Community Entry Card
+   Community Entry Card (left column, below overview)
    ═══════════════════════════════════════ */
-.home-row3 {
-  padding-top: 4px;
-}
-
 .community-entry-card {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 16px;
   padding: 20px 28px;
@@ -679,7 +746,10 @@
   transform: translateY(-2px);
 }
 .community-entry-icon {
-  font-size: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-sage);
 }
 .community-entry-text {
   display: flex;
@@ -698,7 +768,8 @@
 }
 .community-entry-arrow {
   margin-left: auto;
-  font-size: 18px;
+  display: flex;
+  align-items: center;
   color: var(--color-text-3);
   transition: transform 0.2s, color 0.2s;
 }
@@ -717,6 +788,32 @@
 }
 
 /* ═══════════════════════════════════════
+   RESPONSIVE — Short viewport (height-driven)
+   When the window is too short to hold the viewport-pinned layout without
+   compressing the (non-scrolling) overview into an overlap, release the fixed
+   height so the page scrolls. Columns still stretch to equal height, so the
+   two columns' bottoms stay aligned — only the page gains a scrollbar.
+   Content-driven (height) breakpoint, not a device size.
+   ═══════════════════════════════════════ */
+@media (min-width: 901px) and (max-height: 720px) {
+  .home-layout {
+    height: auto;
+    min-height: calc(100vh - 82px);
+  }
+  /* Row 2 must respect its content height (no compressing below it) so nothing
+     overlaps; it still flexes to fill when content is shorter than the viewport. */
+  .home-row2 {
+    min-height: auto;
+  }
+  /* Notes flows with the page rather than scrolling inside a bounded card.
+     The card still fills its stretched cell, so its bottom aligns with the
+     left column. */
+  .note-list {
+    overflow-y: visible;
+  }
+}
+
+/* ═══════════════════════════════════════
    RESPONSIVE — Tablet (≤ 900px)
    ═══════════════════════════════════════ */
 @media (max-width: 900px) {
@@ -724,20 +821,43 @@
   .home-main {
     padding: 0 24px;
   }
+  /* Single column: drop the viewport-pinned height so content flows and the
+     page scrolls naturally; columns become full-width stacked blocks. */
   .home-layout {
+    height: auto;
     min-height: auto;
-    grid-template-rows: auto auto auto;
   }
   .home-row1 {
     grid-template-columns: 1fr;
     gap: 16px;
   }
+  /* Single column: left stack (overview + community) then notes */
   .home-row2 {
+    display: flex;
+    flex-direction: column;
+    flex: none;
     grid-template-columns: 1fr;
+    column-gap: 0;
     gap: 16px;
   }
-  .home-row3 {
-    padding-top: 0;
+  .ga-left {
+    flex: none;
+    gap: 16px;
+  }
+  .ga-overview {
+    flex: none;
+  }
+  .home-row2 .float-card,
+  .ga-overview .float-card,
+  .ga-notes .float-card,
+  .ga-community .float-card,
+  .ga-overview > div,
+  .ga-notes > div {
+    flex: none;
+  }
+  /* Notes flow with the page; no inner scroll region in single column */
+  .note-list {
+    overflow-y: visible;
   }
 
   /* Hero: centered in single-column */
