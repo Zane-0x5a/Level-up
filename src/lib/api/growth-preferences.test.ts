@@ -7,6 +7,8 @@ type GrowthPreferencesRow = {
   enable_habit_checkins: boolean
   enable_progress_tracking: boolean
   enable_state_tracking: boolean
+  enable_focus_timer: boolean
+  enable_motion_detection: boolean
   updated_at?: string
 }
 
@@ -60,6 +62,8 @@ test('upsertGrowthPreferencesWithClient preserves existing enabled toggles acros
     enable_habit_checkins: false,
     enable_progress_tracking: false,
     enable_state_tracking: false,
+    enable_focus_timer: true,
+    enable_motion_detection: true,
   })
 
   await growthPreferencesApi.upsertGrowthPreferencesWithClient(client, 'user-1', {
@@ -75,6 +79,8 @@ test('upsertGrowthPreferencesWithClient preserves existing enabled toggles acros
     enable_habit_checkins: false,
     enable_progress_tracking: true,
     enable_state_tracking: true,
+    enable_focus_timer: true,
+    enable_motion_detection: true,
     updated_at: getRow()?.updated_at,
   })
 })
@@ -85,6 +91,8 @@ test('getGrowthPreferencesWithClient returns stored merged preferences for the s
     enable_habit_checkins: true,
     enable_progress_tracking: true,
     enable_state_tracking: false,
+    enable_focus_timer: true,
+    enable_motion_detection: true,
   })
 
   const result = await growthPreferencesApi.getGrowthPreferencesWithClient(client, 'user-1')
@@ -94,5 +102,7 @@ test('getGrowthPreferencesWithClient returns stored merged preferences for the s
     enable_habit_checkins: true,
     enable_progress_tracking: true,
     enable_state_tracking: false,
+    enable_focus_timer: true,
+    enable_motion_detection: true,
   })
 })

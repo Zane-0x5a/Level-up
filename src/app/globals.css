@@ -474,7 +474,9 @@ body::before {
   -webkit-tap-highlight-color: transparent;
 }
 .tab-icon {
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
 }
 .tab-label {

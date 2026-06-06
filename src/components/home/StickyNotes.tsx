@@ -78,27 +78,29 @@ export default function StickyNotes() {
         <div className="sec-name">{'\u4FBF\u7B7E\u63D0\u9192'}</div>
       </div>
       <div className="float-card glow-neutral">
-        {notes.map(note => (
-          <div key={note.id} className="note-item" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-              <div className="note-dot" />
-              <span>{note.content}</span>
+        <div className="note-list">
+          {notes.map(note => (
+            <div key={note.id} className="note-item" style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <div className="note-dot" />
+                <span>{note.content}</span>
+              </div>
+              <button
+                onClick={() => handleDelete(note.id)}
+                aria-label={'\u5220\u9664\u4FBF\u7B7E'}
+                className="note-delete"
+              >
+                {'\u00D7'}
+              </button>
             </div>
-            <button
-              onClick={() => handleDelete(note.id)}
-              aria-label={'\u5220\u9664\u4FBF\u7B7E'}
-              className="note-delete"
-            >
-              {'\u00D7'}
-            </button>
-          </div>
-        ))}
+          ))}
 
-        {notes.length === 0 && !showInput && (
-          <div className="note-empty">
-            {'\u8FD8\u6CA1\u6709\u4FBF\u7B7E'}
-          </div>
-        )}
+          {notes.length === 0 && !showInput && (
+            <div className="note-empty">
+              {'\u8FD8\u6CA1\u6709\u4FBF\u7B7E'}
+            </div>
+          )}
+        </div>
 
         {showInput && (
           <div className="note-input-row" style={{ marginTop: notes.length > 0 ? 12 : 0, alignItems: 'center' }}>

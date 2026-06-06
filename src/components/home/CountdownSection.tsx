@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { format, parseISO } from 'date-fns'
+import { CalendarClock } from 'lucide-react'
 import { getCountdowns, addCountdown, deleteCountdown } from '@/lib/api/countdowns'
 import { cached, cache } from '@/lib/home-cache'
 import CountdownCard from './CountdownCard'
@@ -226,7 +227,7 @@ export default function CountdownSection() {
             ) : (
               /* Empty state */
               <div className="cd-empty">
-                <span className="cd-empty-icon">🎯</span>
+                <span className="cd-empty-icon"><CalendarClock size={28} strokeWidth={1.5} /></span>
                 <div className="cd-empty-text">还没有倒计时</div>
                 <button className="cd-empty-add" onClick={() => setShowAddForm(true)}>
                   + 添加第一个

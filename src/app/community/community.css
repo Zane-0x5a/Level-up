@@ -509,7 +509,8 @@
 }
 
 .checkin-icon {
-  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
   line-height: 1;
 }
 

@@ -19,15 +19,20 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Row 2: Overview (left) + Notes (right) — 3fr 2fr */}
+        {/* Row 2: two columns. Left stacks overview + community; right is the
+            notes sidebar. Independent columns — neither inflates the other. */}
         <div className="home-row2 anim d2">
-          <ProgressOverview />
-          <StickyNotes />
-        </div>
-
-        {/* Row 3: Community entry card */}
-        <div className="home-row3 anim d3">
-          <CommunityCard />
+          <div className="ga-left">
+            <div className="ga-overview">
+              <ProgressOverview />
+            </div>
+            <div className="ga-community">
+              <CommunityCard />
+            </div>
+          </div>
+          <div className="ga-notes">
+            <StickyNotes />
+          </div>
         </div>
       </div>
     </main>
