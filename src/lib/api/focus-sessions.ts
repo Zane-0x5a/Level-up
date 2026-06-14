@@ -116,6 +116,23 @@ export async function correctSubmittedFocusSession(
   )
 }
 
+export async function deleteFocusSessionWithClient(
+  client: FocusSessionsClient,
+  sessionId: string
+) {
+  const focusSessionsTable = client.from('focus_sessions') as {
+    delete: () => {
+      eq: (column: string, value: string) => Promise<{ error: Error | null }>
+    }
+  }
+  const { error } = await focusSessionsTable.delete().eq('id', sessionId)
+  if (error) throw error
+}
+
+export async function deleteFocusSession(sessionId: string) {
+  return deleteFocusSessionWithClient(await getSupabaseClient(), sessionId)
+}
+
 export async function getLastFocusCategory(userId: string): Promise<string | null> {
   return getLastFocusCategoryWithClient(await getSupabaseClient(), userId)
 }

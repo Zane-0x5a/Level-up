@@ -5,6 +5,7 @@ import * as focusSessionsApi from './focus-sessions.ts'
 const {
   addFocusSessionWithClient,
   correctSubmittedFocusSessionWithClient,
+  deleteFocusSessionWithClient,
   getTodayFocusSessionsWithClient,
 } = focusSessionsApi
 
@@ -28,6 +29,12 @@ type RecordedCall =
       table: string
       userId: string
       date: string
+    }
+  | {
+      type: 'delete'
+      table: string
+      column: string
+      value: string
     }
 
 type FakeClientOptions = {
@@ -86,11 +93,18 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
               },
             }
           },
+          delete() {
+            return {
+              async eq(column: string, value: string) {
+                calls.push({ type: 'delete', table, column, value })
+                return { error: null }
+              },
+            }
+          },
           select() {
             return {
               eq(column: string, value: string) {
                 assert.equal(column, 'user_id')
-
                 return {
                   eq(nextColumn: string, nextValue: string) {
                     assert.equal(nextColumn, 'date')
@@ -181,8 +195,21 @@ test('correctSubmittedFocusSessionWithClient updates only the targeted session i
   })
 })
 
-test('getTodayFocusSessionsWithClient reads sessions for the explicit user id and requested date', async () => {
+test('deleteFocusSessionWithClient deletes only the targeted session id', async () => {
   const { calls, client } = createFocusSessionClient()
+
+  await deleteFocusSessionWithClient(client, 'session-1')
+
+  assert.equal(calls.length, 1)
+  assert.deepEqual(calls[0], {
+    type: 'delete',
+    table: 'focus_sessions',
+    column: 'id',
+    value: 'session-1',
+  })
+})
+
+test('getTodayFocusSessionsWithClient reads sessions for the explicit user id and requested date', async () => {  const { calls, client } = createFocusSessionClient()
 
   const result = await getTodayFocusSessionsWithClient(client, 'user-42', '2026-03-20')
 

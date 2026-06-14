@@ -671,3 +671,131 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ═══════════════════════════════════════
+   FOCUS SESSION LIST (edit / delete)
+   ═══════════════════════════════════════ */
+.focus-session-block {
+  margin-top: 20px;
+}
+
+.focus-session-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.focus-session-empty {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--color-text-3);
+}
+
+.focus-session-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-sub);
+}
+
+.focus-session-row.editing {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.focus-session-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.focus-session-category {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.focus-session-duration {
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.focus-session-time {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.focus-session-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.focus-session-btn {
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
+.focus-session-btn.danger {
+  background: var(--color-coral);
+}
+
+.focus-session-link-btn {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  background: none;
+  color: var(--color-text-3);
+  cursor: pointer;
+  padding: 6px 8px;
+  transition: color 0.2s;
+}
+
+.focus-session-link-btn:hover {
+  color: var(--color-coral);
+}
+
+.focus-session-confirm-text {
+  font-size: 13px;
+  color: var(--color-text-2);
+}
+
+.focus-session-edit-fields {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.focus-session-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.focus-session-edit-caption {
+  font-size: 12px;
+  color: var(--color-text-3);
+}
+
+.focus-session-edit-field .field-input {
+  max-width: 100px;
+}
+
+.focus-session-row.editing .focus-session-actions {
+  margin-top: 12px;
+}
+
+.focus-session-error {
+  width: 100%;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--color-coral);
+}
+

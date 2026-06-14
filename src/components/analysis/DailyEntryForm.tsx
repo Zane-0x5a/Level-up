@@ -8,7 +8,7 @@ import {
   type ProgressLevel,
   type StateLabel,
 } from '@/lib/api/daily-records'
-import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
+import { getTodayFocusSessions, type FocusSession } from '@/lib/api/focus-sessions'
 import {
   DEFAULT_GROWTH_PREFERENCES,
   getGrowthPreferences,
@@ -21,6 +21,7 @@ import {
   readDailyEntryDraft,
   writeDailyEntryDraft,
 } from '@/lib/daily-entry-draft'
+import FocusSessionList from './FocusSessionList'
 
 const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
   { value: 'slight', label: '靠近了一点' },
@@ -42,6 +43,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [focusIn, setFocusIn] = useState(0)
   const [focusOut, setFocusOut] = useState(0)
   const [entertainment, setEntertainment] = useState(0)
+  const [sessions, setSessions] = useState<FocusSession[]>([])
   const [habitCheckins, setHabitCheckins] = useState(0)
   const [progressLevel, setProgressLevel] = useState<ProgressLevel | null>(null)
   const [progressNote, setProgressNote] = useState('')
@@ -126,6 +128,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         else fun += session.duration
       }
 
+      setSessions(sessions)
       setFocusIn(inClass)
       setFocusOut(outClass)
       setEntertainment(fun)
@@ -312,6 +315,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
             />
           </div>
         )}
+      </div>
+
+      <div className="focus-session-block">
+        <label className="entry-field-label">这一天的专注记录</label>
+        <FocusSessionList sessions={sessions} onChanged={loadFocus} />
       </div>
 
       {preferences.enable_progress_tracking && (
