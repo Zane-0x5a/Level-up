@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord, upsertDailyRecord } from '@/lib/api/daily-records'
 import { getStreak } from '@/lib/api/stats'
 import { cached, cache } from '@/lib/home-cache'
+import { useTodayDate } from '@/hooks/useTodayDate'
 
 const WEEKDAYS = [
   '\u661F\u671F\u65E5', '\u661F\u671F\u4E00', '\u661F\u671F\u4E8C',
@@ -27,10 +28,9 @@ function splitGreeting(text: string): [string, string] {
 
 export default function HeroSection() {
   const { user } = useAuth()
-  const [dayType, setDayType] = useState<'study_day' | 'rest_day'>(() => cached<'study_day' | 'rest_day'>('hero:dayType') ?? 'study_day')
-  const [streak, setStreak] = useState(() => cached<number>('hero:streak') ?? 0)
-  const [dateStr, setDateStr] = useState('')
-  const [todayStr, setTodayStr] = useState('')
+  const today = useTodayDate()
+  const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
+  const [streak, setStreak] = useState(0)
   const [greeting, setGreeting] = useState(DEFAULT_GREETINGS[0])
 
   useEffect(() => {
@@ -40,41 +40,55 @@ export default function HeroSection() {
       const pool = list.length > 0 ? list : DEFAULT_GREETINGS
       const picked = pool[Math.floor(Math.random() * pool.length)]
       if (picked !== DEFAULT_GREETINGS[0]) {
-        setGreeting(picked)
+        queueMicrotask(() => setGreeting(picked))
       }
     } catch {
       // keep default
     }
   }, [])
 
-  useEffect(() => {
-    const now = new Date()
-    const weekday = WEEKDAYS[now.getDay()]
-    setDateStr(`${weekday} \u00B7 ${now.getFullYear()}\u5E74${now.getMonth() + 1}\u6708${now.getDate()}\u65E5`)
-    setTodayStr(now.toISOString().split('T')[0])
-  }, [])
+  const dateStr = useMemo(() => {
+    const [year, month, day] = today.split('-').map(Number)
+    const localDate = new Date(year, month - 1, day)
+    const weekday = WEEKDAYS[localDate.getDay()]
+    return `${weekday} \u00B7 ${year}\u5E74${month}\u6708${day}\u65E5`
+  }, [today])
 
   useEffect(() => {
+    let cancelled = false
+
     async function load() {
-      if (!user) return
+      if (!user) {
+        setDayType('study_day')
+        setStreak(0)
+        return
+      }
+
+      const dayTypeCacheKey = `hero:dayType:${user.id}:${today}`
+      const streakCacheKey = `hero:streak:${user.id}:${today}`
+      setDayType(cached<'study_day' | 'rest_day'>(dayTypeCacheKey) ?? 'study_day')
+      setStreak(cached<number>(streakCacheKey) ?? 0)
+
       try {
-        const today = new Date().toISOString().split('T')[0]
         const [record, streakCount] = await Promise.all([
           getDailyRecord(user.id, today),
           getStreak(user.id),
         ])
-        if (record?.day_type === 'rest_day') {
-          setDayType('rest_day')
-        }
+        if (cancelled) return
+        const nextDayType = record?.day_type === 'rest_day' ? 'rest_day' : 'study_day'
+        setDayType(nextDayType)
         setStreak(streakCount)
-        cache('hero:dayType', record?.day_type === 'rest_day' ? 'rest_day' : 'study_day')
-        cache('hero:streak', streakCount)
+        cache(dayTypeCacheKey, nextDayType)
+        cache(streakCacheKey, streakCount)
       } catch {
-        // Silently handle error, keep defaults
+        // Keep only date-scoped cached data or defaults.
       }
     }
     load()
-  }, [user])
+    return () => {
+      cancelled = true
+    }
+  }, [today, user])
 
   const handleToggleDayType = async () => {
     if (!user) return
@@ -82,7 +96,8 @@ export default function HeroSection() {
     const prevType = dayType
     setDayType(newType)
     try {
-      await upsertDailyRecord(user.id, { date: todayStr, day_type: newType })
+      await upsertDailyRecord(user.id, { date: today, day_type: newType })
+      cache(`hero:dayType:${user.id}:${today}`, newType)
     } catch {
       setDayType(prevType)
     }

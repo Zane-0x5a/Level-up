@@ -14,6 +14,7 @@ import {
   sendTextMessage,
   type Message,
 } from '@/lib/api/messages'
+import { getLocalDateString } from '@/lib/local-date'
 
 interface Props {
   channelId: string
@@ -90,10 +91,10 @@ export default function ChatInput({
 
     setSending(true)
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       const [record, sessions] = await Promise.all([
         getDailyRecord(userId, today),
-        getTodayFocusSessions(userId),
+        getTodayFocusSessions(userId, today),
       ])
 
       setCheckinDialog({
