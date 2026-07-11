@@ -12,6 +12,7 @@ import {
 } from '@/lib/api/growth-preferences'
 import { readFocusTimerStart, startFocusTimer } from '@/lib/focus-timer'
 import { attachMotionListener, createMotionDetector } from '@/lib/motion-detector'
+import { getLocalDateString } from '@/lib/local-date'
 import ReturnButton from './ReturnButton'
 import AudioPlayer from './AudioPlayer'
 
@@ -262,7 +263,7 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
   const handleReturn = useCallback(async () => {
     if (!userId) return
     try {
-      const today = new Date().toISOString().split('T')[0]
+      const today = getLocalDateString()
       await incrementReturnCount(userId, today)
       setReturnCount(c => c + 1)
       setShowToast(true)

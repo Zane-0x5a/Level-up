@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import * as focusSessionsApi from './focus-sessions.ts'
+import { getLocalDateString } from '../local-date.ts'
 
 const {
   addFocusSessionWithClient,
@@ -9,7 +10,7 @@ const {
   getTodayFocusSessionsWithClient,
 } = focusSessionsApi
 
-const TODAY = new Date().toISOString().split('T')[0]
+const TODAY = getLocalDateString()
 
 type RecordedCall =
   | {

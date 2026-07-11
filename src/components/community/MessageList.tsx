@@ -30,9 +30,17 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
   const loadingMoreRef = useRef(false)
   const hasMoreRef = useRef(true)
 
-  messagesRef.current = messages
-  loadingMoreRef.current = loadingMore
-  hasMoreRef.current = hasMore
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  useEffect(() => {
+    loadingMoreRef.current = loadingMore
+  }, [loadingMore])
+
+  useEffect(() => {
+    hasMoreRef.current = hasMore
+  }, [hasMore])
 
   const handleDelete = async (messageId: string) => {
     await deleteMessage(messageId, userId, isAdmin)
@@ -42,9 +50,12 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
   // Load initial messages
   useEffect(() => {
     let cancelled = false
-    setMessages([])
-    setLoading(true)
-    setHasMore(true)
+    queueMicrotask(() => {
+      if (cancelled) return
+      setMessages([])
+      setLoading(true)
+      setHasMore(true)
+    })
 
     getMessages(channelId).then(msgs => {
       if (cancelled) return
@@ -100,14 +111,16 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
   // Insert pending message from parent (e.g. optimistic checkin)
   useEffect(() => {
     if (!pendingMessage) return
-    setMessages(prev => {
-      const idx = prev.findIndex(m => m.id === pendingMessage.id)
-      if (idx !== -1) {
-        const updated = [...prev]
-        updated[idx] = pendingMessage
-        return updated
-      }
-      return [...prev, pendingMessage]
+    queueMicrotask(() => {
+      setMessages(prev => {
+        const idx = prev.findIndex(m => m.id === pendingMessage.id)
+        if (idx !== -1) {
+          const updated = [...prev]
+          updated[idx] = pendingMessage
+          return updated
+        }
+        return [...prev, pendingMessage]
+      })
     })
     if (isNearBottom.current) {
       setTimeout(() => {

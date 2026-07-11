@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord } from '@/lib/api/daily-records'
 import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
 import { cached, cache } from '@/lib/home-cache'
+import { useTodayDate } from '@/hooks/useTodayDate'
 
 type DailyData = {
   focusInClass: number
@@ -14,25 +15,36 @@ type DailyData = {
   returnCount: number
 }
 
+const EMPTY_DAILY_DATA: DailyData = {
+  focusInClass: 0,
+  focusOutClass: 0,
+  entertainment: 0,
+  ibetterCount: 0,
+  returnCount: 0,
+}
+
 export default function ProgressOverview() {
   const { user } = useAuth()
-  const [data, setData] = useState<DailyData>(() => cached<DailyData>('overview:data') ?? {
-    focusInClass: 0,
-    focusOutClass: 0,
-    entertainment: 0,
-    ibetterCount: 0,
-    returnCount: 0,
-  })
+  const today = useTodayDate()
+  const [data, setData] = useState<DailyData>(EMPTY_DAILY_DATA)
 
   useEffect(() => {
+    let cancelled = false
+
     async function load() {
-      if (!user) return
+      if (!user) {
+        setData(EMPTY_DAILY_DATA)
+        return
+      }
+
+      const cacheKey = `overview:data:${user.id}:${today}`
+      setData(cached<DailyData>(cacheKey) ?? EMPTY_DAILY_DATA)
+
       try {
-        const today = new Date().toISOString().split('T')[0]
         const [record, sessions, returnCount] = await Promise.all([
           getDailyRecord(user.id, today),
-          getTodayFocusSessions(user.id),
-          getTodayReturnCount(user.id),
+          getTodayFocusSessions(user.id, today),
+          getTodayReturnCount(user.id, today),
         ])
 
         // Always aggregate focus time from focus_sessions (source of truth)
@@ -46,26 +58,25 @@ export default function ProgressOverview() {
           else if (s.category === 'entertainment') entertainment += s.duration
         }
 
-        setData({
+        const nextData = {
           focusInClass,
           focusOutClass,
           entertainment,
           ibetterCount: record?.ibetter_count ?? 0,
           returnCount: returnCount,
-        })
-        cache('overview:data', {
-          focusInClass,
-          focusOutClass,
-          entertainment,
-          ibetterCount: record?.ibetter_count ?? 0,
-          returnCount: returnCount,
-        })
+        }
+        if (cancelled) return
+        setData(nextData)
+        cache(cacheKey, nextData)
       } catch {
-        // Silently handle error, keep defaults
+        // Keep the date-scoped cache or empty state; never show another day's data.
       }
     }
     load()
-  }, [user])
+    return () => {
+      cancelled = true
+    }
+  }, [today, user])
 
   const metrics = [
     { label: '\u8BFE\u5185\u6295\u5165', value: data.focusInClass, unit: 'h', highlighted: true },

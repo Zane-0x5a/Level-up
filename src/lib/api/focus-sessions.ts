@@ -1,3 +1,5 @@
+import { getLocalDateString } from '../local-date.ts'
+
 export type FocusSession = {
   id: string
   user_id: string
@@ -21,10 +23,6 @@ type DailyReturnCountRow = {
 type ExistingDailyRecordRow = {
   id: string
   return_count: number | null
-}
-
-function getTodayDate() {
-  return new Date().toISOString().split('T')[0]
 }
 
 async function getSupabaseClient() {
@@ -55,7 +53,7 @@ export async function addFocusSessionWithClient(
       user_id: userId,
       category,
       duration,
-      date: getTodayDate(),
+      date: getLocalDateString(),
     })
     .select('*')
     .single()
@@ -171,7 +169,7 @@ export async function getTodayFocusSessionsWithClient(
   userId: string,
   date?: string
 ) {
-  const targetDate = date ?? getTodayDate()
+  const targetDate = date ?? getLocalDateString()
   const focusSessionsTable = client.from('focus_sessions') as {
     select: (columns: string) => {
       eq: (column: string, value: string) => {
@@ -193,8 +191,8 @@ export async function getTodayFocusSessionsWithClient(
   return (data as FocusSession[]) ?? []
 }
 
-export async function getTodayReturnCount(userId: string): Promise<number> {
-  const today = getTodayDate()
+export async function getTodayReturnCount(userId: string, date?: string): Promise<number> {
+  const today = date ?? getLocalDateString()
   const supabase = await getSupabaseClient()
   const dailyRecordsTable = supabase.from('daily_records') as {
     select: (columns: string) => {

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getLocalDateString } from '@/lib/local-date'
 
 export async function getStreak(userId: string): Promise<number> {
   const { data, error } = await supabase
@@ -45,7 +46,7 @@ export async function getWeeklyFocusHours(userId: string): Promise<number> {
   const now = new Date()
   const weekAgo = new Date(now)
   weekAgo.setDate(weekAgo.getDate() - 7)
-  const weekStr = weekAgo.toISOString().split('T')[0]
+  const weekStr = getLocalDateString(weekAgo)
 
   const { data, error } = await supabase
     .from('focus_sessions')

@@ -22,6 +22,7 @@ import {
   writeDailyEntryDraft,
 } from '@/lib/daily-entry-draft'
 import FocusSessionList from './FocusSessionList'
+import { getLocalDateString } from '@/lib/local-date'
 
 const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
   { value: 'slight', label: '靠近了一点' },
@@ -38,7 +39,7 @@ const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
 
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const { user } = useAuth()
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(() => getLocalDateString())
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
   const [focusOut, setFocusOut] = useState(0)
