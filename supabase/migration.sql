@@ -77,9 +77,41 @@ create table if not exists focus_sessions (
   user_id uuid not null,
   date date not null default current_date,
   category text not null check (category in ('in_class', 'out_class', 'entertainment')),
-  duration float not null,  -- hours
+  duration float not null constraint focus_sessions_duration_range_check
+    check (duration > 0 and duration <= 8),  -- hours
+  client_session_id uuid,
+  constraint focus_sessions_user_client_session_id_key
+    unique (user_id, client_session_id),
   created_at timestamptz default now()
 );
+
+-- Bring existing installations forward without rejecting historical rows that
+-- need auditing first. NOT VALID still protects all new and updated rows.
+alter table focus_sessions
+  add column if not exists client_session_id uuid;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'focus_sessions_user_client_session_id_key'
+      and conrelid = 'focus_sessions'::regclass
+  ) then
+    alter table focus_sessions
+      add constraint focus_sessions_user_client_session_id_key
+      unique (user_id, client_session_id);
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'focus_sessions_duration_range_check'
+      and conrelid = 'focus_sessions'::regclass
+  ) then
+    alter table focus_sessions
+      add constraint focus_sessions_duration_range_check
+      check (duration > 0 and duration <= 8) not valid;
+  end if;
+end $$;
 
 -- Optional advanced-tracking toggles (managed in Settings)
 create table if not exists user_growth_preferences (

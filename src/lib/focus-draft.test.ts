@@ -36,6 +36,7 @@ test('focus draft is stored per user and falls back to defaults when missing', (
     category: 'in_class',
     hours: '',
     minutes: '',
+    clientSessionId: null,
   })
 
   writeFocusDraft(
@@ -44,6 +45,7 @@ test('focus draft is stored per user and falls back to defaults when missing', (
       category: 'out_class',
       hours: '1',
       minutes: '30',
+      clientSessionId: 'session-a',
     },
     storage
   )
@@ -53,6 +55,7 @@ test('focus draft is stored per user and falls back to defaults when missing', (
       category: 'entertainment',
       hours: '0',
       minutes: '30',
+      clientSessionId: null,
     },
     storage
   )
@@ -61,11 +64,13 @@ test('focus draft is stored per user and falls back to defaults when missing', (
     category: 'out_class',
     hours: '1',
     minutes: '30',
+    clientSessionId: 'session-a',
   })
   assert.deepEqual(readFocusDraft('user-b', storage), {
     category: 'entertainment',
     hours: '0',
     minutes: '30',
+    clientSessionId: null,
   })
 })
 
@@ -78,6 +83,7 @@ test('clearing a focus draft only removes the targeted user draft', () => {
       category: 'out_class',
       hours: '2',
       minutes: '0',
+      clientSessionId: 'session-a',
     },
     storage
   )
@@ -87,6 +93,7 @@ test('clearing a focus draft only removes the targeted user draft', () => {
       category: 'entertainment',
       hours: '1',
       minutes: '0',
+      clientSessionId: null,
     },
     storage
   )
@@ -97,11 +104,13 @@ test('clearing a focus draft only removes the targeted user draft', () => {
     category: 'in_class',
     hours: '',
     minutes: '',
+    clientSessionId: null,
   })
   assert.deepEqual(readFocusDraft('user-b', storage), {
     category: 'entertainment',
     hours: '1',
     minutes: '0',
+    clientSessionId: null,
   })
 })
 
@@ -120,6 +129,7 @@ test('readFocusDraft converts legacy decimal duration drafts to hours and minute
     category: 'out_class',
     hours: '1',
     minutes: '30',
+    clientSessionId: null,
   })
 })
 
@@ -127,9 +137,12 @@ test('getFocusDurationHours validates inputs and converts hour-minute drafts to 
   assert.equal(getFocusDurationHours({ hours: '1', minutes: '30' }), 1.5)
   assert.equal(getFocusDurationHours({ hours: '0', minutes: '45' }), 0.75)
   assert.equal(getFocusDurationHours({ hours: '', minutes: '15' }), 0.25)
+  assert.equal(getFocusDurationHours({ hours: '8', minutes: '0' }), 8)
 
   assert.equal(getFocusDurationHours({ hours: '-1', minutes: '30' }), null)
   assert.equal(getFocusDurationHours({ hours: '1', minutes: '60' }), null)
+  assert.equal(getFocusDurationHours({ hours: '8', minutes: '1' }), null)
+  assert.equal(getFocusDurationHours({ hours: '9', minutes: '0' }), null)
   assert.equal(getFocusDurationHours({ hours: '0', minutes: '0' }), null)
   assert.equal(getFocusDurationHours({ hours: '', minutes: '' }), null)
 })

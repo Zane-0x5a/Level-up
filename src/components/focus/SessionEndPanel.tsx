@@ -18,6 +18,7 @@ import {
 import {
   FOCUS_TIMER_MIN_FOCUS_MS,
   consumeFocusTimer,
+  createFocusClientSessionId,
   readFocusElapsed,
 } from '@/lib/focus-timer'
 
@@ -67,7 +68,13 @@ function readSubmittedSession(userId: string | null): FocusSession | null {
       return null
     }
 
-    return parsed as FocusSession
+    return {
+      ...(parsed as FocusSession),
+      client_session_id:
+        typeof parsed.client_session_id === 'string'
+          ? parsed.client_session_id
+          : null,
+    }
   } catch {
     return null
   }
@@ -126,6 +133,9 @@ function SessionEndPanelContent({
   const [category, setCategory] = useState(() => getInitialDraft(userId).category)
   const [hours, setHours] = useState(() => getInitialDraft(userId).hours)
   const [minutes, setMinutes] = useState(() => getInitialDraft(userId).minutes)
+  const [pendingClientSessionId, setPendingClientSessionId] = useState(
+    () => getInitialDraft(userId).clientSessionId
+  )
   const [submittedSession, setSubmittedSession] = useState<FocusSession | null>(
     () => readSubmittedSession(userId)
   )
@@ -144,8 +154,20 @@ function SessionEndPanelContent({
   useEffect(() => {
     if (!userId || submittedSession) return
 
-    writeFocusDraft(userId, { category, hours, minutes })
-  }, [category, hours, minutes, submittedSession, userId])
+    writeFocusDraft(userId, {
+      category,
+      hours,
+      minutes,
+      clientSessionId: pendingClientSessionId,
+    })
+  }, [
+    category,
+    hours,
+    minutes,
+    pendingClientSessionId,
+    submittedSession,
+    userId,
+  ])
 
   useEffect(() => {
     if (!userId) return
@@ -153,15 +175,15 @@ function SessionEndPanelContent({
     autoCommitRanRef.current = true
 
     void (async () => {
-      const elapsedMs = consumeFocusTimer()
-      if (elapsedMs === null) {
+      const consumedTimer = consumeFocusTimer()
+      if (consumedTimer === null) {
         setAutoCommitting(false)
         return
       }
 
-      // Cross-tab guard: if another tab already wrote the submitted session
-      // for this user (e.g., user has /focus open in two tabs and exited in
-      // tab A), don't double-insert.
+      // This same-tab guard restores confirmation state after a remount.
+      // Cross-tab and retry idempotency is enforced by client_session_id in
+      // the database write contract.
       if (readSubmittedSession(userId)) {
         const existing = readSubmittedSession(userId)
         if (existing) {
@@ -177,8 +199,13 @@ function SessionEndPanelContent({
         const draft = readFocusDraft(userId)
         const finalCategory =
           lastCategory ?? draft.category ?? DEFAULT_FOCUS_DRAFT.category
-        const durationHours = elapsedMs / (1000 * 60 * 60)
-        const session = await addFocusSession(userId, finalCategory, durationHours)
+        const durationHours = consumedTimer.elapsedMs / (1000 * 60 * 60)
+        const session = await addFocusSession(
+          userId,
+          finalCategory,
+          durationHours,
+          consumedTimer.clientSessionId
+        )
         clearFocusDraft(userId)
         writeSubmittedSession(userId, session)
         setSubmittedSession(session)
@@ -188,7 +215,10 @@ function SessionEndPanelContent({
         // Auto-commit failed (network / RLS / migration drift). Pre-fill the
         // duration & category so the user can manually confirm — the timer
         // is already consumed at this point.
-        const prefilled = getDraftFromDuration(elapsedMs / (1000 * 60 * 60))
+        const prefilled = getDraftFromDuration(
+          consumedTimer.elapsedMs / (1000 * 60 * 60)
+        )
+        setPendingClientSessionId(consumedTimer.clientSessionId)
         setHours(prefilled.hours)
         setMinutes(prefilled.minutes)
         const lastCategory = await getLastFocusCategory(userId).catch(() => null)
@@ -243,7 +273,7 @@ function SessionEndPanelContent({
     const durationHours = getFocusDurationHours({ hours, minutes })
 
     if (durationHours === null) {
-      setError('请输入有效的时长')
+      setError('请输入大于 0 且不超过 8 小时的时长')
       return
     }
 
@@ -257,7 +287,12 @@ function SessionEndPanelContent({
               category,
               durationHours
             )
-          : await addFocusSession(userId, category, durationHours)
+          : await addFocusSession(
+              userId,
+              category,
+              durationHours,
+              pendingClientSessionId ?? createFocusClientSessionId()
+            )
       clearFocusDraft(userId)
       writeSubmittedSession(userId, nextSession)
       setSubmittedSession(nextSession)
@@ -337,6 +372,7 @@ function SessionEndPanelContent({
                     inputMode="numeric"
                     step="1"
                     min="0"
+                    max="8"
                     placeholder="0"
                     value={hours}
                     onChange={e => {

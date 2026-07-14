@@ -62,8 +62,9 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
             : null
         )
         setEnableMotion(prefs.enable_motion_detection)
-      } catch {
-        // Silently handle — page still works with zero state
+      } catch (error) {
+        console.error('Failed to load focus summary', error)
+        // Page still works with its zero state.
       }
     }
 
@@ -127,7 +128,7 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
         <div className="float-card glow-sage" style={{ padding: 24 }}>
           <div className="focus-card-label">本周累计</div>
           <div className="focus-card-value">{formatHours(weeklyHours)}</div>
-          <div className="focus-card-sub">过去 7 天</div>
+          <div className="focus-card-sub">本周一至今</div>
         </div>
       </div>
 

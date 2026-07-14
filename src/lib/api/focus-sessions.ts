@@ -1,10 +1,12 @@
 import { getLocalDateString } from '../local-date.ts'
+import { assertValidFocusDuration } from '../focus-duration.ts'
 
 export type FocusSession = {
   id: string
   user_id: string
   category: string
   duration: number
+  client_session_id: string | null
   date: string
   created_at: string
 }
@@ -34,27 +36,34 @@ export async function addFocusSessionWithClient(
   client: FocusSessionsClient,
   userId: string,
   category: string,
-  duration: number
+  duration: number,
+  clientSessionId: string
 ) {
+  assertValidFocusDuration(duration)
   const focusSessionsTable = client.from('focus_sessions') as {
-    insert: (payload: {
+    upsert: (payload: {
       user_id: string
       category: string
       duration: number
+      client_session_id: string
       date: string
-    }) => {
+    }, options: { onConflict: string }) => {
       select: (columns: string) => {
         single: () => SingleRowResult<FocusSession>
       }
     }
   }
   const { data, error } = await focusSessionsTable
-    .insert({
-      user_id: userId,
-      category,
-      duration,
-      date: getLocalDateString(),
-    })
+    .upsert(
+      {
+        user_id: userId,
+        category,
+        duration,
+        client_session_id: clientSessionId,
+        date: getLocalDateString(),
+      },
+      { onConflict: 'user_id,client_session_id' }
+    )
     .select('*')
     .single()
   if (error) throw error
@@ -64,13 +73,15 @@ export async function addFocusSessionWithClient(
 export async function addFocusSession(
   userId: string,
   category: string,
-  duration: number
+  duration: number,
+  clientSessionId: string
 ) {
   return addFocusSessionWithClient(
     await getSupabaseClient(),
     userId,
     category,
-    duration
+    duration,
+    clientSessionId
   )
 }
 
@@ -80,6 +91,7 @@ export async function correctSubmittedFocusSessionWithClient(
   category: string,
   duration: number
 ) {
+  assertValidFocusDuration(duration)
   const focusSessionsTable = client.from('focus_sessions') as {
     update: (payload: { category: string; duration: number }) => {
       eq: (column: string, value: string) => {
