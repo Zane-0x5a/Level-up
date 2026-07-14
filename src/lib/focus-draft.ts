@@ -1,7 +1,10 @@
+import { isValidFocusDuration } from './focus-duration.ts'
+
 export type FocusDraft = {
   category: string
   hours: string
   minutes: string
+  clientSessionId: string | null
 }
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
@@ -10,6 +13,7 @@ export const DEFAULT_FOCUS_DRAFT: FocusDraft = {
   category: 'in_class',
   hours: '',
   minutes: '',
+  clientSessionId: null,
 }
 
 const STORAGE_PREFIX = 'focus-end-draft'
@@ -70,11 +74,12 @@ export function getFocusDurationHours(
   }
 
   const totalMinutes = hours * 60 + minutes
-  if (totalMinutes <= 0) {
+  const durationHours = totalMinutes / 60
+  if (!isValidFocusDuration(durationHours)) {
     return null
   }
 
-  return totalMinutes / 60
+  return durationHours
 }
 
 export function readFocusDraft(
@@ -113,6 +118,10 @@ export function readFocusDraft(
         typeof parsed.minutes === 'string'
           ? parsed.minutes
           : legacyDuration?.minutes ?? DEFAULT_FOCUS_DRAFT.minutes,
+      clientSessionId:
+        typeof parsed.clientSessionId === 'string'
+          ? parsed.clientSessionId
+          : null,
     }
   } catch {
     return DEFAULT_FOCUS_DRAFT

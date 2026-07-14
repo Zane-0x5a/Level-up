@@ -57,7 +57,11 @@ CREATE TABLE focus_sessions (
   user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
   date DATE NOT NULL DEFAULT CURRENT_DATE,
   category TEXT NOT NULL CHECK (category IN ('in_class', 'out_class', 'entertainment')),
-  duration FLOAT NOT NULL,  -- 单位：小时
+  duration FLOAT NOT NULL CONSTRAINT focus_sessions_duration_range_check
+    CHECK (duration > 0 AND duration <= 8),  -- 单位：小时
+  client_session_id UUID,
+  CONSTRAINT focus_sessions_user_client_session_id_key
+    UNIQUE (user_id, client_session_id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
  

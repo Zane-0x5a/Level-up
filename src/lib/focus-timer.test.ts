@@ -37,7 +37,7 @@ function fixedClock(ms: number) {
 
 test('startFocusTimer persists the current timestamp', () => {
   const storage = createStorage()
-  startFocusTimer(storage, fixedClock(1_000))
+  startFocusTimer(storage, fixedClock(1_000), () => 'session-1')
   assert.equal(readFocusTimerStart(storage, fixedClock(1_500)), 1_000)
 })
 
@@ -82,10 +82,26 @@ test('consumeFocusTimer silent-skips elapsed below 5min and clears storage', () 
 
 test('consumeFocusTimer returns elapsed ms when at or above 5min', () => {
   const storage = createStorage()
-  startFocusTimer(storage, fixedClock(0))
+  startFocusTimer(storage, fixedClock(0), () => 'session-1')
   const longMs = FOCUS_TIMER_MIN_FOCUS_MS + 60_000
-  assert.equal(consumeFocusTimer(storage, fixedClock(longMs)), longMs)
+  assert.deepEqual(consumeFocusTimer(storage, fixedClock(longMs)), {
+    clientSessionId: 'session-1',
+    elapsedMs: longMs,
+  })
   assert.equal(readFocusTimerStart(storage), null)
+})
+
+test('legacy numeric timer is upgraded with a stable client session id', () => {
+  const storage = createStorage()
+  storage.setItem('focus-timer-start', '1000')
+
+  assert.equal(
+    readFocusTimerStart(storage, fixedClock(2_000)),
+    1_000
+  )
+  const upgraded = JSON.parse(storage.getItem('focus-timer-start') ?? '')
+  assert.equal(typeof upgraded.clientSessionId, 'string')
+  assert.equal(upgraded.startedAt, 1_000)
 })
 
 test('consumeFocusTimer treats > 8h as expired and returns null', () => {

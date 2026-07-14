@@ -1,5 +1,37 @@
-import { supabase } from '@/lib/supabase'
-import { getLocalDateString } from '@/lib/local-date'
+import { supabase } from '../supabase.ts'
+import { getLocalDateString } from '../local-date.ts'
+
+type WeeklyFocusClient = {
+  from: (table: string) => {
+    select: (columns: string) => {
+      eq: (column: string, value: string) => {
+        gte: (column: string, value: string) => {
+          lte: (
+            column: string,
+            value: string
+          ) => Promise<{
+            data: Array<{ duration: number | null }> | null
+            error: unknown
+          }>
+        }
+      }
+    }
+  }
+}
+
+export function getLocalWeekRange(date = new Date()) {
+  const today = new Date(date)
+  today.setHours(0, 0, 0, 0)
+
+  const mondayOffset = (today.getDay() + 6) % 7
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - mondayOffset)
+
+  return {
+    startDate: getLocalDateString(weekStart),
+    endDate: getLocalDateString(today),
+  }
+}
 
 export async function getStreak(userId: string): Promise<number> {
   const { data, error } = await supabase
@@ -43,17 +75,29 @@ export async function getTotalFocusHours(userId: string): Promise<number> {
 }
 
 export async function getWeeklyFocusHours(userId: string): Promise<number> {
-  const now = new Date()
-  const weekAgo = new Date(now)
-  weekAgo.setDate(weekAgo.getDate() - 7)
-  const weekStr = getLocalDateString(weekAgo)
+  return getWeeklyFocusHoursWithClient(
+    supabase as unknown as WeeklyFocusClient,
+    userId
+  )
+}
 
-  const { data, error } = await supabase
+export async function getWeeklyFocusHoursWithClient(
+  client: WeeklyFocusClient,
+  userId: string,
+  date = new Date()
+): Promise<number> {
+  const { startDate, endDate } = getLocalWeekRange(date)
+
+  const { data, error } = await client
     .from('focus_sessions')
     .select('duration')
     .eq('user_id', userId)
-    .gte('date', weekStr)
-  if (error || !data) return 0
+    .gte('date', startDate)
+    .lte('date', endDate)
+  if (error || !data) {
+    console.error('Failed to load weekly focus hours', error)
+    return 0
+  }
   return data.reduce((sum, r) => sum + (r.duration ?? 0), 0)
 }
 

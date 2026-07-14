@@ -14,9 +14,10 @@ const TODAY = getLocalDateString()
 
 type RecordedCall =
   | {
-      type: 'insert'
+      type: 'upsert'
       table: string
       payload: Record<string, unknown>
+      onConflict: string
     }
   | {
       type: 'update'
@@ -50,6 +51,7 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
+    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }
@@ -64,8 +66,13 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
     client: {
       from(table: string) {
         return {
-          insert(payload: Record<string, unknown>) {
-            calls.push({ type: 'insert', table, payload })
+          upsert(payload: Record<string, unknown>, options: { onConflict: string }) {
+            calls.push({
+              type: 'upsert',
+              table,
+              payload,
+              onConflict: options.onConflict,
+            })
 
             return {
               select() {
@@ -138,25 +145,79 @@ test('addFocusSessionWithClient returns the inserted focus session row', async (
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
+    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }
   const { calls, client } = createFocusSessionClient({ insertedSession })
 
-  const result = await addFocusSessionWithClient(client, 'user-1', 'in_class', 1.5)
+  const result = await addFocusSessionWithClient(
+    client,
+    'user-1',
+    'in_class',
+    1.5,
+    'client-session-1'
+  )
 
   assert.deepEqual(result, insertedSession)
   assert.equal(calls.length, 1)
   assert.deepEqual(calls[0], {
-    type: 'insert',
+    type: 'upsert',
     table: 'focus_sessions',
     payload: {
       user_id: 'user-1',
       category: 'in_class',
       duration: 1.5,
+      client_session_id: 'client-session-1',
       date: TODAY,
     },
+    onConflict: 'user_id,client_session_id',
   })
+})
+
+test('retries use the same database idempotency conflict target', async () => {
+  const { calls, client } = createFocusSessionClient()
+
+  await Promise.all([
+    addFocusSessionWithClient(
+      client,
+      'user-1',
+      'in_class',
+      1.5,
+      'shared-client-session'
+    ),
+    addFocusSessionWithClient(
+      client,
+      'user-1',
+      'in_class',
+      1.5,
+      'shared-client-session'
+    ),
+  ])
+
+  const writes = calls.filter(call => call.type === 'upsert')
+  assert.equal(writes.length, 2)
+  assert.equal(writes.every(call => call.onConflict === 'user_id,client_session_id'), true)
+  assert.equal(
+    writes.every(call => call.payload.client_session_id === 'shared-client-session'),
+    true
+  )
+})
+
+test('focus session writes reject durations outside the supported range', async () => {
+  const { calls, client } = createFocusSessionClient()
+
+  await assert.rejects(
+    addFocusSessionWithClient(client, 'user-1', 'in_class', 0, 'session-zero'),
+    RangeError
+  )
+  await assert.rejects(
+    addFocusSessionWithClient(client, 'user-1', 'in_class', 8.01, 'session-long'),
+    RangeError
+  )
+  await addFocusSessionWithClient(client, 'user-1', 'in_class', 8, 'session-eight')
+
+  assert.equal(calls.filter(call => call.type === 'upsert').length, 1)
 })
 
 test('focus sessions export only a correction-scoped update helper for submitted sessions', () => {
@@ -170,6 +231,7 @@ test('correctSubmittedFocusSessionWithClient updates only the targeted session i
     user_id: 'user-1',
     category: 'out_class',
     duration: 2,
+    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }
