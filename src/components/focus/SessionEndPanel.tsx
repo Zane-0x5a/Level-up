@@ -68,13 +68,7 @@ function readSubmittedSession(userId: string | null): FocusSession | null {
       return null
     }
 
-    return {
-      ...(parsed as FocusSession),
-      client_session_id:
-        typeof parsed.client_session_id === 'string'
-          ? parsed.client_session_id
-          : null,
-    }
+    return parsed as FocusSession
   } catch {
     return null
   }
@@ -182,8 +176,8 @@ function SessionEndPanelContent({
       }
 
       // This same-tab guard restores confirmation state after a remount.
-      // Cross-tab and retry idempotency is enforced by client_session_id in
-      // the database write contract.
+      // Cross-tab and retry idempotency is enforced by using the stable client
+      // session UUID as the focus_sessions primary key.
       if (readSubmittedSession(userId)) {
         const existing = readSubmittedSession(userId)
         if (existing) {

@@ -6,7 +6,6 @@ with ordered_sessions as (
     date,
     category,
     duration,
-    client_session_id,
     created_at,
     lag(id) over duplicate_window as previous_session_id,
     lag(created_at) over duplicate_window as previous_created_at
@@ -23,7 +22,6 @@ with ordered_sessions as (
     date,
     category,
     duration,
-    client_session_id,
     created_at,
     null::uuid as related_session_id
   from ordered_sessions
@@ -38,7 +36,6 @@ with ordered_sessions as (
     date,
     category,
     duration,
-    client_session_id,
     created_at,
     previous_session_id as related_session_id
   from ordered_sessions

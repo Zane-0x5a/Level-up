@@ -47,11 +47,10 @@ type FakeClientOptions = {
 function createFocusSessionClient(options: FakeClientOptions = {}) {
   const calls: RecordedCall[] = []
   const insertedSession = options.insertedSession ?? {
-    id: 'session-1',
+    id: 'client-session-1',
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
-    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }
@@ -139,13 +138,12 @@ function createFocusSessionClient(options: FakeClientOptions = {}) {
   }
 }
 
-test('addFocusSessionWithClient returns the inserted focus session row', async () => {
+test('addFocusSessionWithClient stays compatible with the deployed base schema', async () => {
   const insertedSession = {
-    id: 'session-1',
+    id: 'client-session-1',
     user_id: 'user-1',
     category: 'in_class',
     duration: 1.5,
-    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }
@@ -165,13 +163,13 @@ test('addFocusSessionWithClient returns the inserted focus session row', async (
     type: 'upsert',
     table: 'focus_sessions',
     payload: {
+      id: 'client-session-1',
       user_id: 'user-1',
       category: 'in_class',
       duration: 1.5,
-      client_session_id: 'client-session-1',
       date: TODAY,
     },
-    onConflict: 'user_id,client_session_id',
+    onConflict: 'id',
   })
 })
 
@@ -197,9 +195,13 @@ test('retries use the same database idempotency conflict target', async () => {
 
   const writes = calls.filter(call => call.type === 'upsert')
   assert.equal(writes.length, 2)
-  assert.equal(writes.every(call => call.onConflict === 'user_id,client_session_id'), true)
+  assert.equal(writes.every(call => call.onConflict === 'id'), true)
   assert.equal(
-    writes.every(call => call.payload.client_session_id === 'shared-client-session'),
+    writes.every(call => call.payload.id === 'shared-client-session'),
+    true
+  )
+  assert.equal(
+    writes.every(call => !('client_session_id' in call.payload)),
     true
   )
 })
@@ -231,7 +233,6 @@ test('correctSubmittedFocusSessionWithClient updates only the targeted session i
     user_id: 'user-1',
     category: 'out_class',
     duration: 2,
-    client_session_id: 'client-session-1',
     date: TODAY,
     created_at: `${TODAY}T08:00:00.000Z`,
   }

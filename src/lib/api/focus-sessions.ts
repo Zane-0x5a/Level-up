@@ -6,7 +6,6 @@ export type FocusSession = {
   user_id: string
   category: string
   duration: number
-  client_session_id: string | null
   date: string
   created_at: string
 }
@@ -42,10 +41,10 @@ export async function addFocusSessionWithClient(
   assertValidFocusDuration(duration)
   const focusSessionsTable = client.from('focus_sessions') as {
     upsert: (payload: {
+      id: string
       user_id: string
       category: string
       duration: number
-      client_session_id: string
       date: string
     }, options: { onConflict: string }) => {
       select: (columns: string) => {
@@ -56,13 +55,13 @@ export async function addFocusSessionWithClient(
   const { data, error } = await focusSessionsTable
     .upsert(
       {
+        id: clientSessionId,
         user_id: userId,
         category,
         duration,
-        client_session_id: clientSessionId,
         date: getLocalDateString(),
       },
-      { onConflict: 'user_id,client_session_id' }
+      { onConflict: 'id' }
     )
     .select('*')
     .single()
