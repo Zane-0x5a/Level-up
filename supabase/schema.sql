@@ -48,7 +48,9 @@ CREATE TABLE audio_clips (
 CREATE TABLE focus_images (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000001',
-  file_path TEXT NOT NULL
+  file_path TEXT NOT NULL,
+  device_type TEXT NOT NULL DEFAULT 'universal'
+    CHECK (device_type IN ('mobile', 'desktop', 'universal'))
 );
 
 -- 专注会话（每次专注结束后即时录入）
@@ -71,6 +73,8 @@ CREATE TABLE user_growth_preferences (
   enable_habit_checkins BOOLEAN NOT NULL DEFAULT false,
   enable_progress_tracking BOOLEAN NOT NULL DEFAULT false,
   enable_state_tracking BOOLEAN NOT NULL DEFAULT false,
+  enable_focus_timer BOOLEAN NOT NULL DEFAULT true,
+  enable_motion_detection BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

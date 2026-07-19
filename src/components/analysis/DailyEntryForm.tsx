@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import {
   getDailyRecord,
@@ -12,13 +12,17 @@ import { getTodayFocusSessions, type FocusSession } from '@/lib/api/focus-sessio
 import {
   DEFAULT_GROWTH_PREFERENCES,
   getGrowthPreferences,
+  hasReliableGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
 import { sendToFlomo } from '@/lib/flomo'
 import {
   DEFAULT_DAILY_ENTRY_DRAFT,
   clearDailyEntryDraft,
-  readDailyEntryDraft,
+  getDailyEntryScope,
+  readDailyEntryDraftSnapshot,
+  resolveDailyEntryFields,
+  shouldPersistDailyEntryDraft,
   writeDailyEntryDraft,
 } from '@/lib/daily-entry-draft'
 import FocusSessionList from './FocusSessionList'
@@ -39,6 +43,7 @@ const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
 
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const { user } = useAuth()
+  const userId = user?.id ?? null
   const [date, setDate] = useState(() => getLocalDateString())
   const [dayType, setDayType] = useState<'study_day' | 'rest_day'>('study_day')
   const [focusIn, setFocusIn] = useState(0)
@@ -52,16 +57,61 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [preferences, setPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
     DEFAULT_GROWTH_PREFERENCES
   )
+  const [preferencesUserId, setPreferencesUserId] = useState<string | null>(null)
   const [note, setNote] = useState('')
-  const [isHydrated, setIsHydrated] = useState(false)
+  const [hydratedScope, setHydratedScope] = useState<string | null>(null)
+  const [focusLoadedScope, setFocusLoadedScope] = useState<string | null>(null)
+  const [dirtyScope, setDirtyScope] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const recordRequestIdRef = useRef(0)
+  const focusRequestIdRef = useRef(0)
+  const preferencesRequestIdRef = useRef(0)
+
+  const entryScope = userId ? getDailyEntryScope(userId, date) : null
+  const isEntryReady = entryScope !== null && hydratedScope === entryScope
+  const isFocusReady = entryScope !== null && focusLoadedScope === entryScope
+  const arePreferencesReady = userId !== null && preferencesUserId === userId
+  const canSubmitEntry = isEntryReady && isFocusReady && arePreferencesReady
+  const editingDisabled = saving || !isEntryReady
+
+  const applyEntryFields = useCallback((fields: typeof DEFAULT_DAILY_ENTRY_DRAFT) => {
+    setDayType(fields.dayType)
+    setHabitCheckins(fields.habitCheckins)
+    setProgressLevel(fields.progressLevel)
+    setProgressNote(fields.progressNote)
+    setStateLabel(fields.stateLabel)
+    setNote(fields.note)
+  }, [])
+
+  const currentDraft = useCallback(
+    () => ({
+      dayType,
+      habitCheckins,
+      note,
+      progressLevel,
+      progressNote,
+      stateLabel,
+    }),
+    [dayType, habitCheckins, note, progressLevel, progressNote, stateLabel]
+  )
+
+  const markEntryDirty = useCallback(() => {
+    if (entryScope && hydratedScope === entryScope) {
+      setDirtyScope(entryScope)
+    }
+  }, [entryScope, hydratedScope])
 
   const loadPreferences = useCallback(async () => {
-    if (!user) return
+    const requestId = ++preferencesRequestIdRef.current
+    if (!userId) {
+      setPreferences(DEFAULT_GROWTH_PREFERENCES)
+      return
+    }
     try {
-      const data = await getGrowthPreferences(user.id)
+      const data = await getGrowthPreferences(userId)
+      if (preferencesRequestIdRef.current !== requestId) return
       setPreferences({
         enable_habit_checkins: data.enable_habit_checkins,
         enable_progress_tracking: data.enable_progress_tracking,
@@ -69,56 +119,55 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         enable_focus_timer: data.enable_focus_timer,
         enable_motion_detection: data.enable_motion_detection,
       })
+      if (hasReliableGrowthPreferences(userId)) {
+        setPreferencesUserId(userId)
+      } else {
+        setStatus({ type: 'error', msg: '成长追踪设置加载失败，暂不能保存' })
+      }
     } catch {
-      setPreferences(DEFAULT_GROWTH_PREFERENCES)
+      if (preferencesRequestIdRef.current === requestId) {
+        setPreferences(DEFAULT_GROWTH_PREFERENCES)
+      }
     }
-  }, [user])
+  }, [userId])
 
   const loadRecord = useCallback(async () => {
-    if (!user) return
-    try {
-      const record = await getDailyRecord(user.id, date)
-      if (record) {
-        setDayType(record.day_type)
-        setHabitCheckins(record.ibetter_count ?? 0)
-        setProgressLevel(record.progress_level ?? null)
-        setProgressNote(record.progress_note ?? '')
-        setStateLabel(record.state_label ?? null)
-        setNote(record.note ?? '')
-      } else {
-        setDayType(DEFAULT_DAILY_ENTRY_DRAFT.dayType)
-        setHabitCheckins(DEFAULT_DAILY_ENTRY_DRAFT.habitCheckins)
-        setProgressLevel(DEFAULT_DAILY_ENTRY_DRAFT.progressLevel)
-        setProgressNote(DEFAULT_DAILY_ENTRY_DRAFT.progressNote)
-        setStateLabel(DEFAULT_DAILY_ENTRY_DRAFT.stateLabel)
-        setNote(DEFAULT_DAILY_ENTRY_DRAFT.note)
-      }
+    if (!userId || !entryScope) return
+    const requestId = ++recordRequestIdRef.current
 
-      // Restore draft on top — represents the user's latest unsaved intent
-      // and wins over whatever the server returned.
-      const draft = readDailyEntryDraft(user.id, date)
-      if (draft) {
-        setDayType(draft.dayType)
-        setHabitCheckins(draft.habitCheckins)
-        setProgressLevel(draft.progressLevel)
-        setProgressNote(draft.progressNote)
-        setStateLabel(draft.stateLabel)
-        setNote(draft.note)
-      }
+    setHydratedScope(null)
+    setDirtyScope(null)
+    setStatus(null)
+    applyEntryFields(DEFAULT_DAILY_ENTRY_DRAFT)
+
+    try {
+      const record = await getDailyRecord(userId, date)
+      if (recordRequestIdRef.current !== requestId) return
+
+      const draft = readDailyEntryDraftSnapshot(userId, date)
+      applyEntryFields(resolveDailyEntryFields(record, draft))
+      setHydratedScope(entryScope)
     } catch {
-      // Ignore load errors and keep current local state.
-    } finally {
-      // Only after hydration finishes can we safely persist drafts —
-      // otherwise the initial default values would race the async load
-      // and overwrite a previously-saved draft with empty fields.
-      setIsHydrated(true)
+      if (recordRequestIdRef.current !== requestId) return
+      const draft = readDailyEntryDraftSnapshot(userId, date)
+      if (draft?.source === 'user-edit') {
+        applyEntryFields(draft.values)
+        setHydratedScope(entryScope)
+        setStatus({ type: 'error', msg: '云端记录加载失败，已恢复本地草稿' })
+      } else {
+        setStatus({ type: 'error', msg: '记录加载失败，请切换日期后重试' })
+      }
     }
-  }, [date, user])
+  }, [applyEntryFields, date, entryScope, userId])
 
   const loadFocus = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
+    const requestId = ++focusRequestIdRef.current
+
     try {
-      const sessions = await getTodayFocusSessions(user.id, date)
+      const sessions = await getTodayFocusSessions(userId, date)
+      if (focusRequestIdRef.current !== requestId) return
+
       let inClass = 0
       let outClass = 0
       let fun = 0
@@ -133,62 +182,98 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       setFocusIn(inClass)
       setFocusOut(outClass)
       setEntertainment(fun)
+      if (entryScope) setFocusLoadedScope(entryScope)
     } catch {
-      // Ignore load errors and keep the existing numbers.
+      if (focusRequestIdRef.current !== requestId) return
+      setStatus({ type: 'error', msg: '专注记录加载失败，暂不能保存这一天' })
     }
-  }, [date, user])
+  }, [date, entryScope, userId])
 
   useEffect(() => {
-    loadPreferences()
+    void loadPreferences()
+    return () => {
+      preferencesRequestIdRef.current += 1
+    }
   }, [loadPreferences])
 
   useEffect(() => {
-    setIsHydrated(false)
-    loadRecord()
+    void loadRecord()
+
+    return () => {
+      recordRequestIdRef.current += 1
+    }
   }, [loadRecord])
 
   useEffect(() => {
-    loadFocus()
+    setFocusLoadedScope(null)
+    setSessions([])
+    setFocusIn(0)
+    setFocusOut(0)
+    setEntertainment(0)
+    void loadFocus()
+
+    return () => {
+      focusRequestIdRef.current += 1
+    }
   }, [loadFocus])
 
-  // Persist the in-progress form as a localStorage draft per (userId, date).
-  // Debounced 300ms; cleared on successful save. Skip until loadRecord
-  // finishes — otherwise the default empty state on mount would race the
-  // async load and overwrite a previously-saved draft.
+  // Persist only explicit edits for the fully hydrated (user, date) scope.
+  // A boolean hydration flag is insufficient here: during a date switch the
+  // previous date can still be "hydrated" for one render and contaminate the
+  // new date's localStorage bucket before Supabase responds.
   useEffect(() => {
-    if (!user || !isHydrated) return
+    if (
+      !userId ||
+      !entryScope ||
+      !shouldPersistDailyEntryDraft(entryScope, hydratedScope, dirtyScope)
+    ) {
+      return
+    }
 
     const handle = setTimeout(() => {
-      writeDailyEntryDraft(user.id, date, {
-        dayType,
-        habitCheckins,
-        note,
-        progressLevel,
-        progressNote,
-        stateLabel,
-      })
+      writeDailyEntryDraft(userId, date, currentDraft())
     }, 300)
 
     return () => clearTimeout(handle)
   }, [
-    user,
+    userId,
     date,
-    isHydrated,
+    entryScope,
+    hydratedScope,
+    dirtyScope,
     dayType,
     habitCheckins,
     note,
     progressLevel,
     progressNote,
     stateLabel,
+    currentDraft,
   ])
 
+  const handleDateChange = (nextDate: string) => {
+    if (
+      userId &&
+      entryScope &&
+      shouldPersistDailyEntryDraft(entryScope, hydratedScope, dirtyScope)
+    ) {
+      // Flush the old date before the debounce cleanup runs so rapid date
+      // switches cannot lose the user's latest unsaved keystrokes.
+      writeDailyEntryDraft(userId, date, currentDraft())
+    }
+
+    setHydratedScope(null)
+    setDirtyScope(null)
+    setStatus(null)
+    setDate(nextDate)
+  }
+
   const handleSave = async () => {
-    if (!user) return
+    if (!userId || !canSubmitEntry) return
     setSaving(true)
     setStatus(null)
 
     try {
-      await upsertDailyRecord(user.id, {
+      await upsertDailyRecord(userId, {
         date,
         day_type: dayType,
         ibetter_count: preferences.enable_habit_checkins ? habitCheckins : 0,
@@ -201,7 +286,8 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         state_label: preferences.enable_state_tracking ? stateLabel : null,
       })
 
-      clearDailyEntryDraft(user.id, date)
+      clearDailyEntryDraft(userId, date)
+      setDirtyScope(null)
       onSave?.()
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
@@ -213,7 +299,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }
 
   const handleFlomo = async () => {
-    if (!note.trim()) return
+    if (!userId || !canSubmitEntry || !note.trim()) return
 
     setSending(true)
     setStatus(null)
@@ -256,7 +342,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   }
 
   return (
-    <div className="float-card glow-neutral">
+    <div className="float-card glow-neutral" aria-busy={Boolean(userId) && !canSubmitEntry}>
       <div className="sec-head">
         <span className="sec-dot sky" />
         <span className="sec-name">每日记录</span>
@@ -266,7 +352,8 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         <input
           type="date"
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(event) => handleDateChange(event.target.value)}
+          disabled={saving}
           className="field-input"
           style={{ maxWidth: 180 }}
         />
@@ -275,7 +362,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
             <button
               key={type}
               type="button"
-              onClick={() => setDayType(type)}
+              onClick={() => {
+                markEntryDirty()
+                setDayType(type)
+              }}
+              disabled={editingDisabled}
               className={`pill${dayType === type ? ' active' : ''}`}
             >
               {type === 'study_day' ? '学习日' : '休息日'}
@@ -311,7 +402,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
               type="number"
               min={0}
               value={habitCheckins}
-              onChange={(event) => setHabitCheckins(parseInt(event.target.value, 10) || 0)}
+              onChange={(event) => {
+                markEntryDirty()
+                setHabitCheckins(parseInt(event.target.value, 10) || 0)
+              }}
+              disabled={editingDisabled}
               className="field-input"
             />
           </div>
@@ -331,7 +426,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setProgressLevel(option.value)}
+                onClick={() => {
+                  markEntryDirty()
+                  setProgressLevel(option.value)
+                }}
+                disabled={editingDisabled}
                 className={`pill${progressLevel === option.value ? ' active' : ''}`}
               >
                 {option.label}
@@ -341,7 +440,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
           <textarea
             placeholder="今天最重要的一步..."
             value={progressNote}
-            onChange={(event) => setProgressNote(event.target.value)}
+            onChange={(event) => {
+              markEntryDirty()
+              setProgressNote(event.target.value)
+            }}
+            disabled={editingDisabled}
             rows={2}
             className="field-textarea"
           />
@@ -356,7 +459,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setStateLabel(option.value)}
+                onClick={() => {
+                  markEntryDirty()
+                  setStateLabel(option.value)
+                }}
+                disabled={editingDisabled}
                 className={`pill${stateLabel === option.value ? ' active' : ''}`}
               >
                 {option.label}
@@ -369,7 +476,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       <textarea
         placeholder="今天的总结、感受或提醒..."
         value={note}
-        onChange={(event) => setNote(event.target.value)}
+        onChange={(event) => {
+          markEntryDirty()
+          setNote(event.target.value)
+        }}
+        disabled={editingDisabled}
         rows={3}
         className="field-textarea"
       />
@@ -378,18 +489,18 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving}
+          disabled={saving || !canSubmitEntry}
           className="btn-warm"
-          style={{ opacity: saving ? 0.6 : 1 }}
+          style={{ opacity: saving || !canSubmitEntry ? 0.6 : 1 }}
         >
           {saving ? '保存中...' : '保存记录'}
         </button>
         <button
           type="button"
           onClick={handleFlomo}
-          disabled={sending || !note.trim()}
+          disabled={sending || !canSubmitEntry || !note.trim()}
           className="btn-outline"
-          style={{ opacity: sending || !note.trim() ? 0.5 : 1 }}
+          style={{ opacity: sending || !canSubmitEntry || !note.trim() ? 0.5 : 1 }}
         >
           {sending ? '发送中...' : '发送到 flomo ->'}
         </button>

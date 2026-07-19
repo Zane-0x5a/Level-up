@@ -10,7 +10,7 @@ import {
   getGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
-import { readFocusTimerStart, startFocusTimer } from '@/lib/focus-timer'
+import { syncFocusTimer } from '@/lib/focus-timer'
 import { attachMotionListener, createMotionDetector } from '@/lib/motion-detector'
 import { getLocalDateString } from '@/lib/local-date'
 import ReturnButton from './ReturnButton'
@@ -212,7 +212,12 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
         })
       })
       .catch(() => {
-        if (!cancelled) setPrefs(DEFAULT_GROWTH_PREFERENCES)
+        if (!cancelled) {
+          setPrefs({
+            ...DEFAULT_GROWTH_PREFERENCES,
+            enable_focus_timer: false,
+          })
+        }
       })
     return () => {
       cancelled = true
@@ -220,11 +225,9 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
   }, [userId])
 
   useEffect(() => {
-    if (!prefs?.enable_focus_timer) return
-    if (readFocusTimerStart() === null) {
-      startFocusTimer()
-    }
-  }, [prefs])
+    if (!prefs || !userId) return
+    syncFocusTimer(prefs.enable_focus_timer, userId)
+  }, [prefs, userId])
 
   useEffect(() => {
     if (!prefs?.enable_motion_detection) return
@@ -264,8 +267,8 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
     if (!userId) return
     try {
       const today = getLocalDateString()
-      await incrementReturnCount(userId, today)
-      setReturnCount(c => c + 1)
+      const nextCount = await incrementReturnCount(today)
+      setReturnCount(nextCount)
       setShowToast(true)
       toastTimerRef.current = setTimeout(() => setShowToast(false), 1500)
     } catch {
@@ -324,6 +327,7 @@ function FocusImmersiveStateContent({ onExit, userId }: FocusImmersiveStateConte
           showToast={showToast}
           motionActive={motionActive}
           timerEnabled={prefs?.enable_focus_timer ?? false}
+          userId={userId}
         />
       </div>
 

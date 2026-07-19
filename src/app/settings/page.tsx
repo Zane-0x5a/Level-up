@@ -7,10 +7,13 @@ import { getFocusImages, uploadFocusImage, deleteFocusImage, type FocusImage } f
 import { getAudioClips, uploadAudioClip, deleteAudioClip } from '@/lib/api/audio-clips'
 import {
   DEFAULT_GROWTH_PREFERENCES,
+  clearStagedFocusTimerPreference,
   getGrowthPreferences,
+  stageFocusTimerPreference,
   upsertGrowthPreferences,
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
+import { clearFocusTimer } from '@/lib/focus-timer'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -24,10 +27,13 @@ type AudioClip = {
   file_path: string
 }
 
+type GrowthPreferenceValues = Omit<GrowthPreferences, 'user_id'>
+
 const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
   const { user } = useAuth()
+  const userId = user?.id ?? null
   const [flomoUrl, setFlomoUrl] = useState('')
   const [flomoSaved, setFlomoSaved] = useState(false)
   const [images, setImages] = useState<FocusImage[]>([])
@@ -41,15 +47,27 @@ export default function SettingsPage() {
   const [growthPreferences, setGrowthPreferences] = useState<Omit<GrowthPreferences, 'user_id'>>(
     DEFAULT_GROWTH_PREFERENCES
   )
+  const [growthPreferencesUserId, setGrowthPreferencesUserId] = useState<string | null>(null)
   const [greetings, setGreetings] = useState<string[]>([])
   const [newGreeting, setNewGreeting] = useState('')
   const imageInputRef = useRef<HTMLInputElement>(null)
   const audioInputRef = useRef<HTMLInputElement>(null)
-  const confirmedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'>>(
-    DEFAULT_GROWTH_PREFERENCES
+  const mediaRequestIdRef = useRef(0)
+  const activeGrowthPreferencesUserIdRef = useRef<string | null>(null)
+  const latestGrowthPreferencesRef = useRef<{
+    userId: string
+    preferences: GrowthPreferenceValues
+  } | null>(null)
+  const confirmedGrowthPreferencesRef = useRef(
+    new Map<string, GrowthPreferenceValues>()
   )
-  const queuedGrowthPreferencesRef = useRef<Omit<GrowthPreferences, 'user_id'> | null>(null)
+  const queuedGrowthPreferencesRef = useRef(
+    new Map<string, GrowthPreferenceValues>()
+  )
   const isSavingGrowthPreferencesRef = useRef(false)
+  const growthPreferencesReady = Boolean(
+    user && growthPreferencesUserId === user.id
+  )
 
   useEffect(() => {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
@@ -62,10 +80,19 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    if (!user) return
+    activeGrowthPreferencesUserIdRef.current = userId
+    setGrowthPreferencesUserId(null)
+    if (!userId) {
+      setGrowthPreferences(DEFAULT_GROWTH_PREFERENCES)
+      return
+    }
+    let cancelled = false
 
-    getGrowthPreferences(user.id)
+    getGrowthPreferences(userId)
       .then((prefs) => {
+        if (cancelled || activeGrowthPreferencesUserIdRef.current !== userId) {
+          return
+        }
         const next = {
           enable_habit_checkins: prefs.enable_habit_checkins,
           enable_progress_tracking: prefs.enable_progress_tracking,
@@ -75,28 +102,43 @@ export default function SettingsPage() {
         }
 
         setGrowthPreferences(next)
-        confirmedGrowthPreferencesRef.current = next
+        setGrowthPreferencesUserId(userId)
+        latestGrowthPreferencesRef.current = { userId, preferences: next }
+        confirmedGrowthPreferencesRef.current.set(userId, next)
       })
       .catch((err) => {
-        console.error('加载成长追踪偏好失败:', err)
+        if (!cancelled && activeGrowthPreferencesUserIdRef.current === userId) {
+          console.error('加载成长追踪偏好失败:', err)
+        }
       })
-  }, [user])
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
 
   const loadMedia = useCallback(async () => {
-    if (!user) return
+    const requestId = ++mediaRequestIdRef.current
+    if (!userId) {
+      setImages([])
+      setClips([])
+      return
+    }
 
     try {
       const [focusImages, audioClips] = await Promise.all([
-        getFocusImages(user.id),
-        getAudioClips(user.id),
+        getFocusImages(userId),
+        getAudioClips(userId),
       ])
+      if (mediaRequestIdRef.current !== requestId) return
       setImages(focusImages)
       setClips(audioClips)
     } catch (err) {
+      if (mediaRequestIdRef.current !== requestId) return
       const message = err instanceof Error ? err.message : JSON.stringify(err)
       setError(`加载媒体失败：${message}`)
     }
-  }, [user])
+  }, [userId])
 
   useEffect(() => {
     void loadMedia()
@@ -132,38 +174,94 @@ export default function SettingsPage() {
   }
 
   const flushGrowthPreferencesQueue = useCallback(async () => {
-    if (!user || isSavingGrowthPreferencesRef.current) return
+    if (isSavingGrowthPreferencesRef.current) return
 
     isSavingGrowthPreferencesRef.current = true
     setSavingGrowthPrefs(true)
 
     try {
-      while (queuedGrowthPreferencesRef.current) {
-        const next = queuedGrowthPreferencesRef.current
-        queuedGrowthPreferencesRef.current = null
+      while (queuedGrowthPreferencesRef.current.size > 0) {
+        const queued = queuedGrowthPreferencesRef.current.entries().next().value
+        if (!queued) break
+        const [targetUserId, next] = queued
+        queuedGrowthPreferencesRef.current.delete(targetUserId)
 
-        await upsertGrowthPreferences(user.id, next)
-        confirmedGrowthPreferencesRef.current = next
+        try {
+          await upsertGrowthPreferences(targetUserId, next)
+          confirmedGrowthPreferencesRef.current.set(targetUserId, next)
+          const newerQueued = queuedGrowthPreferencesRef.current.get(targetUserId)
+          if (
+            !newerQueued ||
+            newerQueued.enable_focus_timer === next.enable_focus_timer
+          ) {
+            clearStagedFocusTimerPreference(targetUserId)
+          }
+          const latest = latestGrowthPreferencesRef.current
+          if (
+            activeGrowthPreferencesUserIdRef.current === targetUserId &&
+            latest?.userId === targetUserId &&
+            latest.preferences === next
+          ) {
+            setGrowthPreferences(next)
+            setGrowthPreferencesUserId(targetUserId)
+          }
+        } catch {
+          const newerQueued = queuedGrowthPreferencesRef.current.get(targetUserId)
+          if (!newerQueued) clearStagedFocusTimerPreference(targetUserId)
+          if (activeGrowthPreferencesUserIdRef.current === targetUserId) {
+            if (newerQueued) {
+              // A newer full snapshot is about to be written. Keep its
+              // optimistic UI instead of rolling back to a value that can
+              // immediately disagree with the eventual successful write.
+              latestGrowthPreferencesRef.current = {
+                userId: targetUserId,
+                preferences: newerQueued,
+              }
+              setGrowthPreferences(newerQueued)
+              setGrowthPreferencesUserId(targetUserId)
+              continue
+            }
+            const confirmed =
+              confirmedGrowthPreferencesRef.current.get(targetUserId) ??
+              DEFAULT_GROWTH_PREFERENCES
+            if (!confirmed.enable_focus_timer) clearFocusTimer()
+            latestGrowthPreferencesRef.current = {
+              userId: targetUserId,
+              preferences: confirmed,
+            }
+            setGrowthPreferences(confirmed)
+            setGrowthPreferencesUserId(targetUserId)
+            setError('成长追踪设置保存失败')
+            setTimeout(() => setError(null), 3000)
+          }
+        }
       }
-    } catch {
-      queuedGrowthPreferencesRef.current = null
-      setGrowthPreferences(confirmedGrowthPreferencesRef.current)
-      setError('成长追踪设置保存失败')
-      setTimeout(() => setError(null), 3000)
     } finally {
       isSavingGrowthPreferencesRef.current = false
       setSavingGrowthPrefs(false)
     }
-  }, [user])
+  }, [])
 
   const handleGrowthPreferenceToggle = (
     key: keyof Omit<GrowthPreferences, 'user_id'>,
     value: boolean
   ) => {
-    const next = { ...growthPreferences, [key]: value }
+    if (!user || growthPreferencesUserId !== user.id) return
+    const latest = latestGrowthPreferencesRef.current
+    const current =
+      latest?.userId === user.id ? latest.preferences : growthPreferences
+    const next = { ...current, [key]: value }
 
+    if (key === 'enable_focus_timer') {
+      stageFocusTimerPreference(user.id, value)
+      if (!value) clearFocusTimer()
+    }
+    latestGrowthPreferencesRef.current = {
+      userId: user.id,
+      preferences: next,
+    }
     setGrowthPreferences(next)
-    queuedGrowthPreferencesRef.current = next
+    queuedGrowthPreferencesRef.current.set(user.id, next)
     void flushGrowthPreferencesQueue()
   }
 
@@ -310,6 +408,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={growthPreferences.enable_focus_timer}
+                disabled={!growthPreferencesReady}
                 onChange={(event) =>
                   handleGrowthPreferenceToggle('enable_focus_timer', event.target.checked)
                 }
@@ -325,6 +424,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={growthPreferences.enable_motion_detection}
+                disabled={!growthPreferencesReady}
                 onChange={(event) =>
                   handleGrowthPreferenceToggle('enable_motion_detection', event.target.checked)
                 }
@@ -352,6 +452,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={growthPreferences.enable_habit_checkins}
+                disabled={!growthPreferencesReady}
                 onChange={(event) =>
                   handleGrowthPreferenceToggle('enable_habit_checkins', event.target.checked)
                 }
@@ -365,6 +466,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={growthPreferences.enable_progress_tracking}
+                disabled={!growthPreferencesReady}
                 onChange={(event) =>
                   handleGrowthPreferenceToggle('enable_progress_tracking', event.target.checked)
                 }
@@ -378,6 +480,7 @@ export default function SettingsPage() {
               <input
                 type="checkbox"
                 checked={growthPreferences.enable_state_tracking}
+                disabled={!growthPreferencesReady}
                 onChange={(event) =>
                   handleGrowthPreferenceToggle('enable_state_tracking', event.target.checked)
                 }
@@ -514,6 +617,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </section>
+
     </main>
   )
 }

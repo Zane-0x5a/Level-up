@@ -29,10 +29,15 @@ export default function FocusDefaultState({ onEnter, orbRef }: Props) {
   const [returnCount, setReturnCount] = useState(0)
   const [lastSession, setLastSession] = useState<{ category: string; duration: number } | null>(null)
   const [weeklyHours, setWeeklyHours] = useState(0)
-  const [quietLine] = useState(() => quietLines[Math.floor(Math.random() * quietLines.length)])
+  const [quietLine, setQuietLine] = useState(quietLines[0])
   const [enableMotion, setEnableMotion] = useState(
     DEFAULT_GROWTH_PREFERENCES.enable_motion_detection
   )
+
+  useEffect(() => {
+    const picked = quietLines[Math.floor(Math.random() * quietLines.length)]
+    if (picked !== quietLines[0]) queueMicrotask(() => setQuietLine(picked))
+  }, [])
 
   useEffect(() => {
     if (!user) return

@@ -8,6 +8,7 @@ import {
   getLastFocusCategory,
   type FocusSession,
 } from '@/lib/api/focus-sessions'
+import { getGrowthPreferences } from '@/lib/api/growth-preferences'
 import {
   clearFocusDraft,
   DEFAULT_FOCUS_DRAFT,
@@ -17,7 +18,7 @@ import {
 } from '@/lib/focus-draft'
 import {
   FOCUS_TIMER_MIN_FOCUS_MS,
-  consumeFocusTimer,
+  consumeFocusTimerWhenEnabled,
   createFocusClientSessionId,
   readFocusElapsed,
 } from '@/lib/focus-timer'
@@ -38,6 +39,23 @@ const CATEGORIES = [
 ]
 
 const SUBMITTED_SESSION_PREFIX = 'focus-last-submitted-session'
+const TIMER_PREFERENCE_TIMEOUT_MS = 5_000
+
+async function getTimerEnabledWithTimeout(userId: string): Promise<boolean> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      getGrowthPreferences(userId)
+        .then(preferences => preferences.enable_focus_timer === true)
+        .catch(() => false),
+      new Promise<boolean>(resolve => {
+        timeoutId = setTimeout(() => resolve(false), TIMER_PREFERENCE_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId)
+  }
+}
 
 function getInitialDraft(userId: string | null) {
   return userId ? readFocusDraft(userId) : DEFAULT_FOCUS_DRAFT
@@ -138,7 +156,7 @@ function SessionEndPanelContent({
   const [error, setError] = useState('')
   const [autoCommitting, setAutoCommitting] = useState(() => {
     if (!userId || readSubmittedSession(userId)) return false
-    const elapsed = readFocusElapsed()
+    const elapsed = readFocusElapsed(userId)
     return elapsed !== null && elapsed >= FOCUS_TIMER_MIN_FOCUS_MS
   })
   const autoCommitRanRef = useRef(false)
@@ -167,13 +185,37 @@ function SessionEndPanelContent({
     if (!userId) return
     if (autoCommitRanRef.current) return
     autoCommitRanRef.current = true
+    let cancelled = false
+    let timedOut = false
+    const preferenceTimeout = setTimeout(() => {
+      timedOut = true
+      consumeFocusTimerWhenEnabled(false, userId)
+      if (!cancelled) {
+        setError('未能确认自动计时设置，请手动记录')
+        setAutoCommitting(false)
+      }
+    }, TIMER_PREFERENCE_TIMEOUT_MS)
 
     void (async () => {
-      const consumedTimer = consumeFocusTimer()
+      const timerEnabled = await getGrowthPreferences(userId)
+        .then(preferences => preferences.enable_focus_timer === true)
+        .catch(() => false)
+      if (cancelled || timedOut) return
+      clearTimeout(preferenceTimeout)
+      const consumedTimer = consumeFocusTimerWhenEnabled(
+        timerEnabled,
+        userId
+      )
       if (consumedTimer === null) {
         setAutoCommitting(false)
         return
       }
+
+      const recoveryDraft = readFocusDraft(userId)
+      writeFocusDraft(userId, {
+        ...recoveryDraft,
+        clientSessionId: consumedTimer.clientSessionId,
+      })
 
       // This same-tab guard restores confirmation state after a remount.
       // Cross-tab and retry idempotency is enforced by using the stable client
@@ -190,22 +232,39 @@ function SessionEndPanelContent({
 
       try {
         const lastCategory = await getLastFocusCategory(userId).catch(() => null)
+        if (cancelled) return
         const draft = readFocusDraft(userId)
         const finalCategory =
           lastCategory ?? draft.category ?? DEFAULT_FOCUS_DRAFT.category
+        const stillEnabled = await getTimerEnabledWithTimeout(userId)
+        if (cancelled) return
+        if (!stillEnabled) {
+          setAutoCommitting(false)
+          return
+        }
+
         const durationHours = consumedTimer.elapsedMs / (1000 * 60 * 60)
+        const persistedDuration = getDraftFromDuration(durationHours)
+        writeFocusDraft(userId, {
+          category: finalCategory,
+          hours: persistedDuration.hours,
+          minutes: persistedDuration.minutes,
+          clientSessionId: consumedTimer.clientSessionId,
+        })
         const session = await addFocusSession(
           userId,
           finalCategory,
           durationHours,
           consumedTimer.clientSessionId
         )
+        if (cancelled) return
         clearFocusDraft(userId)
         writeSubmittedSession(userId, session)
         setSubmittedSession(session)
         setIsEditingSubmittedSession(false)
         setAutoCommitting(false)
       } catch {
+        if (cancelled) return
         // Auto-commit failed (network / RLS / migration drift). Pre-fill the
         // duration & category so the user can manually confirm — the timer
         // is already consumed at this point.
@@ -216,11 +275,17 @@ function SessionEndPanelContent({
         setHours(prefilled.hours)
         setMinutes(prefilled.minutes)
         const lastCategory = await getLastFocusCategory(userId).catch(() => null)
+        if (cancelled) return
         if (lastCategory) setCategory(lastCategory)
         setError('自动记录失败，请手动确认或更正')
         setAutoCommitting(false)
       }
     })()
+
+    return () => {
+      cancelled = true
+      clearTimeout(preferenceTimeout)
+    }
   }, [userId])
 
   const handleDone = () => {

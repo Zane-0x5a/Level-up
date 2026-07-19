@@ -8,6 +8,7 @@ const {
   correctSubmittedFocusSessionWithClient,
   deleteFocusSessionWithClient,
   getTodayFocusSessionsWithClient,
+  incrementReturnCountWithClient,
 } = focusSessionsApi
 
 const TODAY = getLocalDateString()
@@ -284,4 +285,24 @@ test('getTodayFocusSessionsWithClient reads sessions for the explicit user id an
     userId: 'user-42',
     date: '2026-03-20',
   })
+})
+
+test('incrementReturnCountWithClient uses the atomic database function and returns its count', async () => {
+  const calls: Array<{ functionName: string; args: { target_date: string } }> = []
+  const client = {
+    async rpc(functionName: string, args: { target_date: string }) {
+      calls.push({ functionName, args })
+      return { data: 7, error: null }
+    },
+  }
+
+  const count = await incrementReturnCountWithClient(client, '2026-07-19')
+
+  assert.equal(count, 7)
+  assert.deepEqual(calls, [
+    {
+      functionName: 'increment_daily_return_count',
+      args: { target_date: '2026-07-19' },
+    },
+  ])
 })

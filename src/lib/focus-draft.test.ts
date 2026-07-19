@@ -146,3 +146,25 @@ test('getFocusDurationHours validates inputs and converts hour-minute drafts to 
   assert.equal(getFocusDurationHours({ hours: '0', minutes: '0' }), null)
   assert.equal(getFocusDurationHours({ hours: '', minutes: '' }), null)
 })
+
+test('draft persistence failures do not break the manual fallback flow', () => {
+  const unavailableStorage: StorageLike = {
+    getItem: () => null,
+    setItem: () => { throw new Error('quota exceeded') },
+    removeItem: () => { throw new Error('storage disabled') },
+  }
+
+  assert.doesNotThrow(() => {
+    writeFocusDraft(
+      'user-a',
+      {
+        category: 'in_class',
+        hours: '1',
+        minutes: '0',
+        clientSessionId: 'session-a',
+      },
+      unavailableStorage
+    )
+    clearFocusDraft('user-a', unavailableStorage)
+  })
+})

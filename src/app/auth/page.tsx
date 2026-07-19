@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import './auth.css'
 
 export default function AuthPage() {
-  const { user, loading, isRecovery, signIn, signUp, updatePassword, clearRecovery } = useAuth()
+  const { user, loading, isRecovery, signIn, signUp, updatePassword } = useAuth()
   const router = useRouter()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')

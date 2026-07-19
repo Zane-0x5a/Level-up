@@ -136,12 +136,20 @@ export function writeFocusDraft(
   const targetStorage = getStorage(storage)
   if (!targetStorage) return
 
-  targetStorage.setItem(getStorageKey(userId), JSON.stringify(draft))
+  try {
+    targetStorage.setItem(getStorageKey(userId), JSON.stringify(draft))
+  } catch {
+    // A restricted or full localStorage must not break the manual fallback UI.
+  }
 }
 
 export function clearFocusDraft(userId: string, storage?: StorageLike) {
   const targetStorage = getStorage(storage)
   if (!targetStorage) return
 
-  targetStorage.removeItem(getStorageKey(userId))
+  try {
+    targetStorage.removeItem(getStorageKey(userId))
+  } catch {
+    // The current UI can still complete even if stale draft cleanup is blocked.
+  }
 }

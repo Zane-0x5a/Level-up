@@ -18,7 +18,11 @@ function formatDate(dateStr: string) {
 
 export default function CountdownSection() {
   const { user } = useAuth()
-  const [items, setItems] = useState<Countdown[]>(() => cached<Countdown[]>('cd:items') ?? [])
+  const userId = user?.id ?? null
+  const cacheKey = userId ? `cd:items:${userId}` : null
+  const [items, setItems] = useState<Countdown[]>(() =>
+    cacheKey ? cached<Countdown[]>(cacheKey) ?? [] : []
+  )
   const [activeIndex, setActiveIndex] = useState(0)
   const [direction, setDirection] = useState<'left' | 'right' | null>(null)
   const [animKey, setAnimKey] = useState(0)
@@ -26,25 +30,39 @@ export default function CountdownSection() {
   const [newLabel, setNewLabel] = useState('')
   const [newDate, setNewDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const initializedRef = useRef(false)
+  const initializedUserRef = useRef<string | null>(null)
+  const loadRequestIdRef = useRef(0)
   const labelInputRef = useRef<HTMLInputElement>(null)
 
   const load = useCallback(async () => {
-    if (!user) return
+    const requestId = ++loadRequestIdRef.current
+    if (!userId) {
+      setItems([])
+      setActiveIndex(0)
+      initializedUserRef.current = null
+      return
+    }
+    const nextCacheKey = `cd:items:${userId}`
+    setItems(cached<Countdown[]>(nextCacheKey) ?? [])
     try {
-      const data = await getCountdowns(user.id)
+      const data = await getCountdowns(userId)
+      if (loadRequestIdRef.current !== requestId) return
       const list = data ?? []
       setItems(list)
-      cache('cd:items', list)
-      // On first load, random start index
-      if (!initializedRef.current && list.length > 0) {
+      cache(nextCacheKey, list)
+      // Randomize once per signed-in user, then keep the index within bounds.
+      if (initializedUserRef.current !== userId && list.length > 0) {
         setActiveIndex(Math.floor(Math.random() * list.length))
-        initializedRef.current = true
+        initializedUserRef.current = userId
+      } else {
+        setActiveIndex(previous =>
+          list.length === 0 ? 0 : Math.min(previous, list.length - 1)
+        )
       }
     } catch {
-      setItems([])
+      if (loadRequestIdRef.current === requestId) setItems([])
     }
-  }, [user])
+  }, [userId])
 
   useEffect(() => { load() }, [load])
 
@@ -74,10 +92,10 @@ export default function CountdownSection() {
   }
 
   const handleAdd = async () => {
-    if (!newLabel.trim() || !newDate || isSubmitting || !user) return
+    if (!newLabel.trim() || !newDate || isSubmitting || !userId) return
     setIsSubmitting(true)
     try {
-      await addCountdown(user.id, newLabel.trim(), newDate)
+      await addCountdown(userId, newLabel.trim(), newDate)
       setNewLabel('')
       setNewDate('')
       setShowAddForm(false)
@@ -93,7 +111,7 @@ export default function CountdownSection() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!user) return
+    if (!userId) return
     try {
       await deleteCountdown(id)
       // Adjust active index if needed
