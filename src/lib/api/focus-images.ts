@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getSupabaseStorageObjectPath } from '@/lib/storage-path'
 
 export type FocusImage = {
   id: string
@@ -34,13 +35,31 @@ export async function uploadFocusImage(
   const { error } = await supabase
     .from('focus_images')
     .insert({ user_id: userId, file_path: urlData.publicUrl, device_type: deviceType })
-  if (error) throw error
+  if (error) {
+    await supabase.storage.from('focus-images').remove([filePath]).catch(() => undefined)
+    throw error
+  }
 }
 
 export async function deleteFocusImage(id: string) {
-  const { error } = await supabase
+  const { data, error: readError } = await supabase
+    .from('focus_images')
+    .select('file_path')
+    .eq('id', id)
+    .single()
+  if (readError) throw readError
+
+  const { error: deleteError } = await supabase
     .from('focus_images')
     .delete()
     .eq('id', id)
-  if (error) throw error
+  if (deleteError) throw deleteError
+
+  const objectPath = getSupabaseStorageObjectPath(data.file_path, 'focus-images')
+  if (objectPath) {
+    const { error: storageError } = await supabase.storage
+      .from('focus-images')
+      .remove([objectPath])
+    if (storageError) console.error('专注背景文件清理失败:', storageError)
+  }
 }

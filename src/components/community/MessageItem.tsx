@@ -5,6 +5,7 @@ import type { Message } from '@/lib/api/messages'
 import type { UserProfile } from '@/lib/api/user-profiles'
 import CheckinCard from './CheckinCard'
 import DeleteConfirmDialog from './DeleteConfirmDialog'
+import { parseCheckinCardData } from '@/lib/checkin-share'
 
 interface Props {
   message: Message
@@ -32,6 +33,10 @@ export default function MessageItem({ message, profile, isOwn, isAdmin, replyMes
 
   const nickname = profile?.nickname ?? '未知用户'
   const initial = nickname[0]?.toUpperCase() ?? '?'
+  const checkinData =
+    message.message_type === 'checkin'
+      ? parseCheckinCardData(message.checkin_data)
+      : null
 
   const canDelete = () => {
     if (isAdmin) return true
@@ -82,6 +87,8 @@ export default function MessageItem({ message, profile, isOwn, isAdmin, replyMes
         )}
         {message.message_type === 'image' && (
           <div className="msg-image-wrap">
+            {/* Dynamic Supabase public URLs are intentionally rendered natively in this static export. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={message.image_url ?? ''}
               alt=""
@@ -91,10 +98,13 @@ export default function MessageItem({ message, profile, isOwn, isAdmin, replyMes
             />
           </div>
         )}
-        {message.message_type === 'checkin' && message.checkin_data && (
+        {message.message_type === 'checkin' && checkinData && (
           <div className="msg-checkin-card">
-            <CheckinCard data={message.checkin_data as Parameters<typeof CheckinCard>[0]['data']} />
+            <CheckinCard data={checkinData} />
           </div>
+        )}
+        {message.message_type === 'checkin' && !checkinData && (
+          <div className="msg-text">这条打卡数据已损坏，无法展示。</div>
         )}
 
         {/* Reply action */}

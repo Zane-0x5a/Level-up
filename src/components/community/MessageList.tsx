@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { getMessages, subscribeToChannel, unsubscribeFromChannel, deleteMessage, type Message } from '@/lib/api/messages'
 import type { UserProfile } from '@/lib/api/user-profiles'
 import type { RealtimeChannel } from '@supabase/supabase-js'
@@ -14,6 +14,19 @@ interface Props {
   profilesMap: Record<string, UserProfile>
   onReply?: (message: Message) => void
   pendingMessage?: Message | null
+}
+
+function mergeMessages(channelId: string, ...groups: Message[][]): Message[] {
+  const byId = new Map<string, Message>()
+  for (const group of groups) {
+    for (const message of group) {
+      if (message.channel_id === channelId) byId.set(message.id, message)
+    }
+  }
+  return [...byId.values()].sort((left, right) => {
+    const timeOrder = left.created_at.localeCompare(right.created_at)
+    return timeOrder !== 0 ? timeOrder : left.id.localeCompare(right.id)
+  })
 }
 
 export default function MessageList({ channelId, userId, isAdmin, profilesMap, onReply, pendingMessage }: Props) {
@@ -50,16 +63,11 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
   // Load initial messages
   useEffect(() => {
     let cancelled = false
-    queueMicrotask(() => {
-      if (cancelled) return
-      setMessages([])
-      setLoading(true)
-      setHasMore(true)
-    })
 
     getMessages(channelId).then(msgs => {
       if (cancelled) return
-      setMessages(msgs)
+      // Reconcile with any Realtime insert that arrived while history loaded.
+      setMessages(current => mergeMessages(channelId, msgs, current))
       setLoading(false)
       setTimeout(() => {
         if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight
@@ -110,7 +118,7 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
 
   // Insert pending message from parent (e.g. optimistic checkin)
   useEffect(() => {
-    if (!pendingMessage) return
+    if (!pendingMessage || pendingMessage.channel_id !== channelId) return
     queueMicrotask(() => {
       setMessages(prev => {
         const idx = prev.findIndex(m => m.id === pendingMessage.id)
@@ -119,7 +127,7 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
           updated[idx] = pendingMessage
           return updated
         }
-        return [...prev, pendingMessage]
+        return mergeMessages(channelId, prev, [pendingMessage])
       })
     })
     if (isNearBottom.current) {
@@ -127,7 +135,7 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
         if (listRef.current) listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
       }, 50)
     }
-  }, [pendingMessage])
+  }, [channelId, pendingMessage])
 
   // Track scroll position
   const handleScroll = useCallback(() => {
@@ -144,7 +152,7 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
       getMessages(channelId, oldest).then(older => {
         if (older.length < 50) setHasMore(false)
         if (older.length > 0) {
-          setMessages(prev => [...older, ...prev])
+          setMessages(prev => mergeMessages(channelId, older, prev))
           // Preserve scroll position
           requestAnimationFrame(() => {
             el.scrollTop = el.scrollHeight - prevHeight
@@ -159,6 +167,11 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
     }
   }, [channelId])
 
+  const messagesById = useMemo(
+    () => new Map(messages.map(message => [message.id, message])),
+    [messages]
+  )
+
   return (
     <div className="message-list" ref={listRef} onScroll={handleScroll}>
       {loadingMore && <div className="message-loading-more">加载更多...</div>}
@@ -168,7 +181,7 @@ export default function MessageList({ channelId, userId, isAdmin, profilesMap, o
         <div className="message-empty">还没有消息，说点什么吧</div>
       ) : (
         messages.map(msg => {
-          const replied = msg.reply_to ? messages.find(m => m.id === msg.reply_to) : undefined
+          const replied = msg.reply_to ? messagesById.get(msg.reply_to) : undefined
           return (
             <MessageItem
               key={msg.id}

@@ -68,8 +68,26 @@ create table if not exists audio_clips (
 create table if not exists focus_images (
   id uuid default gen_random_uuid() primary key,
   user_id uuid not null,
-  file_path text not null
+  file_path text not null,
+  device_type text not null default 'universal'
+    check (device_type in ('mobile', 'desktop', 'universal'))
 );
+
+alter table focus_images
+  add column if not exists device_type text not null default 'universal';
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'focus_images_device_type_check'
+      and conrelid = 'focus_images'::regclass
+  ) then
+    alter table focus_images
+      add constraint focus_images_device_type_check
+      check (device_type in ('mobile', 'desktop', 'universal')) not valid;
+  end if;
+end $$;
 
 -- Focus sessions (committed when a focus run ends)
 create table if not exists focus_sessions (
@@ -119,9 +137,15 @@ create table if not exists user_growth_preferences (
   enable_habit_checkins boolean not null default false,
   enable_progress_tracking boolean not null default false,
   enable_state_tracking boolean not null default false,
+  enable_focus_timer boolean not null default true,
+  enable_motion_detection boolean not null default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
+
+alter table user_growth_preferences
+  add column if not exists enable_focus_timer boolean not null default true,
+  add column if not exists enable_motion_detection boolean not null default true;
 
 
 -- ============================================================
@@ -176,8 +200,16 @@ create table if not exists messages (
 -- ============================================================
 
 create index if not exists idx_daily_records_user_date on daily_records(user_id, date desc);
+create index if not exists idx_countdowns_user_target_date on countdowns(user_id, target_date);
+create index if not exists idx_sticky_notes_user_order on sticky_notes(user_id, "order");
+create index if not exists idx_audio_clips_user_order on audio_clips(user_id, "order");
+create index if not exists idx_focus_images_user on focus_images(user_id);
+create index if not exists idx_focus_sessions_user_date_created
+  on focus_sessions(user_id, date, created_at desc);
+create index if not exists idx_focus_sessions_user_created
+  on focus_sessions(user_id, created_at desc);
 create index if not exists idx_messages_channel_created on messages(channel_id, created_at desc);
-
+create index if not exists idx_messages_reply_to on messages(reply_to);
 
 -- ============================================================
 -- §4  Row Level Security — personal data
@@ -382,7 +414,40 @@ $$ language plpgsql security definer;
 
 
 -- ============================================================
--- §8  Realtime
+-- §8  Atomic counters
+-- ============================================================
+
+create or replace function increment_daily_return_count(target_date date)
+returns integer
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  next_count integer;
+  current_user_id uuid := (select auth.uid());
+begin
+  if current_user_id is null then
+    raise exception 'Authentication required';
+  end if;
+
+  insert into public.daily_records (user_id, date, day_type, return_count)
+  values (current_user_id, target_date, 'study_day', 1)
+  on conflict (user_id, date)
+  do update set return_count = public.daily_records.return_count + 1
+  returning return_count into next_count;
+
+  return next_count;
+end;
+$$;
+
+revoke all on function increment_daily_return_count(date) from public;
+revoke all on function increment_daily_return_count(date) from anon;
+grant execute on function increment_daily_return_count(date) to authenticated;
+
+
+-- ============================================================
+-- §9  Realtime
 -- ============================================================
 -- Enable Realtime for the messages table so chat syncs live:
 --   Dashboard -> Database -> Replication -> add `messages`

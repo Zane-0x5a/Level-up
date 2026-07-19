@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getDailyRecord } from '@/lib/api/daily-records'
-import { getTodayFocusSessions, getTodayReturnCount } from '@/lib/api/focus-sessions'
+import { getTodayFocusSessions } from '@/lib/api/focus-sessions'
 import { cached, cache } from '@/lib/home-cache'
 import { useTodayDate } from '@/hooks/useTodayDate'
 
@@ -41,10 +41,9 @@ export default function ProgressOverview() {
       setData(cached<DailyData>(cacheKey) ?? EMPTY_DAILY_DATA)
 
       try {
-        const [record, sessions, returnCount] = await Promise.all([
+        const [record, sessions] = await Promise.all([
           getDailyRecord(user.id, today),
           getTodayFocusSessions(user.id, today),
-          getTodayReturnCount(user.id, today),
         ])
 
         // Always aggregate focus time from focus_sessions (source of truth)
@@ -63,7 +62,7 @@ export default function ProgressOverview() {
           focusOutClass,
           entertainment,
           ibetterCount: record?.ibetter_count ?? 0,
-          returnCount: returnCount,
+          returnCount: record?.return_count ?? 0,
         }
         if (cancelled) return
         setData(nextData)

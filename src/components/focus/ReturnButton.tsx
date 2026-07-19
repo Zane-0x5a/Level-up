@@ -9,6 +9,7 @@ type Props = {
   showToast: boolean
   motionActive: boolean
   timerEnabled: boolean
+  userId: string | null
 }
 
 function formatElapsed(ms: number): string {
@@ -26,6 +27,7 @@ export default function ReturnButton({
   showToast,
   motionActive,
   timerEnabled,
+  userId,
 }: Props) {
   const [animating, setAnimating] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -43,11 +45,11 @@ export default function ReturnButton({
 
   useEffect(() => {
     if (!shouldShowTime) return
-    const tick = () => setElapsedMs(readFocusElapsed())
+    const tick = () => setElapsedMs(userId ? readFocusElapsed(userId) : null)
     tick()
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
-  }, [shouldShowTime])
+  }, [shouldShowTime, userId])
 
   const handleClick = useCallback(() => {
     if (animatingRef.current) return

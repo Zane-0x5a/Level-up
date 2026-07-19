@@ -1,6 +1,7 @@
 // src/lib/api/messages.ts
 import { supabase } from '@/lib/supabase'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+import { getSupabaseStorageObjectPath } from '@/lib/storage-path'
 
 export type Message = {
   id: string
@@ -73,7 +74,10 @@ export async function sendImageMessage(channelId: string, userId: string, file: 
     })
     .select()
     .single()
-  if (error) throw error
+  if (error) {
+    await supabase.storage.from('chat-images').remove([filePath]).catch(() => undefined)
+    throw error
+  }
   return data as Message
 }
 
@@ -192,17 +196,20 @@ export async function deleteMessage(
     }
   }
 
-  if (message.message_type === 'image' && message.image_url) {
-    const path = message.image_url.split('/chat-images/')[1]
-    if (path) {
-      await supabase.storage.from('chat-images').remove([path])
-    }
-  }
-
   const { error: deleteError } = await supabase
     .from('messages')
     .delete()
     .eq('id', messageId)
 
   if (deleteError) throw deleteError
+
+  if (message.message_type === 'image' && message.image_url) {
+    const objectPath = getSupabaseStorageObjectPath(message.image_url, 'chat-images')
+    if (objectPath) {
+      const { error: storageError } = await supabase.storage
+        .from('chat-images')
+        .remove([objectPath])
+      if (storageError) console.error('聊天图片清理失败:', storageError)
+    }
+  }
 }

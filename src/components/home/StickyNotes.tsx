@@ -9,22 +9,34 @@ type Note = { id: string; content: string }
 
 export default function StickyNotes() {
   const { user } = useAuth()
-  const [notes, setNotes] = useState<Note[]>(() => cached<Note[]>('notes:list') ?? [])
+  const userId = user?.id ?? null
+  const cacheKey = userId ? `notes:list:${userId}` : null
+  const [notes, setNotes] = useState<Note[]>(() =>
+    cacheKey ? cached<Note[]>(cacheKey) ?? [] : []
+  )
   const [showInput, setShowInput] = useState(false)
   const [text, setText] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const loadRequestIdRef = useRef(0)
 
   const load = useCallback(async () => {
-    if (!user) return
-    try {
-      const data = await getStickyNotes(user.id)
-      setNotes(data ?? [])
-      cache('notes:list', data ?? [])
-    } catch {
+    const requestId = ++loadRequestIdRef.current
+    if (!userId) {
       setNotes([])
+      return
     }
-  }, [user])
+    const nextCacheKey = `notes:list:${userId}`
+    setNotes(cached<Note[]>(nextCacheKey) ?? [])
+    try {
+      const data = await getStickyNotes(userId)
+      if (loadRequestIdRef.current !== requestId) return
+      setNotes(data ?? [])
+      cache(nextCacheKey, data ?? [])
+    } catch {
+      if (loadRequestIdRef.current === requestId) setNotes([])
+    }
+  }, [userId])
 
   useEffect(() => { load() }, [load])
 
@@ -36,10 +48,10 @@ export default function StickyNotes() {
   }, [showInput])
 
   const handleAdd = async () => {
-    if (!text.trim() || isSubmitting || !user) return
+    if (!text.trim() || isSubmitting || !userId) return
     setIsSubmitting(true)
     try {
-      await addStickyNote(user.id, text.trim())
+      await addStickyNote(userId, text.trim())
       setText('')
       setShowInput(false)
       await load()
@@ -51,7 +63,7 @@ export default function StickyNotes() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!user) return
+    if (!userId) return
     try {
       await deleteStickyNote(id)
       await load()

@@ -8,90 +8,56 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { useNav } from '@/contexts/NavContext'
+import { useAuth } from '@/contexts/AuthContext'
 import FocusDefaultState from '@/components/focus/FocusDefaultState'
 import SpaceTransition from '@/components/focus/SpaceTransition'
 import FocusImmersiveState from '@/components/focus/FocusImmersiveState'
 import SessionEndPanel from '@/components/focus/SessionEndPanel'
-import { clearFocusTimer } from '@/lib/focus-timer'
+import { freezeFocusTimer } from '@/lib/focus-timer'
+import {
+  FOCUS_STATE_CHANGE_EVENT,
+  FOCUS_STATE_STORAGE_KEY,
+  readFocusState,
+  writeFocusState,
+  type PersistedFocusState,
+} from '@/lib/focus-state'
 import './focus.css'
 
 type FocusState = 'default' | 'transitioning' | 'immersive' | 'ending'
-type PersistedFocusState = Exclude<FocusState, 'transitioning'>
-
-const STORAGE_KEY = 'focus-state'
-const STORE_EVENT = 'focus-state-change'
-const STATE_MAX_AGE_MS = 8 * 60 * 60 * 1000
-
-type PersistedEntry = {
-  state: 'immersive' | 'ending'
-  setAt: number
-}
-
-function parsePersistedEntry(raw: string | null, now: number): PersistedEntry | null {
-  if (!raw) return null
-  try {
-    const parsed = JSON.parse(raw) as Partial<PersistedEntry>
-    if (
-      (parsed.state !== 'immersive' && parsed.state !== 'ending') ||
-      typeof parsed.setAt !== 'number' ||
-      !Number.isFinite(parsed.setAt)
-    ) {
-      return null
-    }
-    if (now - parsed.setAt > STATE_MAX_AGE_MS) return null
-    return { state: parsed.state, setAt: parsed.setAt }
-  } catch {
-    return null
-  }
-}
-
-const getStoredFocusState = (): PersistedFocusState => {
-  if (typeof window === 'undefined') return 'default'
-
-  const raw = window.localStorage.getItem(STORAGE_KEY)
-  const entry = parsePersistedEntry(raw, Date.now())
-  if (!entry) {
-    if (raw !== null) {
-      window.localStorage.removeItem(STORAGE_KEY)
-      clearFocusTimer()
-    }
-    return 'default'
-  }
-  return entry.state
-}
 
 const subscribeToFocusState = (callback: () => void) => {
   if (typeof window === 'undefined') {
     return () => undefined
   }
 
-  const handleChange = () => callback()
-  window.addEventListener('storage', handleChange)
-  window.addEventListener(STORE_EVENT, handleChange)
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === FOCUS_STATE_STORAGE_KEY) {
+      callback()
+    }
+  }
+  const handleLocalChange = () => callback()
+  window.addEventListener('storage', handleStorage)
+  window.addEventListener(FOCUS_STATE_CHANGE_EVENT, handleLocalChange)
 
   return () => {
-    window.removeEventListener('storage', handleChange)
-    window.removeEventListener(STORE_EVENT, handleChange)
+    window.removeEventListener('storage', handleStorage)
+    window.removeEventListener(FOCUS_STATE_CHANGE_EVENT, handleLocalChange)
   }
 }
 
-const setStoredFocusState = (nextState: PersistedFocusState) => {
-  if (nextState === 'default') {
-    window.localStorage.removeItem(STORAGE_KEY)
-    // Keep the timer's lifecycle in lockstep with focus-state. Without this,
-    // exiting an immersive session would leave focus-timer-start behind, and
-    // the next entry would fall through the "timer already exists" branch in
-    // FocusImmersiveState and resume from a stale baseline.
-    clearFocusTimer()
-  } else {
-    const entry: PersistedEntry = { state: nextState, setAt: Date.now() }
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(entry))
-  }
-
-  window.dispatchEvent(new Event(STORE_EVENT))
+const setStoredFocusState = (
+  userId: string,
+  nextState: PersistedFocusState
+) => {
+  writeFocusState(userId, nextState)
+  window.dispatchEvent(new Event(FOCUS_STATE_CHANGE_EVENT))
 }
 
-export default function FocusPage() {
+function FocusPageContent({ userId }: { userId: string | null }) {
+  const getStoredFocusState = useCallback(
+    () => (userId ? readFocusState(userId) : 'default'),
+    [userId]
+  )
   const persistedState = useSyncExternalStore<PersistedFocusState>(
     subscribeToFocusState,
     getStoredFocusState,
@@ -101,6 +67,7 @@ export default function FocusPage() {
   const [exiting, setExiting] = useState(false)
   const { setNavHidden } = useNav()
   const orbRef = useRef<HTMLDivElement>(null)
+  const enterTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [orbCenter, setOrbCenter] = useState<{ x: number; y: number } | null>(null)
   const state: FocusState = isTransitioning ? 'transitioning' : persistedState
 
@@ -113,7 +80,13 @@ export default function FocusPage() {
     }
   }, [state, setNavHidden])
 
+  useEffect(() => () => {
+    if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current)
+  }, [])
+
   const handleEnter = useCallback(() => {
+    if (!userId) return
+    setIsTransitioning(false)
     // Capture the orb's screen position for the transition origin
     if (orbRef.current) {
       const rect = orbRef.current.getBoundingClientRect()
@@ -125,28 +98,39 @@ export default function FocusPage() {
     setExiting(true) // trigger content fade-out
 
     // After content fades (400ms), start transition
-    setTimeout(() => {
+    if (enterTimeoutRef.current) clearTimeout(enterTimeoutRef.current)
+    enterTimeoutRef.current = setTimeout(() => {
+      enterTimeoutRef.current = null
       setIsTransitioning(true)
       setExiting(false)
     }, 400)
-  }, [])
+  }, [userId])
 
   const handleTransitionComplete = useCallback(() => {
-    setStoredFocusState('immersive')
+    if (userId) {
+      setStoredFocusState(userId, 'immersive')
+    }
     setIsTransitioning(false)
-  }, [])
+  }, [userId])
 
   const handleExit = useCallback(() => {
-    setStoredFocusState('ending')
-  }, [])
+    if (userId) {
+      freezeFocusTimer(userId)
+      setStoredFocusState(userId, 'ending')
+    }
+  }, [userId])
 
   const handleSessionComplete = useCallback(() => {
-    setStoredFocusState('default')
-  }, [])
+    if (userId) {
+      setStoredFocusState(userId, 'default')
+    }
+  }, [userId])
 
   const handleSkip = useCallback(() => {
-    setStoredFocusState('default')
-  }, [])
+    if (userId) {
+      setStoredFocusState(userId, 'default')
+    }
+  }, [userId])
 
   return (
     <>
@@ -179,4 +163,10 @@ export default function FocusPage() {
       )}
     </>
   )
+}
+
+export default function FocusPage() {
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  return <FocusPageContent key={userId ?? 'anon'} userId={userId} />
 }

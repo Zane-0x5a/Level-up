@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase'
+import { getSupabaseStorageObjectPath } from '@/lib/storage-path'
 
 export async function getAudioClips(userId: string) {
   const { data, error } = await supabase
@@ -29,13 +30,31 @@ export async function uploadAudioClip(userId: string, file: File, label: string)
       label,
       file_path: urlData.publicUrl,
     })
-  if (error) throw error
+  if (error) {
+    await supabase.storage.from('audio-clips').remove([filePath]).catch(() => undefined)
+    throw error
+  }
 }
 
 export async function deleteAudioClip(id: string) {
-  const { error } = await supabase
+  const { data, error: readError } = await supabase
+    .from('audio_clips')
+    .select('file_path')
+    .eq('id', id)
+    .single()
+  if (readError) throw readError
+
+  const { error: deleteError } = await supabase
     .from('audio_clips')
     .delete()
     .eq('id', id)
-  if (error) throw error
+  if (deleteError) throw deleteError
+
+  const objectPath = getSupabaseStorageObjectPath(data.file_path, 'audio-clips')
+  if (objectPath) {
+    const { error: storageError } = await supabase.storage
+      .from('audio-clips')
+      .remove([objectPath])
+    if (storageError) console.error('音频文件清理失败:', storageError)
+  }
 }

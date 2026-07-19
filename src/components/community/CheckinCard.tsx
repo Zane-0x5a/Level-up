@@ -4,17 +4,11 @@ import { ClipboardCheck } from 'lucide-react'
 import {
   formatCheckinFocusMinutes,
   getCheckinDayLabel,
+  type CheckinCardData,
 } from '@/lib/checkin-share'
 
-interface CheckinData {
-  date?: string
-  day_type?: string
-  focus_minutes?: number
-  note_snippet?: string
-}
-
 interface Props {
-  data: CheckinData
+  data: CheckinCardData
 }
 
 export default function CheckinCard({ data }: Props) {

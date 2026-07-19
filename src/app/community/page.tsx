@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { getProfile, type UserProfile } from '@/lib/api/user-profiles'
 import { getAllProfiles } from '@/lib/api/user-profiles'
@@ -14,6 +14,7 @@ import './community.css'
 
 export default function CommunityPage() {
   const { user } = useAuth()
+  const userId = user?.id ?? null
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [profilesMap, setProfilesMap] = useState<Record<string, UserProfile>>({})
   const [channels, setChannels] = useState<Channel[]>([])
@@ -22,15 +23,39 @@ export default function CommunityPage() {
   const [needsNickname, setNeedsNickname] = useState(false)
   const [replyTo, setReplyTo] = useState<Message | null>(null)
   const [pendingMessage, setPendingMessage] = useState<Message | null>(null)
+  const loadRequestIdRef = useRef(0)
+  const loadedUserIdRef = useRef<string | null>(null)
 
   const loadData = useCallback(async () => {
-    if (!user) return
+    const requestId = ++loadRequestIdRef.current
+    if (!userId) {
+      loadedUserIdRef.current = null
+      setProfile(null)
+      setProfilesMap({})
+      setChannels([])
+      setActiveChannelId(null)
+      setNeedsNickname(false)
+      setLoading(false)
+      return
+    }
+    if (loadedUserIdRef.current !== userId) {
+      setProfile(null)
+      setProfilesMap({})
+      setChannels([])
+      setActiveChannelId(null)
+      setReplyTo(null)
+      setPendingMessage(null)
+      setNeedsNickname(false)
+      setLoading(true)
+    }
     try {
       const [myProfile, allProfiles, allChannels] = await Promise.all([
-        getProfile(user.id),
+        getProfile(userId),
         getAllProfiles(),
         getChannels(),
       ])
+      if (loadRequestIdRef.current !== requestId) return
+      loadedUserIdRef.current = userId
 
       if (!myProfile) {
         setNeedsNickname(true)
@@ -44,24 +69,24 @@ export default function CommunityPage() {
       setProfilesMap(map)
       setChannels(allChannels)
 
-      if (allChannels.length > 0) {
-        const stillExists = activeChannelId && allChannels.some(ch => ch.id === activeChannelId)
-        if (!stillExists) {
-          setActiveChannelId(allChannels[0].id)
-        }
-      } else {
-        setActiveChannelId(null)
-      }
+      setActiveChannelId(currentId => {
+        if (allChannels.length === 0) return null
+        return currentId && allChannels.some(channel => channel.id === currentId)
+          ? currentId
+          : allChannels[0].id
+      })
     } catch (err) {
-      console.error('加载社群数据失败:', err)
+      if (loadRequestIdRef.current === requestId) {
+        console.error('加载社群数据失败:', err)
+      }
     } finally {
-      setLoading(false)
+      if (loadRequestIdRef.current === requestId) setLoading(false)
     }
-  }, [user, activeChannelId])
+  }, [userId])
 
   useEffect(() => { loadData() }, [loadData])
 
-  const handleNicknameComplete = (nickname: string) => {
+  const handleNicknameComplete = () => {
     setNeedsNickname(false)
     loadData()
   }
@@ -84,7 +109,11 @@ export default function CommunityPage() {
         <ChannelList
           channels={channels}
           activeChannelId={activeChannelId}
-          onSelect={(id: string) => { setActiveChannelId(id); setReplyTo(null) }}
+          onSelect={(id: string) => {
+            setActiveChannelId(id)
+            setReplyTo(null)
+            setPendingMessage(null)
+          }}
           isAdmin={profile?.is_admin ?? false}
           userId={user?.id ?? ''}
           onChannelsChange={loadData}
@@ -93,6 +122,7 @@ export default function CommunityPage() {
           {activeChannelId && user ? (
             <>
               <MessageList
+                key={activeChannelId}
                 channelId={activeChannelId}
                 userId={user.id}
                 isAdmin={profile?.is_admin ?? false}

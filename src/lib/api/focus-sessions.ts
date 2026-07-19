@@ -21,9 +21,11 @@ type DailyReturnCountRow = {
   return_count: number | null
 }
 
-type ExistingDailyRecordRow = {
-  id: string
-  return_count: number | null
+type ReturnCountClient = {
+  rpc: (
+    functionName: string,
+    args: { target_date: string }
+  ) => Promise<{ data: number | null; error: Error | null }>
 }
 
 async function getSupabaseClient() {
@@ -223,45 +225,23 @@ export async function getTodayReturnCount(userId: string, date?: string): Promis
   return data.return_count ?? 0
 }
 
-export async function incrementReturnCount(userId: string, date: string) {
-  const supabase = await getSupabaseClient()
-  const dailyRecordsTable = supabase.from('daily_records') as {
-    select: (columns: string) => {
-      eq: (column: string, value: string) => {
-        eq: (column: string, value: string) => {
-          single: () => SingleRowResult<ExistingDailyRecordRow>
-        }
-      }
-    }
-    update: (payload: { return_count: number }) => {
-      eq: (column: string, value: string) => Promise<{ error: Error | null }>
-    }
-    insert: (payload: {
-      user_id: string
-      date: string
-      day_type: 'study_day'
-      return_count: number
-    }) => Promise<{ error: Error | null }>
-  }
-  const { data: existing } = await dailyRecordsTable
-    .select('id, return_count')
-    .eq('user_id', userId)
-    .eq('date', date)
-    .single()
+export async function incrementReturnCount(date: string): Promise<number> {
+  return incrementReturnCountWithClient(
+    (await getSupabaseClient()) as unknown as ReturnCountClient,
+    date
+  )
+}
 
-  if (existing) {
-    const { error } = await dailyRecordsTable
-      .update({ return_count: (existing.return_count ?? 0) + 1 })
-      .eq('id', existing.id)
-    if (error) throw error
-  } else {
-    const { error } = await dailyRecordsTable
-      .insert({
-        user_id: userId,
-        date,
-        day_type: 'study_day',
-        return_count: 1,
-      })
-    if (error) throw error
+export async function incrementReturnCountWithClient(
+  client: ReturnCountClient,
+  date: string
+): Promise<number> {
+  const { data, error } = await client.rpc('increment_daily_return_count', {
+    target_date: date,
+  })
+  if (error) throw error
+  if (typeof data !== 'number' || !Number.isFinite(data)) {
+    throw new Error('Invalid return-count response')
   }
+  return data
 }
