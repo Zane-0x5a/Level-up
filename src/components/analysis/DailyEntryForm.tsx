@@ -41,6 +41,12 @@ const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
   { value: 'energized', label: '很有能量' },
 ]
 
+// The input keeps '' when untouched; a blank field persists as 0.
+function parseHabitCheckinCount(value: string): number {
+  const parsed = parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
 export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const { user } = useAuth()
   const userId = user?.id ?? null
@@ -50,7 +56,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [focusOut, setFocusOut] = useState(0)
   const [entertainment, setEntertainment] = useState(0)
   const [sessions, setSessions] = useState<FocusSession[]>([])
-  const [habitCheckins, setHabitCheckins] = useState(0)
+  const [habitCheckins, setHabitCheckins] = useState('')
   const [progressLevel, setProgressLevel] = useState<ProgressLevel | null>(null)
   const [progressNote, setProgressNote] = useState('')
   const [stateLabel, setStateLabel] = useState<StateLabel | null>(null)
@@ -276,7 +282,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       await upsertDailyRecord(userId, {
         date,
         day_type: dayType,
-        ibetter_count: preferences.enable_habit_checkins ? habitCheckins : 0,
+        ibetter_count: preferences.enable_habit_checkins
+          ? parseHabitCheckinCount(habitCheckins)
+          : 0,
         note,
         focus_in_class: focusIn,
         focus_out_class: focusOut,
@@ -306,7 +314,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
 
     try {
       const optionalLines = [
-        preferences.enable_habit_checkins ? `习惯打卡数: ${habitCheckins}` : null,
+        preferences.enable_habit_checkins
+          ? `习惯打卡数: ${parseHabitCheckinCount(habitCheckins)}`
+          : null,
         preferences.enable_progress_tracking && progressLevel
           ? `主线推进: ${PROGRESS_LEVEL_OPTIONS.find((option) => option.value === progressLevel)?.label ?? progressLevel}`
           : null,
@@ -401,10 +411,11 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
             <input
               type="number"
               min={0}
+              placeholder="0"
               value={habitCheckins}
               onChange={(event) => {
                 markEntryDirty()
-                setHabitCheckins(parseInt(event.target.value, 10) || 0)
+                setHabitCheckins(event.target.value)
               }}
               disabled={editingDisabled}
               className="field-input"

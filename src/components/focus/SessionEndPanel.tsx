@@ -22,6 +22,7 @@ import {
   createFocusClientSessionId,
   readFocusElapsed,
 } from '@/lib/focus-timer'
+import WheelNumberInput from './WheelNumberInput'
 
 type Props = {
   onComplete: () => void
@@ -426,36 +427,28 @@ function SessionEndPanelContent({
               <div className="session-end-duration-fields">
                 <label className="session-end-duration-field">
                   <span className="session-end-duration-caption">小时</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
-                    max="8"
+                  <WheelNumberInput
+                    min={0}
+                    max={8}
                     placeholder="0"
                     value={hours}
-                    onChange={e => {
-                      setHours(e.target.value)
-                      setError('')
-                    }}
+                    onValueChange={setHours}
+                    onUserEdit={() => setError('')}
                     className="field-input"
+                    ariaLabel="小时"
                   />
                 </label>
                 <label className="session-end-duration-field">
                   <span className="session-end-duration-caption">分钟</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
-                    max="59"
+                  <WheelNumberInput
+                    min={0}
+                    max={59}
                     placeholder="30"
                     value={minutes}
-                    onChange={e => {
-                      setMinutes(e.target.value)
-                      setError('')
-                    }}
+                    onValueChange={setMinutes}
+                    onUserEdit={() => setError('')}
                     className="field-input"
+                    ariaLabel="分钟"
                   />
                 </label>
               </div>
