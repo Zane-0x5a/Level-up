@@ -45,7 +45,7 @@ test('writeDailyEntryDraft round-trips through readDailyEntryDraft', () => {
   const draft = {
     ...DEFAULT_DAILY_ENTRY_DRAFT,
     note: 'today was rough',
-    habitCheckins: 3,
+    habitCheckins: '3',
     progressLevel: 'solid' as const,
     progressNote: 'shipped the migration',
     stateLabel: 'recovering' as const,
@@ -163,6 +163,29 @@ test('readDailyEntryDraft coerces invalid field types back to defaults', () => {
   )
 })
 
+test('readDailyEntryDraft migrates legacy numeric habitCheckins', () => {
+  const storage = createStorage()
+  storage.setItem(
+    'daily-entry-draft:user-a:2026-05-25',
+    JSON.stringify({ ...DEFAULT_DAILY_ENTRY_DRAFT, habitCheckins: 3 })
+  )
+  storage.setItem(
+    'daily-entry-draft:user-a:2026-05-26',
+    JSON.stringify({ ...DEFAULT_DAILY_ENTRY_DRAFT, habitCheckins: 0 })
+  )
+
+  // A stored positive count survives as a string; a stored 0 was just the
+  // old prefill default, so it reads back as a blank field.
+  assert.equal(
+    readDailyEntryDraft('user-a', '2026-05-25', storage)?.habitCheckins,
+    '3'
+  )
+  assert.equal(
+    readDailyEntryDraft('user-a', '2026-05-26', storage)?.habitCheckins,
+    ''
+  )
+})
+
 test('resolveDailyEntryFields hydrates a saved historical note when no draft exists', () => {
   const fields = resolveDailyEntryFields(
     {
@@ -178,7 +201,7 @@ test('resolveDailyEntryFields hydrates a saved historical note when no draft exi
 
   assert.deepEqual(fields, {
     dayType: 'rest_day',
-    habitCheckins: 2,
+    habitCheckins: '2',
     note: '这是之前保存的总结',
     progressLevel: 'solid',
     progressNote: '完成了历史记录补填',

@@ -7,6 +7,7 @@ import {
   type FocusSession,
 } from '@/lib/api/focus-sessions'
 import { getFocusDurationHours } from '@/lib/focus-draft'
+import WheelNumberInput from '../focus/WheelNumberInput'
 
 type Props = {
   sessions: FocusSession[]
@@ -140,35 +141,28 @@ export default function FocusSessionList({ sessions, onChanged }: Props) {
               <div className="focus-session-edit-fields">
                 <label className="focus-session-edit-field">
                   <span className="focus-session-edit-caption">小时</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
+                  <WheelNumberInput
+                    min={0}
+                    max={8}
                     placeholder="0"
                     value={hours}
-                    onChange={(e) => {
-                      setHours(e.target.value)
-                      setError('')
-                    }}
+                    onValueChange={setHours}
+                    onUserEdit={() => setError('')}
                     className="field-input"
+                    ariaLabel="小时"
                   />
                 </label>
                 <label className="focus-session-edit-field">
                   <span className="focus-session-edit-caption">分钟</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    step="1"
-                    min="0"
-                    max="59"
+                  <WheelNumberInput
+                    min={0}
+                    max={59}
                     placeholder="30"
                     value={minutes}
-                    onChange={(e) => {
-                      setMinutes(e.target.value)
-                      setError('')
-                    }}
+                    onValueChange={setMinutes}
+                    onUserEdit={() => setError('')}
                     className="field-input"
+                    ariaLabel="分钟"
                   />
                 </label>
               </div>

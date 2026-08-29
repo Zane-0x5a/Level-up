@@ -2,7 +2,9 @@ import type { DailyRecord, ProgressLevel, StateLabel } from '@/lib/api/daily-rec
 
 export type DailyEntryDraft = {
   dayType: 'study_day' | 'rest_day'
-  habitCheckins: number
+  // Empty string means "not recorded yet" — the form keeps the field blank
+  // instead of prefilling 0. Legacy drafts stored this as a number.
+  habitCheckins: string
   note: string
   progressLevel: ProgressLevel | null
   progressNote: string
@@ -22,7 +24,7 @@ export type DailyEntryDraftSnapshot = {
 
 export const DEFAULT_DAILY_ENTRY_DRAFT: DailyEntryDraft = {
   dayType: 'study_day',
-  habitCheckins: 0,
+  habitCheckins: '',
   note: '',
   progressLevel: null,
   progressNote: '',
@@ -68,15 +70,24 @@ function isValidStateLabel(value: unknown): value is StateLabel {
   )
 }
 
+// 0 and blank are the same value ("nothing recorded"); blank is how the
+// form displays it. Legacy drafts with a stored 0 therefore normalize to ''.
+function parseHabitCheckinsDraft(value: unknown): string {
+  if (typeof value === 'string') {
+    return /^\d*$/.test(value) ? value : DEFAULT_DAILY_ENTRY_DRAFT.habitCheckins
+  }
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value > 0 ? String(Math.trunc(value)) : ''
+  }
+  return DEFAULT_DAILY_ENTRY_DRAFT.habitCheckins
+}
+
 function normalizeDailyEntryDraft(parsed: Partial<DailyEntryDraft>): DailyEntryDraft {
   return {
     dayType: isValidDayType(parsed.dayType)
       ? parsed.dayType
       : DEFAULT_DAILY_ENTRY_DRAFT.dayType,
-    habitCheckins:
-      typeof parsed.habitCheckins === 'number' && Number.isFinite(parsed.habitCheckins)
-        ? parsed.habitCheckins
-        : DEFAULT_DAILY_ENTRY_DRAFT.habitCheckins,
+    habitCheckins: parseHabitCheckinsDraft(parsed.habitCheckins),
     note: typeof parsed.note === 'string' ? parsed.note : DEFAULT_DAILY_ENTRY_DRAFT.note,
     progressLevel: isValidProgressLevel(parsed.progressLevel)
       ? parsed.progressLevel
@@ -146,7 +157,7 @@ function fieldsFromRecord(record: DailyEntryRecordFields | null): DailyEntryDraf
 
   return {
     dayType: record.day_type,
-    habitCheckins: record.ibetter_count ?? 0,
+    habitCheckins: record.ibetter_count ? String(record.ibetter_count) : '',
     note: record.note ?? '',
     progressLevel: record.progress_level ?? null,
     progressNote: record.progress_note ?? '',
