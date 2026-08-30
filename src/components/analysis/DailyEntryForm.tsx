@@ -26,6 +26,7 @@ import {
   writeDailyEntryDraft,
 } from '@/lib/daily-entry-draft'
 import FocusSessionList from './FocusSessionList'
+import WheelNumberInput from '../focus/WheelNumberInput'
 import { getLocalDateString } from '@/lib/local-date'
 
 const PROGRESS_LEVEL_OPTIONS: Array<{ value: ProgressLevel; label: string }> = [
@@ -408,17 +409,16 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         {preferences.enable_habit_checkins && (
           <div className="entry-field">
             <label className="entry-field-label">习惯打卡数</label>
-            <input
-              type="number"
+            <WheelNumberInput
               min={0}
+              max={99}
               placeholder="0"
               value={habitCheckins}
-              onChange={(event) => {
-                markEntryDirty()
-                setHabitCheckins(event.target.value)
-              }}
-              disabled={editingDisabled}
+              onValueChange={setHabitCheckins}
+              onUserEdit={markEntryDirty}
               className="field-input"
+              ariaLabel="习惯打卡数"
+              disabled={editingDisabled}
             />
           </div>
         )}

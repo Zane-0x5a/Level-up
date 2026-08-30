@@ -490,3 +490,184 @@ body::before {
 .tab-item.active .tab-label {
   font-weight: 600;
 }
+
+/* ═══════════════════════════════════════
+   WHEEL NUMBER INPUT — desktop wheel + mobile rotary dial
+   ═══════════════════════════════════════ */
+@property --disc-rot {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: true;
+}
+
+.wheel-number-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* Native spinners are replaced by the wheel / dial gestures. */
+.wheel-number-input::-webkit-outer-spin-button,
+.wheel-number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.wheel-number-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.wheel-number-wrap.has-dial .wheel-number-input {
+  padding-right: 40px;
+}
+
+/* Peeking imprint: the scale of a wheel whose body hides behind the field's
+   right edge — ink only, no plate of its own. Faint at rest, solid on
+   intent, gone while typing or while the full dial is open. */
+.wheel-mini-dial {
+  position: absolute;
+  right: -22px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--color-text-3);
+  opacity: 0.38;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.25s, transform 0.25s var(--ease-spring);
+}
+.wheel-mini-dial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.wheel-mini-dial svg line {
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.75;
+}
+.wheel-mini-dial-value {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  fill: var(--color-text-2);
+  text-anchor: end;
+  dominant-baseline: central;
+}
+.wheel-number-wrap:hover .wheel-mini-dial,
+.wheel-mini-dial:focus-visible {
+  opacity: 0.85;
+}
+.wheel-mini-dial:active {
+  transform: translateY(-50%) scale(0.9);
+}
+.wheel-number-wrap.input-focused .wheel-mini-dial {
+  opacity: 0;
+  pointer-events: none;
+}
+/* When the dial opens, the imprint lingers ~100ms and then fades slowly, so
+   the planet's arriving limb takes over from it — a handoff, not a gap. */
+.wheel-number-wrap.dial-open .wheel-mini-dial {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.28s ease 0.1s;
+}
+
+/* Planet dial: a large ceramic disc whose body hangs beyond the screen's
+   right edge — only the lit limb crosses the field, like a planet rising
+   past the horizon. The wrapper sits on the circle's center (positioned by
+   the component); the face casts its own shadow so the sight line stays
+   clean. */
+.number-dial {
+  position: absolute;
+  z-index: 80;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.number-dial-face {
+  position: absolute;
+  inset: 0;
+  pointer-events: auto;
+  border-radius: 50%;
+  /* Cold, white, bright ceramic: the lit limb falls past the terminator
+     into a blue-grey shadow side (which stays mostly off-screen). */
+  background:
+    radial-gradient(115% 115% at 30% 30%, rgba(255,255,255,0.95), rgba(255,255,255,0) 44%),
+    linear-gradient(100deg, #ffffff 0%, #f3f5f9 16%, #e3e8f0 32%, #ccd4df 50%, #a5b0c0 68%, #7c889b 84%, #5e6a7c 100%);
+  box-shadow:
+    inset 0 2px 8px rgba(255,255,255,0.75),
+    inset 0 -8px 20px rgba(43,45,66,0.12),
+    inset 0 0 0 1px rgba(43,45,66,0.04);
+  filter:
+    drop-shadow(0 18px 34px rgba(43,45,66,0.22))
+    drop-shadow(0 3px 8px rgba(43,45,66,0.10));
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+.number-dial-face:active {
+  cursor: grabbing;
+}
+.number-dial-disc {
+  position: absolute;
+  inset: 0;
+  transform: rotate(var(--disc-rot, 0deg));
+  will-change: transform;
+}
+.number-dial-tick {
+  position: absolute;
+  width: 1.5px;
+  height: 7px;
+  background: rgba(43,45,66,0.18);
+  border-radius: 1px;
+}
+.number-dial-tick.major {
+  height: 10px;
+  background: rgba(43,45,66,0.32);
+}
+/* The tick resting at the sight line earns a touch of ink — the minimal
+   current-value cue (the exact number lives in the field). */
+.number-dial-tick.current {
+  width: 2px;
+  height: 13px;
+  background: rgba(43,45,66,0.62);
+}
+.number-dial-label {
+  position: absolute;
+  /* Stay upright while riding the rotating disc. */
+  transform: translate(-50%, -50%) rotate(calc(-1 * var(--disc-rot, 0deg)));
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-2);
+  transition: opacity 0.15s;
+}
+
+/* Sight line pressed into the surface, its diamond resting on the limb tip. */
+.number-dial-marker {
+  position: absolute;
+  left: -30px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 1.5px;
+  background: var(--color-text-2);
+  opacity: 0.55;
+  border-radius: 1px;
+}
+.number-dial-marker::after {
+  content: '';
+  position: absolute;
+  right: -1px;
+  top: 50%;
+  transform: translateY(-50%) rotate(45deg);
+  width: 7px;
+  height: 7px;
+  background: var(--color-text-2);
+  border-radius: 1.5px;
+}

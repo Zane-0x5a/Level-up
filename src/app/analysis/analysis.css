@@ -784,7 +784,8 @@
   color: var(--color-text-3);
 }
 
-.focus-session-edit-field .field-input {
+.focus-session-edit-field .field-input,
+.focus-session-edit-field .wheel-number-wrap {
   max-width: 100px;
 }
 

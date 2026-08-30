@@ -163,6 +163,8 @@ export default function FocusSessionList({ sessions, onChanged }: Props) {
                     onUserEdit={() => setError('')}
                     className="field-input"
                     ariaLabel="分钟"
+                    dialStepDeg={9}
+                    dialLabelEvery={5}
                   />
                 </label>
               </div>
