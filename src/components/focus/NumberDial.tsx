@@ -31,13 +31,13 @@ type Props = {
   labelEvery?: number
 }
 
-export const NUMBER_DIAL_RADIUS = 120
+export const NUMBER_DIAL_RADIUS = 134
 // The circle center sits this far right of the field's right edge, so the
 // limb overlaps the field by ~26px and the rest of the body is off-screen.
 export const NUMBER_DIAL_CENTER_OFFSET = NUMBER_DIAL_RADIUS - 26
 
-const LABEL_RADIUS = 92
-const TICK_RADIUS = 108
+const LABEL_RADIUS = 104
+const TICK_RADIUS = 122
 // How far the scale is drawn to either side of the marker, in degrees.
 const VISIBLE_ARC_DEG = 78
 const MIN_VISIBLE_STEPS = 2
@@ -248,14 +248,25 @@ export default function NumberDial({
     )
     const disc = discRef.current
     if (disc) {
+      // Wind the scale down onto the value with direct transform animations —
+      // compositor-only, no custom-property interpolation on the main thread.
+      // Labels get the exact counter-rotation so they stay upright throughout.
       const settled = rotationRef.current
+      const from = settled + 40
+      const wind = { duration: 560, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' } as const
       disc.animate(
-        [
-          { '--disc-rot': `${settled + 40}deg` },
-          { '--disc-rot': `${settled}deg` },
-        ] as unknown as Keyframe[],
-        { duration: 560, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' }
+        [{ transform: `rotate(${from}deg)` }, { transform: `rotate(${settled}deg)` }],
+        wind
       )
+      disc.querySelectorAll('.number-dial-label').forEach((label) => {
+        label.animate(
+          [
+            { transform: `translate(-50%, -50%) rotate(${-from}deg)` },
+            { transform: `translate(-50%, -50%) rotate(${-settled}deg)` },
+          ],
+          wind
+        )
+      })
     }
   }, [])
 
@@ -324,7 +335,11 @@ export default function NumberDial({
     const drag = dragRef.current
     if (!drag || drag.pointerId !== event.pointerId) return
     dragRef.current = null
-    if (!drag.moved) return
+    if (!drag.moved) {
+      // A bare tap in the hit zone (not on the disc proper) dismisses.
+      requestClose()
+      return
+    }
 
     const { min: lo, max: hi } = latestRef.current
     const now = performance.now()
@@ -365,14 +380,18 @@ export default function NumberDial({
       aria-valuemax={max}
       aria-valuenow={intValue}
     >
+      {/* Generous hit zone: ~1/3 of the screen width to the left of the
+          limb, so a drag can start on the field — no need to touch the
+          disc itself. A tap here (no drag) dismisses the dial. */}
       <div
-        className="number-dial-face"
+        className="number-dial-hit"
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerEnd}
         onPointerCancel={handlePointerEnd}
         onContextMenu={(event) => event.preventDefault()}
-      >
+      />
+      <div className="number-dial-face">
         <div
           ref={discRef}
           className="number-dial-disc"
