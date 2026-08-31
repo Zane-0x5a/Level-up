@@ -42,6 +42,9 @@ const STATE_LABEL_OPTIONS: Array<{ value: StateLabel; label: string }> = [
   { value: 'energized', label: '很有能量' },
 ]
 
+// Session durations accumulate in float math; keep displayed/saved hours at 2 decimals.
+const round2 = (value: number) => Math.round(value * 100) / 100
+
 // The input keeps '' when untouched; a blank field persists as 0.
 function parseHabitCheckinCount(value: string): number {
   const parsed = parseInt(value, 10)
@@ -186,9 +189,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       }
 
       setSessions(sessions)
-      setFocusIn(inClass)
-      setFocusOut(outClass)
-      setEntertainment(fun)
+      setFocusIn(round2(inClass))
+      setFocusOut(round2(outClass))
+      setEntertainment(round2(fun))
       if (entryScope) setFocusLoadedScope(entryScope)
     } catch {
       if (focusRequestIdRef.current !== requestId) return
