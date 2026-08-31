@@ -79,3 +79,9 @@ output/
 
 # Local Remotion workspace artifacts
 remotion/
+
+# Supabase CLI metadata
+supabase/.temp/
+
+# Local scratch files
+.tmp_*
