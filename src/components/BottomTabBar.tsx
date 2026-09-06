@@ -27,6 +27,7 @@ export default function BottomTabBar() {
           <Link
             key={href}
             href={href}
+            aria-current={isActive ? 'page' : undefined}
             className={`tab-item${isActive ? ' active' : ''}`}
           >
             <span className="tab-icon"><Icon size={20} strokeWidth={2} /></span>

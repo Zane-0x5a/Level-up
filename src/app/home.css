@@ -97,6 +97,7 @@
   flex: 1;
   min-height: 0;
 }
+
 /* Community card is a horizontal bar (icon · text · arrow), overriding the
    column flow applied to row-2 cards above. */
 .ga-community .float-card {
@@ -115,7 +116,7 @@
   font-size: 12px;
   font-weight: 500;
   color: var(--color-text-3);
-  letter-spacing: 0.06em;
+  letter-spacing: 0;
   margin-bottom: 24px;
 }
 .hero-greeting {
@@ -124,7 +125,8 @@
   font-weight: 800;
   color: var(--color-text);
   margin-bottom: 28px;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
   line-height: 1.15;
 }
 .hero-greeting em {
@@ -294,7 +296,8 @@
   font-size: 88px;
   font-weight: 800;
   line-height: 1;
-  letter-spacing: -4px;
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
 }
 .cd-pill.coral .cd-number { color: var(--color-coral); }
 .cd-pill.sage .cd-number { color: var(--color-sage); }
@@ -314,6 +317,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 100%;
 }
 .cd-target {
   font-family: var(--font-mono);
@@ -495,6 +499,7 @@
   padding: 20px 28px;
   width: 100%;
   height: 100%;
+  flex-wrap: wrap;
 }
 .cd-form-layout .field-input {
   font-size: 13px;
@@ -595,6 +600,7 @@
   color: var(--color-text);
   line-height: 1.1;
   margin-bottom: 4px;
+  font-variant-numeric: tabular-nums;
 }
 .metric-val .u {
   font-size: 13px;
@@ -877,7 +883,7 @@
   /* Countdown */
   .cd-number {
     font-size: 64px;
-    letter-spacing: -3px;
+    letter-spacing: 0;
   }
   .cd-pill {
     padding: 16px 24px;
@@ -955,7 +961,7 @@
   }
   .cd-number {
     font-size: 56px;
-    letter-spacing: -3px;
+    letter-spacing: 0;
   }
   .cd-card {
     min-height: auto;
@@ -1000,4 +1006,24 @@
   .community-entry-desc {
     font-size: 12px;
   }
+}
+
+.cd-card:focus-within .cd-delete,
+.note-item:focus-within .note-delete { opacity: 1; }
+.note-item > span { min-width: 0; overflow-wrap: anywhere; }
+.cd-form-btns { flex-wrap: wrap; }
+.cd-add-btn { width: 32px; height: 32px; }
+.cd-arrow { width: 36px; height: 36px; }
+
+@media (min-width: 901px) and (max-width: 1100px) {
+  .metrics-row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 12px; }
+  .metric::after { display: none; }
+  .home-row2 { column-gap: 24px; }
+  .cd-pill { padding-inline: 20px; }
+  .cd-number { font-size: 64px; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cd-delete, .note-delete { opacity: 1; width: 36px; height: 36px; }
+  .cd-arrow, .cd-add-btn { width: 40px; height: 40px; }
 }

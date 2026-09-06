@@ -27,6 +27,7 @@ export default function TopNav() {
             <Link
               key={href}
               href={href}
+              aria-current={isActive ? 'page' : undefined}
               className={`nav-link${isActive ? ' active' : ''}`}
             >
               {label}

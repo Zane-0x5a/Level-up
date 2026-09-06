@@ -73,6 +73,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const [focusLoadedScope, setFocusLoadedScope] = useState<string | null>(null)
   const [dirtyScope, setDirtyScope] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [sessionBusy, setSessionBusy] = useState(false)
   const [sending, setSending] = useState(false)
   const [status, setStatus] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const recordRequestIdRef = useRef(0)
@@ -83,7 +84,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
   const isEntryReady = entryScope !== null && hydratedScope === entryScope
   const isFocusReady = entryScope !== null && focusLoadedScope === entryScope
   const arePreferencesReady = userId !== null && preferencesUserId === userId
-  const canSubmitEntry = isEntryReady && isFocusReady && arePreferencesReady
+  const canSubmitEntry = isEntryReady && isFocusReady && arePreferencesReady && !sessionBusy
   const editingDisabled = saving || !isEntryReady
 
   const applyEntryFields = useCallback((fields: typeof DEFAULT_DAILY_ENTRY_DRAFT) => {
@@ -362,12 +363,13 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
         <span className="sec-name">每日记录</span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20 }}>
+      <div className="entry-date-row">
         <input
           type="date"
           value={date}
           onChange={(event) => handleDateChange(event.target.value)}
-          disabled={saving}
+          disabled={saving || sessionBusy}
+          aria-label="记录日期"
           className="field-input"
           style={{ maxWidth: 180 }}
         />
@@ -428,8 +430,9 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       </div>
 
       <div className="focus-session-block">
-        <label className="entry-field-label">这一天的专注记录</label>
-        <FocusSessionList sessions={sessions} onChanged={loadFocus} />
+        <FocusSessionList key={entryScope} sessions={sessions} onChanged={loadFocus}
+          date={date} userId={userId ?? ''} disabled={saving || !isFocusReady}
+          onBusyChange={setSessionBusy} />
       </div>
 
       {preferences.enable_progress_tracking && (
