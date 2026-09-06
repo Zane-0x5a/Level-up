@@ -38,7 +38,8 @@ export async function addFocusSessionWithClient(
   userId: string,
   category: string,
   duration: number,
-  clientSessionId: string
+  clientSessionId: string,
+  date?: string
 ) {
   assertValidFocusDuration(duration)
   const focusSessionsTable = client.from('focus_sessions') as {
@@ -61,7 +62,7 @@ export async function addFocusSessionWithClient(
         user_id: userId,
         category,
         duration,
-        date: getLocalDateString(),
+        date: date ?? getLocalDateString(),
       },
       { onConflict: 'id' }
     )
@@ -75,14 +76,16 @@ export async function addFocusSession(
   userId: string,
   category: string,
   duration: number,
-  clientSessionId: string
+  clientSessionId: string,
+  date?: string
 ) {
   return addFocusSessionWithClient(
     await getSupabaseClient(),
     userId,
     category,
     duration,
-    clientSessionId
+    clientSessionId,
+    date
   )
 }
 

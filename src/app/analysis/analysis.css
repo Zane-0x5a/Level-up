@@ -172,7 +172,7 @@
   font-family: var(--font-display);
   font-size: 17px;
   line-height: 1.6;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--color-text);
 }
 
@@ -670,6 +670,87 @@
   .growth-assets-grid {
     grid-template-columns: 1fr;
   }
+
+  .entry-date-row {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .entry-date-row .field-input {
+    max-width: none !important;
+    flex: 1 1 100%;
+  }
+
+  .entry-date-row .entry-day-pills {
+    flex: 1 1 100%;
+  }
+
+  .entry-date-row .pill {
+    flex: 1;
+  }
+
+  .entry-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .entry-actions > button {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .entry-status {
+    margin: 4px 0 0;
+    text-align: center;
+  }
+
+  .focus-session-row {
+    align-items: flex-start;
+  }
+
+  .focus-session-info,
+  .focus-session-actions {
+    width: 100%;
+  }
+
+  .focus-session-actions {
+    justify-content: flex-start;
+  }
+
+  .focus-session-add {
+    min-height: 40px;
+  }
+
+  .focus-session-editor .focus-session-actions {
+    flex-wrap: wrap;
+  }
+
+  .focus-session-editor .focus-session-btn {
+    flex: 1 1 140px;
+  }
+}
+
+@media (max-width: 400px) {
+  .analysis-page {
+    padding-inline: 12px;
+  }
+
+  .analysis-page .float-card {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .focus-session-heading {
+    align-items: center;
+  }
+
+  .focus-session-add {
+    padding-inline: 10px;
+  }
+
+  .growth-echo-chips {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ═══════════════════════════════════════
@@ -677,7 +758,82 @@
    ═══════════════════════════════════════ */
 .focus-session-block {
   margin-top: 20px;
+  margin-bottom: 24px;
 }
+
+.entry-date-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.focus-session-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+}
+
+.focus-session-heading .entry-field-label {
+  margin: 0;
+  text-align: left;
+}
+
+.focus-session-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.focus-session-editor {
+  padding: 16px 0;
+  margin: 8px 0;
+  border-top: 1px solid var(--color-bg-sub);
+  border-bottom: 1px solid var(--color-bg-sub);
+}
+
+.focus-session-editor-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.focus-session-editor-title time {
+  color: var(--color-text-2);
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.focus-session-editor-fields {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 212px auto;
+  align-items: end;
+  gap: 12px 24px;
+}
+
+.focus-session-category-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.focus-session-editor .session-end-pills { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 48px; margin-bottom: 0; }
+.focus-session-editor .focus-session-edit-fields { margin-top: 0; }
+.focus-session-editor .focus-session-actions { min-height: 48px; margin-top: 0; }
+.focus-session-editor .focus-session-btn { min-height: 40px; }
+.focus-session-block button:disabled { opacity: 0.5; cursor: not-allowed; }
+.focus-session-block button:focus-visible { outline: 2px solid var(--color-coral); outline-offset: 3px; }
 
 .focus-session-list {
   display: flex;
@@ -713,6 +869,7 @@
   align-items: baseline;
   gap: 10px;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .focus-session-category {
@@ -735,6 +892,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .focus-session-btn {
@@ -777,6 +935,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100px;
+  min-width: 0;
 }
 
 .focus-session-edit-caption {
@@ -787,6 +947,7 @@
 .focus-session-edit-field .field-input,
 .focus-session-edit-field .wheel-number-wrap {
   max-width: 100px;
+  width: 100%;
 }
 
 .focus-session-row.editing .focus-session-actions {
@@ -798,5 +959,15 @@
   margin-top: 8px;
   font-size: 13px;
   color: var(--color-coral);
+}
+
+@media (max-width: 1000px) {
+  .focus-session-editor-fields { grid-template-columns: minmax(0, 1fr) 212px; }
+  .focus-session-editor .focus-session-actions { grid-column: 1 / -1; justify-content: flex-end; }
+}
+
+@media (max-width: 640px) {
+  .focus-session-editor-fields { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
+  .focus-session-editor .focus-session-actions { justify-content: flex-start; }
 }
 

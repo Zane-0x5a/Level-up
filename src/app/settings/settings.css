@@ -55,6 +55,7 @@
   padding: 14px 16px;
   background: var(--color-bg-sub);
   border-radius: var(--radius-xs);
+  cursor: pointer;
 }
 
 .settings-toggle-title {
@@ -136,6 +137,9 @@
 .greeting-item:hover .greeting-delete {
   opacity: 1;
 }
+
+.greeting-item:focus-within .greeting-delete,
+.image-thumb:focus-within .image-thumb-delete { opacity: 1; }
 
 .greeting-delete:hover {
   color: var(--color-rose);
@@ -244,14 +248,16 @@
   width: 100%;
   padding: 4px 6px;
   border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
+  border: 1px solid rgba(43, 45, 66, 0.14);
+  background: var(--color-card);
+  color: var(--color-text-2);
+  min-height: 36px;
   font-size: 12px;
   cursor: pointer;
 }
 
 .image-upload-trigger {
+  width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius-sm);
   border: 2px dashed rgba(43, 45, 66, 0.08);
@@ -288,6 +294,7 @@
 }
 
 .audio-file-label {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -296,7 +303,16 @@
 }
 
 .audio-file-label input[type="file"] {
-  display: none;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  clip-path: inset(50%);
+  overflow: hidden;
+}
+
+.audio-file-label:focus-within {
+  outline: 2px solid var(--color-coral);
+  outline-offset: 3px;
 }
 
 .audio-list {
@@ -313,6 +329,7 @@
   background: var(--color-bg-sub);
   border-radius: var(--radius-xs);
   transition: background 0.2s;
+  gap: 12px;
 }
 
 .audio-item:hover {
@@ -349,6 +366,9 @@
 }
 
 .audio-item-delete {
+  flex-shrink: 0;
+  min-width: 36px;
+  min-height: 36px;
   background: none;
   border: none;
   color: var(--color-text-3);
@@ -480,4 +500,12 @@
   .image-grid {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
+
+  .nickname-edit-row .field-input { flex-basis: 100%; }
+  .settings-toggle-row { padding: 12px; gap: 12px; }
+  .settings-page .btn-warm, .settings-page .btn-outline { min-height: 44px; }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .greeting-delete, .image-thumb-delete { opacity: 1; min-width: 36px; min-height: 36px; }
 }
