@@ -113,10 +113,10 @@ export const DIMENSIONS: Record<HeatmapDimension, DimensionConfig> = {
   },
   note: {
     key: 'note',
-    label: 'Note',
+    label: '笔记',
     tone: 'sky',
     format: (value) => `${value} 字`,
-    describe: (record) => (record.note ? '写了' : null),
+    describe: () => null,
     extract: (record) => (record.note ?? '').length,
   },
   state: {

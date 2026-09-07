@@ -9,7 +9,7 @@ export default function CommunityCard() {
       <div className="community-entry-icon"><MessagesSquare size={26} strokeWidth={1.75} /></div>
       <div className="community-entry-text">
         <span className="community-entry-title">社群</span>
-        <span className="community-entry-desc">和小伙伴聊天、打卡分享</span>
+        <span className="community-entry-desc">聊聊近况，分享今天的收获</span>
       </div>
       <span className="community-entry-arrow"><ArrowRight size={18} strokeWidth={2} /></span>
     </Link>

@@ -35,11 +35,11 @@ export default function FocusTimeTrendChart({ records }: Props) {
       <div className="float-card glow-coral">
         <div className="chart-header">
           <div>
-            <div className="chart-title">成长曲线</div>
-            <div className="chart-subtitle">最近 7 天的有效投入</div>
+            <div className="chart-title">专注时长</div>
+            <div className="chart-subtitle">最近 7 次记录</div>
           </div>
         </div>
-        <div className="chart-empty">先开始记录，曲线就会慢慢出现。</div>
+        <div className="chart-empty">这段时间还没有专注记录。</div>
       </div>
     )
   }
@@ -48,27 +48,27 @@ export default function FocusTimeTrendChart({ records }: Props) {
     <div className="float-card glow-coral">
       <div className="chart-header">
         <div>
-          <div className="chart-title">成长曲线</div>
-          <div className="chart-subtitle">主线看有效投入，副线看娱乐消耗</div>
+          <div className="chart-title">专注时长</div>
+          <div className="chart-subtitle">最近 7 次记录</div>
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <AreaChart data={data} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
           <defs>
             <linearGradient id="focusGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d4654a" stopOpacity={0.24} />
-              <stop offset="95%" stopColor="#d4654a" stopOpacity={0.02} />
+              <stop offset="0%" stopColor="var(--color-coral)" stopOpacity={0.24} />
+              <stop offset="95%" stopColor="var(--color-coral)" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(43,45,66,0.04)" />
+          <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 11, fill: '#a3a9b8', fontFamily: 'DM Mono, monospace' }}
+            tick={{ fontSize: 11, fill: 'var(--color-text-3)', fontFamily: 'DM Mono, monospace' }}
             axisLine={false}
             tickLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#a3a9b8', fontFamily: 'DM Mono, monospace' }}
+            tick={{ fontSize: 11, fill: 'var(--color-text-3)', fontFamily: 'DM Mono, monospace' }}
             width={36}
             axisLine={false}
             tickLine={false}
@@ -77,30 +77,31 @@ export default function FocusTimeTrendChart({ records }: Props) {
           <Tooltip
             formatter={(value, key) => [
               `${Number(value).toFixed(1)}h`,
-              key === 'effectiveFocus' ? '有效投入' : '娱乐消耗',
+              key === 'effectiveFocus' ? '专注时长' : '休闲时间',
             ]}
             contentStyle={{
-              background: '#fff',
-              border: '1px solid rgba(43,45,66,0.06)',
+              background: 'var(--color-card)',
+              color: 'var(--color-text)',
+              border: '1px solid var(--color-border)',
               borderRadius: 10,
               fontSize: 12,
               fontFamily: 'var(--font-body)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+              boxShadow: 'var(--shadow-md)',
             }}
           />
           <Area
             type="monotone"
             dataKey="effectiveFocus"
-            stroke="#d4654a"
+            stroke="var(--color-coral)"
             strokeWidth={2.5}
             fill="url(#focusGrad)"
-            dot={{ r: 4, fill: '#d4654a', stroke: '#fff', strokeWidth: 2 }}
-            activeDot={{ r: 6, fill: '#d4654a', stroke: '#fff', strokeWidth: 2 }}
+            dot={{ r: 4, fill: 'var(--color-coral)', stroke: 'var(--color-card)', strokeWidth: 2 }}
+            activeDot={{ r: 6, fill: 'var(--color-coral)', stroke: 'var(--color-card)', strokeWidth: 2 }}
           />
           <Line
             type="monotone"
             dataKey="entertainment"
-            stroke="#a3a9b8"
+            stroke="var(--color-text-3)"
             strokeWidth={1.8}
             strokeDasharray="4 4"
             dot={false}

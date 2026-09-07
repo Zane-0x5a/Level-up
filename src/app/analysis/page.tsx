@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTodayDate } from '@/hooks/useTodayDate'
 import { clearDailyNote, getAllDailyRecords, type DailyRecord } from '@/lib/api/daily-records'
 import {
   DEFAULT_GROWTH_PREFERENCES,
@@ -31,6 +32,7 @@ const DEFAULT_PREFERENCES: PreferencesState = DEFAULT_GROWTH_PREFERENCES
 
 export default function AnalysisPage() {
   const { user } = useAuth()
+  const today = useTodayDate()
   const [records, setRecords] = useState<DailyRecord[]>([])
   const [filter, setFilter] = useState<'all' | 'study_day' | 'rest_day'>('all')
   const [streak, setStreak] = useState(0)
@@ -106,7 +108,10 @@ export default function AnalysisPage() {
   const totals = buildTimeStructureTotals(filteredRecords)
   const assets = buildGrowthAssets(filteredRecords, preferences)
   const memories = buildRecentMemory(filteredRecords)
-  const growthEcho = buildGrowthEcho(records, new Date(), preferences)
+  const growthEcho = useMemo(
+    () => buildGrowthEcho(records, new Date(`${today}T12:00:00`), preferences),
+    [records, today, preferences],
+  )
 
   return (
     <main className="analysis-page">
@@ -122,7 +127,7 @@ export default function AnalysisPage() {
       <section className="analysis-section anim d2">
         <div className="sec-head">
           <span className="sec-dot neutral" />
-          <span className="sec-name">成长回声</span>
+          <span className="sec-name">回看今天</span>
         </div>
         <GrowthEchoCard echo={growthEcho} />
       </section>
@@ -130,7 +135,7 @@ export default function AnalysisPage() {
       <section className="analysis-section anim d2">
         <div className="sec-head">
           <span className="sec-dot neutral" />
-          <span className="sec-name">成长脉冲</span>
+          <span className="sec-name">最近的节奏</span>
         </div>
         <div className="analysis-pulse-grid">
           <FocusTimeTrendChart records={filteredRecords} />
@@ -141,7 +146,7 @@ export default function AnalysisPage() {
       <section className="analysis-section anim d3">
         <div className="sec-head">
           <span className="sec-dot neutral" />
-          <span className="sec-name">成长结构</span>
+          <span className="sec-name">时间分配</span>
         </div>
         <FocusTimePieChart
           inClass={totals.inClass}
@@ -153,7 +158,7 @@ export default function AnalysisPage() {
       <section className="analysis-section anim d4">
         <div className="sec-head">
           <span className="sec-dot neutral" />
-          <span className="sec-name">成长资产</span>
+          <span className="sec-name">一路积累</span>
         </div>
         <GrowthAssetsGrid assets={assets} streak={streak} />
       </section>
@@ -161,7 +166,7 @@ export default function AnalysisPage() {
       <section className="analysis-section anim d4">
         <div className="sec-head">
           <span className="sec-dot neutral" />
-          <span className="sec-name">成长记忆</span>
+          <span className="sec-name">写下的日子</span>
         </div>
         <NotesDrawer
           records={memories}

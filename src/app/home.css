@@ -16,25 +16,44 @@
   flex-direction: column;
   gap: 24px;
   padding: 20px 0 40px;
-  height: calc(100vh - 82px);
+  height: calc(100dvh - var(--page-top-space, 24px));
   min-height: 540px;
 }
 
 /* Row 1: Hero + Countdown — equal halves, equal heights (countdown grows with
    hero's breathing room instead of pinning to its own minimum). */
 .home-row1 {
+  flex-shrink: 0;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   gap: 20px;
   align-items: stretch;
+  padding-inline-end: 0;
+  transition: padding-inline-end var(--corner-nav-duration) var(--corner-nav-ease);
+}
+
+/* Let the first row yield to the same corner geometry and timing as the wheel. */
+@media (min-width: 769px) {
+  .corner-nav[data-open="true"] ~ .page-content .home-row1 {
+    padding-inline-end: max(0px, calc(
+      var(--corner-nav-radius) + var(--corner-nav-clearance)
+      - var(--home-edge-space)
+    ));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-row1 { transition: none; }
 }
 
 .grid-hero {
+  min-width: 0;
   display: flex;
   align-items: center;
 }
 
 .grid-countdown {
+  container: countdown / inline-size;
   display: flex;
   flex-direction: column;
 }
@@ -44,9 +63,9 @@
    Both columns stretch to the same height so their bottoms align. */
 .home-row2 {
   flex: 1;
-  min-height: 0;
+  min-height: 280px;
   display: grid;
-  grid-template-columns: 3fr 2fr;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
   column-gap: 44px;
   align-items: stretch;
 }
@@ -68,21 +87,17 @@
 .ga-notes > div {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 0;
 }
-/* Component root inside the notes cell grows to fill it (it scrolls inside).
-   The overview component root grows to fill but never shrinks below its content
-   (it has no internal scroll, so compressing it would overflow — see edge case). */
-.ga-notes > div {
+/* Both columns share the available height; only the notes list scrolls. */
+.ga-notes > div,
+.ga-overview > div,
+.ga-overview {
   flex: 1;
 }
-.ga-overview > div {
-  flex: 1 0 auto;
-}
-/* Overview cell grows to absorb the left column's slack but won't compress its
-   content; the notes column is the element that gives under tight heights. */
-.ga-overview {
-  flex: 1 0 auto;
+.ga-community {
+  flex-shrink: 0;
 }
 .home-row2 .float-card {
   display: flex;
@@ -97,7 +112,9 @@
   flex: 1;
   min-height: 0;
 }
-
+.ga-overview .float-card {
+  padding-block: 20px;
+}
 /* Community card is a horizontal bar (icon · text · arrow), overriding the
    column flow applied to row-2 cards above. */
 .ga-community .float-card {
@@ -108,30 +125,95 @@
    Hero — left-aligned, vertically centered
    ═══════════════════════════════════════ */
 .hero {
-  padding: 44px 0 48px;
+  container: hero / inline-size;
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-width: 0;
+  min-height: 344px;
+  padding: 28px 0 24px;
   text-align: left;
 }
-.hero-date {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-3);
+.hero-artwork {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.hero-art {
+  object-fit: contain;
+  object-position: center;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.hero-art--dark { opacity: 0; }
+:root[data-theme="dark"] .hero-art--light { opacity: 0; }
+:root[data-theme="dark"] .hero-art--dark { opacity: 1; }
+
+/* The duplicate image supplies its own alpha; the mask only controls light falloff. */
+.hero-light-layer { display: none; }
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  :root[data-theme="dark"] .hero-light-layer {
+    display: block;
+    opacity: 0;
+    filter: brightness(1.4);
+    mask-image: radial-gradient(ellipse 180px 160px at var(--hero-light-x, 75%) var(--hero-light-y, 50%), #000, transparent 85%);
+    transition: opacity 180ms ease;
+  }
+  :root[data-theme="dark"] .hero[data-light-active="true"] .hero-light-layer {
+    opacity: 0.55;
+  }
+}
+.hero-copy {
+  position: relative;
+  width: 54%;
+}
+.hero-title {
+  margin: 0 0 18px;
+  font-family: var(--font-display);
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 0.98;
   letter-spacing: 0;
-  margin-bottom: 24px;
+  color: var(--color-text);
+}
+.hero-title span {
+  display: block;
+}
+.hero-date {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: var(--color-text-2);
+  letter-spacing: 0;
 }
 .hero-greeting {
-  font-family: var(--font-display);
-  font-size: 42px;
-  font-weight: 800;
-  color: var(--color-text);
-  margin-bottom: 28px;
-  letter-spacing: 0;
+  margin: 0;
+  min-height: 64px;
+  max-width: 15em;
+  text-wrap: pretty;
   overflow-wrap: anywhere;
-  line-height: 1.15;
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--color-text);
+  letter-spacing: 0;
+  line-height: 1.6;
 }
-.hero-greeting em {
-  font-style: normal;
-  color: var(--color-coral);
+.hero-greeting-long {
+  font-size: 16px;
+}
+.hero-footer {
+  position: relative;
+  margin-top: 20px;
+}
+.hero-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 12px;
 }
 .hero-tag {
   display: inline-flex;
@@ -140,31 +222,51 @@
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-sage);
-  background: var(--color-sage-soft);
-  padding: 8px 20px;
+  color: #37644f;
+  background: #e7eee8;
+  min-height: 34px;
+  padding: 6px 12px;
   border-radius: 100px;
   cursor: pointer;
   border: none;
   user-select: none;
-  transition: transform 0.15s ease;
+  transition: background 0.15s ease;
 }
-.hero-tag:active {
-  transform: scale(0.93);
+.hero-tag:hover:not(:disabled) {
+  background: #d7e6da;
+}
+.hero-tag:focus-visible {
+  outline: 2px solid var(--color-sage);
+  outline-offset: 4px;
+}
+.hero-tag:disabled {
+  cursor: default;
+  opacity: 0.65;
 }
 .hero-tag.holiday {
-  color: var(--color-honey);
-  background: var(--color-honey-soft);
+  color: #77501d;
+  background: #f3e8d6;
 }
-.hero-tag.holiday .dot {
-  background: var(--color-honey);
+.hero-tag.holiday:hover:not(:disabled) {
+  background: #ecddc3;
 }
-.hero-tag .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-sage);
-  animation: pulse 2.5s ease-in-out infinite;
+.hero-streak {
+  font-size: 12px;
+  color: var(--color-text-2);
+}
+.hero-streak strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.hero-error {
+  display: block;
+  margin-top: 8px;
+  color: var(--color-rose);
+  font-size: 12px;
+}
+
+@container hero (max-width: 440px) {
+  .hero-title { font-size: 56px; }
 }
 
 /* ═══════════════════════════════════════
@@ -187,7 +289,7 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 1.5px solid rgba(43, 45, 66, 0.08);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.08);
   background: transparent;
   color: var(--color-text-3);
   font-size: 14px;
@@ -338,7 +440,7 @@
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  border: 1.5px solid rgba(43, 45, 66, 0.06);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.06);
   background: transparent;
   color: var(--color-text-3);
   font-size: 13px;
@@ -351,7 +453,7 @@
   flex-shrink: 0;
 }
 .cd-arrow:hover {
-  border-color: rgba(43, 45, 66, 0.12);
+  border-color: rgba(var(--ink-rgb), 0.12);
   color: var(--color-text-2);
   background: var(--color-bg-sub);
 }
@@ -366,7 +468,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: rgba(43, 45, 66, 0.10);
+  background: rgba(var(--ink-rgb), 0.10);
   transition: all 0.3s;
   cursor: pointer;
   border: none;
@@ -591,7 +693,7 @@
   top: 18%;
   bottom: 18%;
   width: 1px;
-  background: rgba(43,45,66,0.06);
+  background: rgba(var(--ink-rgb), 0.06);
 }
 .metric-val {
   font-family: var(--font-display);
@@ -633,16 +735,25 @@
   overflow-y: auto;
   margin: 0 -4px;
   padding: 0 4px;
+  overscroll-behavior-y: contain;
 }
 .note-item {
   display: flex;
+  flex-shrink: 0;
   align-items: flex-start;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid rgba(43,45,66,0.05);
+  border-bottom: 1px solid rgba(var(--ink-rgb), 0.05);
   font-size: 13px;
   color: var(--color-text-2);
   line-height: 1.5;
+}
+.note-item > div {
+  min-width: 0;
+  flex: 1;
+}
+.note-item span {
+  overflow-wrap: anywhere;
 }
 .note-item:last-of-type {
   border-bottom: none;
@@ -699,12 +810,15 @@
   gap: 8px;
   margin-top: 10px;
 }
+.note-input-row .field-input {
+  min-width: 0;
+}
 .note-submit {
   padding: 6px 16px;
   border: none;
   border-radius: 100px;
   background: var(--color-coral);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 600;
@@ -713,7 +827,7 @@
   white-space: nowrap;
 }
 .note-submit:hover {
-  background: #c05540;
+  background: var(--color-coral-hover);
 }
 .note-submit:disabled {
   opacity: 0.5;
@@ -788,6 +902,7 @@
    HOME MAIN — replaces inline style on <main>
    ═══════════════════════════════════════ */
 .home-main {
+  --home-edge-space: max(48px, (100vw - 1104px) / 2);
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 48px;
@@ -804,18 +919,16 @@
 @media (min-width: 901px) and (max-height: 720px) {
   .home-layout {
     height: auto;
-    min-height: calc(100vh - 82px);
+    min-height: calc(100dvh - var(--page-top-space, 24px));
   }
   /* Row 2 must respect its content height (no compressing below it) so nothing
      overlaps; it still flexes to fill when content is shorter than the viewport. */
   .home-row2 {
     min-height: auto;
   }
-  /* Notes flows with the page rather than scrolling inside a bounded card.
-     The card still fills its stretched cell, so its bottom aligns with the
-     left column. */
+  /* Bound the list even when the surrounding page needs to scroll. */
   .note-list {
-    overflow-y: visible;
+    max-height: clamp(200px, 50dvh, 440px);
   }
 }
 
@@ -825,6 +938,7 @@
 @media (max-width: 900px) {
   /* Layout: 2x2 → single column */
   .home-main {
+    --home-edge-space: 24px;
     padding: 0 24px;
   }
   /* Single column: drop the viewport-pinned height so content flows and the
@@ -845,6 +959,7 @@
     grid-template-columns: 1fr;
     column-gap: 0;
     gap: 16px;
+    min-height: 0;
   }
   .ga-left {
     flex: none;
@@ -861,23 +976,23 @@
   .ga-notes > div {
     flex: none;
   }
-  /* Notes flow with the page; no inner scroll region in single column */
+  /* Long note collections remain manageable in the stacked layout. */
   .note-list {
-    overflow-y: visible;
+    max-height: clamp(200px, 50dvh, 440px);
   }
 
-  /* Hero: centered in single-column */
+  /* Keep the artwork and typography in one unframed composition. */
   .grid-hero {
     justify-content: center;
   }
   .hero {
-    padding: 20px 0 24px;
-    text-align: center;
+    padding: 28px 0 24px;
+    text-align: left;
     width: 100%;
   }
-  .hero-greeting {
-    font-size: 30px;
-    margin-bottom: 18px;
+  .hero-art {
+    object-fit: contain;
+    object-position: right center;
   }
 
   /* Countdown */
@@ -904,6 +1019,49 @@
   }
 }
 
+/* The wheel can narrow the card independently of the viewport. */
+@container countdown (max-width: 560px) {
+  .cd-form-layout { flex-wrap: wrap; align-content: center; }
+  .cd-form-layout .field-input[type="text"] {
+    flex-basis: calc(100% - 152px);
+    min-width: 0;
+  }
+  .cd-form-btns { margin-inline-start: auto; }
+}
+
+@container countdown (max-width: 380px) {
+  .cd-layout { flex-direction: column; }
+  .cd-left { flex: none; min-width: 0; }
+  .cd-right {
+    flex: 1;
+    padding: 12px 16px;
+    align-items: center;
+    text-align: center;
+  }
+  .cd-pill {
+    padding: 20px 16px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .cd-number { font-size: 56px; letter-spacing: 0; }
+  .cd-label { max-width: 100%; }
+  .cd-nav {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: auto;
+  }
+  .cd-form-layout {
+    flex-direction: column;
+    padding: 16px;
+    gap: 10px;
+  }
+  .cd-form-layout .field-input[type="text"],
+  .cd-form-layout .field-input[type="date"] {
+    width: 100%;
+    min-width: 0;
+    flex: none;
+  }
+}
+
 /* ═══════════════════════════════════════
    RESPONSIVE — Mobile (≤ 640px)
    ═══════════════════════════════════════ */
@@ -917,22 +1075,35 @@
     padding: 12px 0 24px;
   }
 
-  /* Hero: centered on mobile */
+  /* Keep the full paper silhouette visible beside the live text. */
+  .hero-artwork { left: 32%; }
   .hero {
-    padding: 20px 0 24px;
-    text-align: center;
+    min-height: 310px;
+    padding: 24px 0 20px;
+    text-align: left;
     width: 100%;
+  }
+  .hero-art {
+    object-fit: contain;
+    object-position: right 18px;
+  }
+  .hero-title {
+    font-size: 52px;
+    margin-bottom: 16px;
   }
   .hero-date {
     font-size: 11px;
-    margin-bottom: 14px;
   }
   .hero-greeting {
-    font-size: 28px;
-    margin-bottom: 16px;
+    font-size: 17px;
+    min-height: 54px;
+  }
+  .hero-greeting-long {
+    font-size: 14px;
   }
   .hero-tag {
-    padding: 7px 16px;
+    min-height: 36px;
+    padding: 7px 12px;
     font-size: 11px;
   }
 
@@ -1018,7 +1189,7 @@
 @media (min-width: 901px) and (max-width: 1100px) {
   .metrics-row { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 12px; }
   .metric::after { display: none; }
-  .home-row2 { column-gap: 24px; }
+  .home-row2 { column-gap: 24px; min-height: 360px; }
   .cd-pill { padding-inline: 20px; }
   .cd-number { font-size: 64px; }
 }

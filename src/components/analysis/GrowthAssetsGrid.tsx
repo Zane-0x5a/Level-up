@@ -9,7 +9,7 @@ type Props = {
 
 export default function GrowthAssetsGrid({ assets, streak }: Props) {
   const streakAsset: GrowthAsset = {
-    label: '连续成长天数',
+    label: '连续记录天数',
     value: `${streak}`,
     tone: 'sage',
   }

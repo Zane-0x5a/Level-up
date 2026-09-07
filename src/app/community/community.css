@@ -9,7 +9,7 @@
 .community-page {
   position: relative;
   z-index: 10;
-  height: calc(100vh - 82px);
+  height: calc(100dvh - var(--page-top-space, 24px));
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -42,7 +42,7 @@
   display: flex;
   flex-direction: column;
   background: var(--color-bg-sub);
-  border-right: 1px solid rgba(43, 45, 66, 0.05);
+  border-right: 1px solid rgba(var(--ink-rgb), 0.05);
   overflow-y: auto;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .channel-item:hover {
-  background: rgba(43, 45, 66, 0.04);
+  background: rgba(var(--ink-rgb), 0.04);
   color: var(--color-text);
 }
 
@@ -126,7 +126,7 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-xs);
-  border: 1.5px solid rgba(43, 45, 66, 0.08);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.08);
   background: none;
   color: var(--color-text-3);
   font-family: var(--font-mono);
@@ -421,7 +421,7 @@
   max-height: 280px;
   object-fit: cover;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(43, 45, 66, 0.06);
+  border: 1px solid rgba(var(--ink-rgb), 0.06);
   cursor: pointer;
   transition: transform 0.2s var(--ease-spring);
 }
@@ -611,7 +611,7 @@
 /* ── Chat Input Area ── */
 .chat-input-area {
   padding: 12px 24px 16px;
-  border-top: 1px solid rgba(43, 45, 66, 0.05);
+  border-top: 1px solid rgba(var(--ink-rgb), 0.05);
   background: var(--color-card);
   flex-shrink: 0;
 }
@@ -629,7 +629,7 @@
   width: 38px;
   height: 38px;
   border-radius: var(--radius-xs);
-  border: 1.5px solid rgba(43, 45, 66, 0.08);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.08);
   background: var(--color-bg-sub);
   color: var(--color-text-2);
   cursor: pointer;
@@ -668,7 +668,7 @@
 
 .chat-textarea:focus {
   border-color: var(--color-coral);
-  background: #fff;
+  background: var(--color-card);
   box-shadow: 0 0 0 3px var(--color-coral-soft);
 }
 
@@ -684,7 +684,7 @@
   border-radius: 100px;
   border: none;
   background: var(--color-coral);
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
   box-shadow: 0 3px 12px var(--color-coral-glow);
   transition: all 0.25s;
@@ -692,7 +692,7 @@
 }
 
 .chat-send-btn:hover:not(:disabled) {
-  background: #c05540;
+  background: var(--color-coral-hover);
   box-shadow: 0 6px 20px var(--color-coral-glow-lg);
   transform: translateY(-1px);
 }
@@ -720,7 +720,7 @@
   text-align: center;
   background: var(--color-bg-sub);
   border-radius: var(--radius);
-  border: 1.5px dashed rgba(43, 45, 66, 0.08);
+  border: 1.5px dashed rgba(var(--ink-rgb), 0.08);
 }
 
 /* ═══════════════════════════════════════
@@ -738,7 +738,7 @@
     flex-direction: row;
     align-items: center;
     border-right: none;
-    border-bottom: 1px solid rgba(43, 45, 66, 0.05);
+    border-bottom: 1px solid rgba(var(--ink-rgb), 0.05);
     overflow-x: auto;
     overflow-y: hidden;
     -webkit-overflow-scrolling: touch;
@@ -773,7 +773,7 @@
 
   .channel-item.active {
     background: var(--color-coral);
-    color: #fff;
+    color: var(--color-on-accent);
     box-shadow: 0 2px 10px var(--color-coral-glow);
   }
 
@@ -1002,12 +1002,12 @@
 }
 
 .delete-dialog-cancel:hover:not(:disabled) {
-  background: rgba(43, 45, 66, 0.08);
+  background: rgba(var(--ink-rgb), 0.08);
 }
 
 .delete-dialog-confirm {
   background: var(--color-rose);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .delete-dialog-confirm:hover:not(:disabled) {
@@ -1149,7 +1149,7 @@
   border-radius: 8px;
   border: none;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;

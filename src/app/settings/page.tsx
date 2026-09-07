@@ -14,6 +14,8 @@ import {
   type GrowthPreferences,
 } from '@/lib/api/growth-preferences'
 import { clearFocusTimer } from '@/lib/focus-timer'
+import { DEFAULT_GREETINGS, parseGreetings } from '@/lib/hero-greetings'
+import ThemeSettings from '@/components/ThemeSettings'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -28,8 +30,6 @@ type AudioClip = {
 }
 
 type GrowthPreferenceValues = Omit<GrowthPreferences, 'user_id'>
-
-const DEFAULT_GREETINGS = ['保持热爱，奔赴山海', '每一步都算数', '今天也要加油']
 
 export default function SettingsPage() {
   const { user } = useAuth()
@@ -73,7 +73,7 @@ export default function SettingsPage() {
     setFlomoUrl(localStorage.getItem('flomo_api_url') ?? '')
     try {
       const stored = localStorage.getItem('hero_greetings')
-      setGreetings(stored ? JSON.parse(stored) : DEFAULT_GREETINGS)
+      setGreetings(parseGreetings(stored))
     } catch {
       setGreetings(DEFAULT_GREETINGS)
     }
@@ -326,6 +326,8 @@ export default function SettingsPage() {
     <main className="settings-page">
       <h1 className="settings-title anim">设置</h1>
 
+      <ThemeSettings />
+
       {error && (
         <div className="settings-error anim">
           {error}
@@ -356,7 +358,7 @@ export default function SettingsPage() {
           <div className="greeting-add-row">
             <input
               type="text"
-              placeholder="输入新的问候语..."
+              placeholder="写一句想对自己说的话"
               value={newGreeting}
               onChange={(event) => setNewGreeting(event.target.value)}
               onKeyDown={handleGreetingKeyDown}
@@ -461,7 +463,7 @@ export default function SettingsPage() {
             <label className="settings-toggle-row">
               <div>
                 <div className="settings-toggle-title">主线推进</div>
-                <div className="settings-toggle-desc">记录今天是否在最重要的方向上更进一步。</div>
+                <div className="settings-toggle-desc">记下重要事情的进展。</div>
               </div>
               <input
                 type="checkbox"
@@ -475,7 +477,7 @@ export default function SettingsPage() {
             <label className="settings-toggle-row">
               <div>
                 <div className="settings-toggle-title">状态标签</div>
-                <div className="settings-toggle-desc">给低能量日、稳住日和状态好的日子加上温和上下文。</div>
+                <div className="settings-toggle-desc">记下当天的精力和感受。</div>
               </div>
               <input
                 type="checkbox"
@@ -488,7 +490,7 @@ export default function SettingsPage() {
             </label>
           </div>
           <p className="settings-inline-status">
-            {savingGrowthPrefs ? '正在保存成长追踪设置...' : '你可以在这里决定成长反馈系统包含哪些维度。'}
+            {savingGrowthPrefs ? '正在保存...' : ''}
           </p>
         </div>
       </section>

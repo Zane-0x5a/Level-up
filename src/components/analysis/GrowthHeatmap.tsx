@@ -113,9 +113,9 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
     <div className="float-card glow-coral heatmap-card" ref={containerRef}>
       <div className="chart-header">
         <div>
-          <div className="chart-title">成长热力图</div>
+          <div className="chart-title">每日足迹</div>
           <div className="chart-subtitle">
-            过去 {days} 天 · 与你自己的分布对比{data.hasFallback ? '（数据较少，按对数刻度兜底）' : ''}
+            过去 {days} 天
           </div>
         </div>
       </div>
@@ -169,7 +169,7 @@ export default function GrowthHeatmap({ records, preferences, days = 90 }: Props
             ))}
           </div>
 
-          <div className="heatmap-grid" role="grid" aria-label="成长强度网格">
+          <div className="heatmap-grid" role="grid" aria-label="每日记录热力图">
             {data.cells.map((cell) => {
               if (cell.isPlaceholder) {
                 return (

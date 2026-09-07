@@ -1,10 +1,11 @@
 @import "tailwindcss";
+@import "./theme.css";
 
 /* ═══════════════════════════════════════
    TAILWIND v4 THEME — Drift 漂流
    Organic warmth, buoyant lightness, gentle motion
    ═══════════════════════════════════════ */
-@theme inline {
+@theme {
   /* Colors */
   --color-bg: #faf8f5;
   --color-bg-sub: #f3efe9;
@@ -97,7 +98,7 @@ body::before {
 
 ::selection {
   background: var(--color-coral);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 /* ═══════════════════════════════════════
@@ -106,7 +107,7 @@ body::before {
 .float-card {
   background: var(--color-card);
   border-radius: var(--radius);
-  border: 1px solid rgba(43,45,66,0.04);
+  border: 1px solid rgba(var(--ink-rgb), 0.04);
   padding: 28px;
   transition: all 0.35s var(--ease-spring);
 }
@@ -199,13 +200,13 @@ body::before {
   border-radius: 100px;
   border: none;
   background: var(--color-coral);
-  color: #fff;
+  color: var(--color-on-accent);
   cursor: pointer;
   box-shadow: 0 3px 12px var(--color-coral-glow);
   transition: all 0.25s;
 }
 .btn-warm:hover {
-  background: #c05540;
+  background: var(--color-coral-hover);
   box-shadow: 0 6px 20px var(--color-coral-glow-lg);
   transform: translateY(-1px);
 }
@@ -216,7 +217,7 @@ body::before {
   font-weight: 600;
   padding: 11px 26px;
   border-radius: 100px;
-  border: 1.5px solid rgba(43,45,66,0.08);
+  border: 1.5px solid rgba(var(--ink-rgb), 0.08);
   background: transparent;
   color: var(--color-text-2);
   cursor: pointer;
@@ -245,7 +246,7 @@ body::before {
 }
 .field-input:focus {
   border-color: var(--color-coral);
-  background: #fff;
+  background: var(--color-card);
   box-shadow: 0 0 0 3px var(--color-coral-soft);
 }
 
@@ -266,7 +267,7 @@ body::before {
 }
 .field-textarea:focus {
   border-color: var(--color-coral);
-  background: #fff;
+  background: var(--color-card);
   box-shadow: 0 0 0 3px var(--color-coral-soft);
 }
 
@@ -327,69 +328,12 @@ body::before {
 }
 .pill.active {
   background: var(--color-coral);
-  color: #fff;
+  color: var(--color-on-accent);
   box-shadow: 0 2px 10px var(--color-coral-glow);
 }
 .pill:hover:not(.active) {
-  background: #ede8e3;
+  background: var(--color-hover);
   color: var(--color-text-2);
-}
-
-/* ═══════════════════════════════════════
-   TOP NAV
-   ═══════════════════════════════════════ */
-.top-nav {
-  position: fixed;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  padding: 8px 10px 8px 24px;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border: 1px solid rgba(43,45,66,0.05);
-  border-radius: 100px;
-  box-shadow: 0 4px 24px rgba(43,45,66,0.06);
-  transition: top 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-}
-.top-nav.hidden {
-  top: -80px;
-}
-.nav-brand {
-  font-family: var(--font-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text);
-}
-.nav-brand span {
-  color: var(--color-coral);
-}
-.nav-links {
-  display: flex;
-  gap: 3px;
-}
-.nav-link {
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-text-3);
-  text-decoration: none;
-  padding: 7px 18px;
-  border-radius: 100px;
-  transition: all 0.25s;
-}
-.nav-link:hover {
-  color: var(--color-text-2);
-  background: rgba(43,45,66,0.03);
-}
-.nav-link.active {
-  color: #fff;
-  background: var(--color-coral);
-  box-shadow: 0 2px 12px var(--color-coral-glow);
 }
 
 /* ═══════════════════════════════════════
@@ -398,20 +342,21 @@ body::before {
 ::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-  background: rgba(43,45,66,0.06);
+  background: rgba(var(--ink-rgb), 0.06);
   border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(43,45,66,0.12);
+  background: rgba(var(--ink-rgb), 0.12);
 }
 
 /* ═══════════════════════════════════════
-   PAGE CONTENT WRAPPER — nav offset
+   PAGE CONTENT WRAPPER
    ═══════════════════════════════════════ */
 .page-content {
   position: relative;
   z-index: 10;
-  padding-top: 82px;
+  --page-top-space: 24px;
+  padding-top: max(var(--page-top-space), env(safe-area-inset-top, 0px));
 }
 
 /* ═══════════════════════════════════════
@@ -436,12 +381,9 @@ body::before {
    RESPONSIVE — Nav switch (≤ 768px)
    ═══════════════════════════════════════ */
 @media (max-width: 768px) {
-  .top-nav {
-    display: none;
-  }
   .page-content {
-    padding-top: 20px;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    --page-top-space: 20px;
+    padding-bottom: 0;
   }
 }
 
@@ -453,65 +395,6 @@ body::before {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-/* ═══════════════════════════════════════
-   BOTTOM TAB BAR — mobile only
-   ═══════════════════════════════════════ */
-.bottom-tab-bar {
-  display: none;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 100;
-  height: calc(56px + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  min-height: 56px;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(20px) saturate(1.4);
-  -webkit-backdrop-filter: blur(20px) saturate(1.4);
-  border-top: 1px solid rgba(43,45,66,0.05);
-  align-items: center;
-  justify-content: space-around;
-}
-
-@media (max-width: 768px) {
-  .bottom-tab-bar {
-    display: flex;
-  }
-}
-
-.tab-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  flex: 1;
-  text-decoration: none;
-  color: var(--color-text-3);
-  transition: color 0.2s;
-  padding: 6px 0;
-  min-height: 48px;
-  -webkit-tap-highlight-color: transparent;
-}
-.tab-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-.tab-label {
-  font-family: var(--font-body);
-  font-size: 10px;
-  font-weight: 500;
-}
-.tab-item.active {
-  color: var(--color-coral);
-}
-.tab-item.active .tab-label {
-  font-weight: 600;
 }
 
 /* ═══════════════════════════════════════
@@ -658,19 +541,19 @@ body::before {
   position: absolute;
   width: 1.5px;
   height: 7px;
-  background: rgba(43,45,66,0.18);
+  background: rgba(var(--ink-rgb), 0.18);
   border-radius: 1px;
 }
 .number-dial-tick.major {
   height: 10px;
-  background: rgba(43,45,66,0.32);
+  background: rgba(var(--ink-rgb), 0.32);
 }
 /* The tick resting at the sight line earns a touch of ink — the minimal
    current-value cue (the exact number lives in the field). */
 .number-dial-tick.current {
   width: 2px;
   height: 13px;
-  background: rgba(43,45,66,0.62);
+  background: rgba(var(--ink-rgb), 0.62);
 }
 .number-dial-label {
   position: absolute;

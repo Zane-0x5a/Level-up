@@ -33,6 +33,81 @@
   margin-bottom: 24px;
 }
 
+.theme-settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding-bottom: 28px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.theme-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 360px;
+  max-width: 100%;
+  min-width: 0;
+  padding: 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-bg-sub);
+}
+
+.theme-option {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.theme-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.theme-option-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px;
+  border-radius: 5px;
+  color: var(--color-text-2);
+  font-size: 13px;
+  line-height: 1.4;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.theme-option-label svg { flex-shrink: 0; }
+.theme-option:hover .theme-option-label { color: var(--color-text); }
+.theme-option input:checked + .theme-option-label {
+  color: var(--color-nav-active);
+  background: var(--color-card);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+.theme-option input:focus-visible + .theme-option-label {
+  outline: 2px solid var(--color-coral);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .theme-settings { align-items: stretch; flex-direction: column; gap: 12px; }
+  .theme-options { width: 100%; }
+}
+
+@media (max-width: 360px) {
+  .theme-option-label { gap: 6px; padding-inline: 6px; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-option-label { transition: none; }
+}
+
 .settings-copy {
   font-family: var(--font-body);
   font-size: 13px;
@@ -106,7 +181,7 @@
 }
 
 .greeting-item:hover {
-  background: #ede8e3;
+  background: var(--color-hover);
 }
 
 .greeting-text {
@@ -248,9 +323,9 @@
   width: 100%;
   padding: 4px 6px;
   border-radius: 6px;
-  border: 1px solid rgba(43, 45, 66, 0.14);
+  border: 1px solid var(--color-border);
   background: var(--color-card);
-  color: var(--color-text-2);
+  color: var(--color-text);
   min-height: 36px;
   font-size: 12px;
   cursor: pointer;
@@ -260,7 +335,7 @@
   width: 100%;
   aspect-ratio: 1;
   border-radius: var(--radius-sm);
-  border: 2px dashed rgba(43, 45, 66, 0.08);
+  border: 2px dashed rgba(var(--ink-rgb), 0.08);
   background: var(--color-bg-sub);
   display: flex;
   flex-direction: column;
@@ -333,7 +408,7 @@
 }
 
 .audio-item:hover {
-  background: #ede8e3;
+  background: var(--color-hover);
 }
 
 .audio-item-info {

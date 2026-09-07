@@ -70,7 +70,7 @@ test('buildGrowthAssets returns progress-aware asset cards', () => {
   )
 
   assert.equal(assets[0]?.value, '5.0h')
-  assert.equal(assets[3]?.label, '突破日次数')
+  assert.equal(assets[3]?.label, '突破天数')
   assert.equal(assets[3]?.value, '1')
 })
 
