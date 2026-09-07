@@ -366,7 +366,6 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       <div className="entry-date-row">
         <input
           type="date"
-          aria-label="记录日期"
           value={date}
           onChange={(event) => handleDateChange(event.target.value)}
           disabled={saving || sessionBusy}
