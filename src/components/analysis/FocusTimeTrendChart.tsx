@@ -53,7 +53,7 @@ export default function FocusTimeTrendChart({ records }: Props) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={220}>
-        <AreaChart data={data} margin={{ top: 8, right: 8, left: -10, bottom: 0 }}>
+        <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
           <defs>
             <linearGradient id="focusGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--color-coral)" stopOpacity={0.24} />
@@ -69,7 +69,7 @@ export default function FocusTimeTrendChart({ records }: Props) {
           />
           <YAxis
             tick={{ fontSize: 11, fill: 'var(--color-text-3)', fontFamily: 'DM Mono, monospace' }}
-            width={36}
+            width={52}
             axisLine={false}
             tickLine={false}
             unit="h"
