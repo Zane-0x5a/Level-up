@@ -305,7 +305,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       setStatus({ type: 'success', msg: '已保存' })
       setTimeout(() => setStatus(null), 2000)
     } catch {
-      setStatus({ type: 'error', msg: '保存失败' })
+      setStatus({ type: 'error', msg: '保存失败，内容仍在，请重试' })
     } finally {
       setSaving(false)
     }
@@ -401,7 +401,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
           <input type="number" min={0} step={0.1} value={focusOut} className="field-input" readOnly />
         </div>
         <div className="entry-field">
-          <label className="entry-field-label">娱乐消耗 (h)</label>
+          <label className="entry-field-label">休闲时间 (h)</label>
           <input
             type="number"
             min={0}
@@ -470,7 +470,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
 
       {preferences.enable_state_tracking && (
         <div className="entry-advanced-block">
-          <label className="entry-field-label">今日状态标签</label>
+          <label className="entry-field-label">今天的状态</label>
           <div className="entry-choice-row">
             {STATE_LABEL_OPTIONS.map((option) => (
               <button
@@ -491,7 +491,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
       )}
 
       <textarea
-        placeholder="今天的总结、感受或提醒..."
+        placeholder="今天学到了什么？有什么想留给明天？"
         value={note}
         onChange={(event) => {
           markEntryDirty()
@@ -519,7 +519,7 @@ export default function DailyEntryForm({ onSave }: { onSave?: () => void }) {
           className="btn-outline"
           style={{ opacity: sending || !canSubmitEntry || !note.trim() ? 0.5 : 1 }}
         >
-          {sending ? '发送中...' : '发送到 flomo ->'}
+          {sending ? '发送中...' : '发送到 flomo'}
         </button>
         {status && <span className={`entry-status ${status.type}`}>{status.msg}</span>}
       </div>

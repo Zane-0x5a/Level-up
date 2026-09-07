@@ -80,8 +80,8 @@ export default function ProgressOverview() {
   const metrics = [
     { label: '\u8BFE\u5185\u6295\u5165', value: data.focusInClass, unit: 'h', highlighted: true },
     { label: '\u8BFE\u5916\u6295\u5165', value: data.focusOutClass, unit: 'h', highlighted: false },
-    { label: '\u5A31\u4E50\u6D88\u8D39', value: data.entertainment, unit: 'h', highlighted: false },
-    { label: '习惯打卡数', value: data.ibetterCount, unit: '', highlighted: false },
+    { label: '\u4F11\u95F2\u65F6\u95F4', value: data.entertainment, unit: 'h', highlighted: false },
+    { label: '\u4E60\u60EF\u6253\u5361\u6570', value: data.ibetterCount, unit: '', highlighted: false },
     { label: '\u56DE\u5F52\u6B21\u6570', value: data.returnCount, unit: '', highlighted: false },
   ]
 

@@ -32,7 +32,7 @@ export default function NotesDrawer({ records, onDeleteNote }: Props) {
     <div className="history-section">
       <div className="history-toolbar">
         <p className="history-toolbar-copy">
-          默认先看最近 6 条成长记忆，旧记录会继续保留，可以随时展开全部。
+          {memories.length} 条记录
         </p>
         {remainingCount > 0 && (
           <button className="btn-outline history-toggle" onClick={() => setShowAll((value) => !value)} type="button">
@@ -52,7 +52,7 @@ export default function NotesDrawer({ records, onDeleteNote }: Props) {
                 <button
                   className="history-delete"
                   onClick={() => onDeleteNote(record.date)}
-                  aria-label="删除记录"
+                  aria-label="删除这一天的文字笔记"
                   type="button"
                 >
                   ×
@@ -72,7 +72,7 @@ export default function NotesDrawer({ records, onDeleteNote }: Props) {
           )
         })}
 
-        {visibleMemories.length === 0 && <div className="history-empty">还没有成长记忆，先留下一次记录吧。</div>}
+        {visibleMemories.length === 0 && <div className="history-empty">还没有笔记。</div>}
       </div>
     </div>
   )

@@ -1,0 +1,208 @@
+:root {
+  --corner-nav-radius: 304px;
+  --corner-nav-clearance: 24px;
+  --corner-nav-duration: 480ms;
+  --corner-nav-ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.corner-nav {
+  --nav-radius: var(--corner-nav-radius);
+  --nav-ease: var(--corner-nav-ease);
+  position: fixed;
+  top: env(safe-area-inset-top, 0px);
+  right: env(safe-area-inset-right, 0px);
+  z-index: 100;
+  width: var(--nav-radius);
+  height: var(--nav-radius);
+  pointer-events: none;
+  isolation: isolate;
+  letter-spacing: 0;
+}
+
+/* The whole quarter-disc is a travel corridor, including the space between links. */
+.corner-nav__hit-area {
+  position: absolute;
+  inset: 0;
+  clip-path: circle(100% at 100% 0);
+}
+
+.corner-nav[data-open="true"] .corner-nav__hit-area { pointer-events: auto; }
+
+.corner-nav__surface {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 0 0 0 100%;
+  background: var(--color-bg);
+  box-shadow: -8px 12px 40px rgba(43, 45, 66, 0.08), inset 1px -1px 0 rgba(43, 45, 66, 0.055);
+  transform: scale(0.25);
+  transform-origin: top right;
+  opacity: 0;
+  transition: transform var(--corner-nav-duration) var(--nav-ease), opacity 220ms ease;
+}
+
+.corner-nav[data-open="true"] .corner-nav__surface { transform: scale(1); opacity: 1; }
+
+.corner-nav__inner-arc {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 154px;
+  height: 154px;
+  border: 1px solid rgba(var(--ink-rgb), 0.07);
+  border-top: 0;
+  border-right: 0;
+  border-bottom-left-radius: 100%;
+}
+
+.corner-nav__brand {
+  position: absolute;
+  top: 24px;
+  right: 26px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 20px;
+  color: var(--color-text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(6px, -4px);
+  transition: opacity 160ms ease, transform 320ms var(--nav-ease);
+}
+.corner-nav__brand span { color: var(--color-coral); }
+.corner-nav[data-open="true"] .corner-nav__brand {
+  opacity: 1;
+  transform: translate(0, 0);
+  transition-delay: 60ms;
+}
+
+.corner-nav__trigger {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0 0 100%;
+  background: transparent;
+  color: var(--color-text-3);
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.corner-nav[data-open="true"] .corner-nav__trigger {
+  width: 154px;
+  height: 154px;
+}
+
+.corner-nav__imprint {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 76px;
+  height: 76px;
+  border-bottom-left-radius: 100%;
+  box-shadow: inset 1px -1px 0 rgba(255, 255, 255, 0.72), -1px 1px 0 rgba(43, 45, 66, 0.035);
+  transition: opacity 180ms ease, transform 400ms var(--nav-ease);
+}
+.corner-nav__imprint::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 74px;
+  height: 74px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-top: 0;
+  border-right: 0;
+  border-bottom-left-radius: 100%;
+}
+
+.corner-nav[data-open="true"] .corner-nav__imprint { opacity: 0; transform: scale(1.15); }
+.corner-nav__trigger:hover .corner-nav__brand span { color: var(--color-nav-active); }
+
+.corner-nav__links {
+  position: absolute;
+  inset: 0;
+  visibility: hidden;
+  transition: visibility 0s 200ms;
+}
+.corner-nav[data-open="true"] .corner-nav__links { visibility: visible; transition-delay: 0s; }
+
+.corner-nav__link {
+  position: absolute;
+  right: var(--nav-x);
+  top: var(--nav-y);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  color: var(--color-nav);
+  text-decoration: none;
+  opacity: 0;
+  transform: translate(50%, -50%) translate(10px, -10px);
+  transition: opacity 150ms ease, transform 240ms var(--nav-ease), color 150ms ease;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Equal angular steps on a 238px radius, with upright, evenly sized labels. */
+.corner-nav__link:nth-child(1) { --nav-x: 233.4px; --nav-y: 46.4px; --nav-delay: 60ms; }
+.corner-nav__link:nth-child(2) { --nav-x: 197.9px; --nav-y: 132.2px; --nav-delay: 95ms; }
+.corner-nav__link:nth-child(3) { --nav-x: 132.2px; --nav-y: 197.9px; --nav-delay: 130ms; }
+.corner-nav__link:nth-child(4) { --nav-x: 46.4px; --nav-y: 233.4px; --nav-delay: 165ms; }
+
+.corner-nav[data-open="true"] .corner-nav__link {
+  pointer-events: auto;
+  opacity: 1;
+  transform: translate(50%, -50%);
+  transition: opacity 220ms ease var(--nav-delay), transform 420ms var(--nav-ease) var(--nav-delay), color 150ms ease;
+}
+
+.corner-nav__icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  transition: background 180ms ease, color 180ms ease, transform 220ms var(--nav-ease), box-shadow 180ms ease;
+}
+.corner-nav__label {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  white-space: nowrap;
+}
+.corner-nav__link[aria-current="page"] { color: var(--color-nav-active); }
+.corner-nav__link[aria-current="page"] .corner-nav__label { font-weight: 600; }
+.corner-nav__link[aria-current="page"] .corner-nav__icon {
+  background: var(--color-coral);
+  color: var(--color-on-accent);
+  box-shadow: 0 3px 9px rgba(212, 101, 74, 0.15);
+}
+.corner-nav__link:hover { color: var(--color-text); }
+.corner-nav__link:hover .corner-nav__icon { background: rgba(var(--ink-rgb), 0.055); transform: translateY(-2px); }
+.corner-nav__link[aria-current="page"]:hover .corner-nav__icon { background: var(--color-coral-hover); }
+.corner-nav__link:active .corner-nav__icon { transform: scale(0.93); }
+
+.corner-nav__trigger:focus-visible,
+.corner-nav__link:focus-visible { outline: 2px solid var(--color-coral); outline-offset: -3px; }
+
+@media (max-width: 768px) {
+  .corner-nav { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .corner-nav *, .corner-nav *::after { transition: none !important; }
+}
+@media (forced-colors: active) {
+  .corner-nav__surface, .corner-nav__imprint { border: 1px solid CanvasText; }
+  .corner-nav__link[aria-current="page"] { outline: 1px solid Highlight; }
+}

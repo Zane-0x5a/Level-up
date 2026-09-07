@@ -37,9 +37,9 @@ function pickRecentWindow(
 
 function describeDelta(label: string, deltaHours: number, score: number): Observation {
   const abs = Math.abs(deltaHours)
-  const direction = deltaHours >= 0 ? '高' : '低'
+  const direction = deltaHours >= 0 ? '多' : '少'
   return {
-    text: `比${label}${direction} ${abs.toFixed(1)}h。`,
+    text: `截至目前，专注时长比${label}${direction} ${abs.toFixed(1)} 小时。`,
     score,
     tags: ['position', 'focus-delta'],
     source: 'position',
@@ -65,7 +65,7 @@ export function positionGenerator(ctx: EchoContext): Observation[] {
     const delta = todayFocus - avg
     if (Math.abs(delta) >= 0.8) {
       observations.push({
-        ...describeDelta('近一周均值', delta, Math.abs(delta) * 2),
+        ...describeDelta('此前 7 天有记录日的平均值', delta, Math.abs(delta) * 2),
         tags: ['position', 'focus-delta', 'week'],
       })
     }
@@ -77,7 +77,7 @@ export function positionGenerator(ctx: EchoContext): Observation[] {
     const delta = todayFocus - avg
     if (Math.abs(delta) >= 1.2) {
       observations.push({
-        ...describeDelta('近一个月均值', delta, Math.abs(delta) * 1.8),
+        ...describeDelta('此前 30 天有记录日的平均值', delta, Math.abs(delta) * 1.8),
         tags: ['position', 'focus-delta', 'month'],
       })
     }

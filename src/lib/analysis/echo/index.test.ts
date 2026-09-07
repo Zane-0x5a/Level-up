@@ -73,7 +73,7 @@ test('buildGrowthEcho includes a streak observation after several consecutive fo
     rng: deterministicRng([0]),
   })
   const joined = output.narrative.join('\n')
-  assert.match(joined, /连续 5 个有专注的日子/)
+  assert.match(joined, /连续 5 天，都留出了专注的时间/)
 })
 
 test('buildGrowthEcho output respects the diversity limit (no tag repeated more than twice)', () => {

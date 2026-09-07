@@ -1,6 +1,6 @@
 .auth-page {
   min-height: 100vh;
-  margin-top: -82px;
+  margin-top: calc(-1 * var(--page-top-space, 24px));
   display: flex;
   align-items: center;
   justify-content: center;

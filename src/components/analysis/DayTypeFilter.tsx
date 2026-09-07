@@ -8,7 +8,7 @@ type Props = {
 const options = [
   { value: 'all' as const, label: '全部' },
   { value: 'study_day' as const, label: '学习日' },
-  { value: 'rest_day' as const, label: '休假日' },
+  { value: 'rest_day' as const, label: '休息日' },
 ]
 
 export default function DayTypeFilter({ value, onChange }: Props) {
@@ -16,6 +16,8 @@ export default function DayTypeFilter({ value, onChange }: Props) {
     <div className="analysis-filters">
       {options.map(opt => (
         <button
+          type="button"
+          aria-pressed={value === opt.value}
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`pill${value === opt.value ? ' active' : ''}`}

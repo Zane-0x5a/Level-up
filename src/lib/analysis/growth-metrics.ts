@@ -120,15 +120,15 @@ export function buildGrowthAssets(
   const habitDays = records.filter((record) => (record.ibetter_count ?? 0) > 0).length
 
   const assets: GrowthAsset[] = [
-    { label: '累计有效投入', value: `${totalEffectiveHours.toFixed(1)}h`, tone: 'coral' },
+    { label: '累计专注时长', value: `${totalEffectiveHours.toFixed(1)}h`, tone: 'coral' },
     { label: '累计记录天数', value: `${recordedDays}`, tone: 'sage' },
-    { label: '活跃成长天数', value: `${activeDays}`, tone: 'honey' },
+    { label: '有内容的记录天数', value: `${activeDays}`, tone: 'honey' },
   ]
 
   if (preferences.enable_progress_tracking) {
-    assets.push({ label: '突破日次数', value: `${breakthroughDays}`, tone: 'sky' })
+    assets.push({ label: '突破天数', value: `${breakthroughDays}`, tone: 'sky' })
   } else if (preferences.enable_habit_checkins) {
-    assets.push({ label: '习惯活跃天数', value: `${habitDays}`, tone: 'sky' })
+    assets.push({ label: '习惯打卡天数', value: `${habitDays}`, tone: 'sky' })
   }
 
   return assets

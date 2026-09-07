@@ -35,7 +35,7 @@ export function patternGenerator(ctx: EchoContext): Observation[] {
     }
     if (streak >= 3) {
       observations.push({
-        text: `已经连续 ${streak} 个有专注的日子。`,
+        text: `连续 ${streak} 天，都留出了专注的时间。`,
         score: 6 + Math.min(streak, 14),
         tags: ['pattern', 'streak'],
         source: 'pattern',
@@ -54,14 +54,14 @@ export function patternGenerator(ctx: EchoContext): Observation[] {
     if (todayLabel && yesterdayLabel) {
       if (ctx.today.state_label === ctx.yesterday.state_label) {
         observations.push({
-          text: `状态稳在「${todayLabel}」。`,
+          text: `昨天和今天，你都选择了「${todayLabel}」。`,
           score: 7,
           tags: ['pattern', 'state-persistence'],
           source: 'pattern',
         })
       } else {
         observations.push({
-          text: `状态从「${yesterdayLabel}」走到「${todayLabel}」。`,
+          text: `昨天的自评是「${yesterdayLabel}」，今天是「${todayLabel}」。`,
           score: 9,
           tags: ['pattern', 'state-transition'],
           source: 'pattern',
@@ -82,7 +82,7 @@ export function patternGenerator(ctx: EchoContext): Observation[] {
     }
     if (progressDays >= 3) {
       observations.push({
-        text: `本周已经有 ${progressDays} 天主线在前进。`,
+        text: `过去 7 天，有 ${progressDays} 天记下了新进展。`,
         score: 5 + progressDays,
         tags: ['pattern', 'progress-rhythm'],
         source: 'pattern',
@@ -101,7 +101,7 @@ export function patternGenerator(ctx: EchoContext): Observation[] {
   }
   if (noteDays >= 4) {
     observations.push({
-      text: `本周写下了 ${noteDays} 段总结，留得很整齐。`,
+      text: `过去 7 天，有 ${noteDays} 天留下了笔记。`,
       score: 4 + noteDays,
       tags: ['pattern', 'note-rhythm'],
       source: 'pattern',

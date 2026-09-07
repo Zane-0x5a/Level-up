@@ -7,6 +7,8 @@ import TopNav from "@/components/TopNav";
 import BottomTabBar from "@/components/BottomTabBar";
 import AuthGuard from "@/components/AuthGuard";
 import FocusSessionGuard from "@/components/FocusSessionGuard";
+import ThemeSync from "@/components/ThemeSync";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-display" });
 const lexend = Lexend({ subsets: ["latin"], variable: "--font-body" });
@@ -21,7 +23,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
-  themeColor: "#faf8f5",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -30,8 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="zh" className={`h-full ${sora.variable} ${lexend.variable} ${dmMono.variable}`}>
+    <html lang="zh" suppressHydrationWarning className={`h-full ${sora.variable} ${lexend.variable} ${dmMono.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="antialiased min-h-full">
+        <ThemeSync />
         <AuthProvider>
           <AuthGuard>
             <NavProvider>
