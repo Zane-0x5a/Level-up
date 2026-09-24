@@ -8,6 +8,7 @@ import BottomTabBar from "@/components/BottomTabBar";
 import AuthGuard from "@/components/AuthGuard";
 import FocusSessionGuard from "@/components/FocusSessionGuard";
 import ThemeSync from "@/components/ThemeSync";
+import PageBackground from "@/components/PageBackground";
 import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const sora = Sora({ subsets: ["latin"], variable: "--font-display" });
@@ -38,6 +39,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-full">
         <ThemeSync />
+        <PageBackground />
         <AuthProvider>
           <AuthGuard>
             <NavProvider>
