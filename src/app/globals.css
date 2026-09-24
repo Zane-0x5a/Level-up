@@ -96,6 +96,25 @@ body::before {
   z-index: 0;
 }
 
+/* Shader page background (PageBackground.tsx). Covers the static wash above
+   once WebGL mounts; the scrim keeps the top-left heading zone calm. */
+.page-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  animation: page-bg-in 1.2s ease both;
+}
+.page-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 60% 55% at 16% 14%, rgba(var(--canvas-rgb), 0.72), rgba(var(--canvas-rgb), 0.3) 55%, transparent 80%);
+}
+@keyframes page-bg-in {
+  from { opacity: 0; }
+}
+
 ::selection {
   background: var(--color-coral);
   color: var(--color-on-accent);

@@ -16,6 +16,7 @@ import {
 import { clearFocusTimer } from '@/lib/focus-timer'
 import { DEFAULT_GREETINGS, parseGreetings } from '@/lib/hero-greetings'
 import ThemeSettings from '@/components/ThemeSettings'
+import BackgroundSettings from '@/components/BackgroundSettings'
 import './settings.css'
 
 function getThumbnailUrl(url: string, width = 400, quality = 60): string {
@@ -327,6 +328,7 @@ export default function SettingsPage() {
       <h1 className="settings-title anim">设置</h1>
 
       <ThemeSettings />
+      <BackgroundSettings />
 
       {error && (
         <div className="settings-error anim">
