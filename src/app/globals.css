@@ -96,15 +96,21 @@ body::before {
   z-index: 0;
 }
 
-/* Shader page background (PageBackground.tsx). Covers the static wash above
-   once WebGL mounts; the scrim keeps the top-left heading zone calm. */
+/* Shader page background (PageBackground.tsx); the scrim keeps the top-left
+   heading zone calm. It must sit beneath ALL in-flow content, including
+   unpositioned elements outside .page-content such as the AuthGuard loading
+   state, so it takes z-index -1. The body background would paint over a
+   negative layer, so it steps aside (html carries the same colour), and the
+   static wash it replaces is hidden. */
 .page-bg {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: -1;
   pointer-events: none;
   animation: page-bg-in 1.2s ease both;
 }
+body:has(> .page-bg) { background: transparent; }
+body:has(> .page-bg)::before { display: none; }
 .page-bg::after {
   content: '';
   position: absolute;
