@@ -1,17 +1,8 @@
-import { getEffectiveFocus } from '../growth-metrics.ts'
+import {
+  getEffectiveFocus,
+  type GrowthRecord,
+} from '../growth-metrics.ts'
 import type { EchoContext, Observation } from './types.ts'
-
-function toDateKey(date: Date): string {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
-}
-
-function dateFromKey(key: string): Date {
-  const [y, m, d] = key.split('-').map(Number)
-  return new Date(y, m - 1, d)
-}
 
 function averageFocus(records: readonly { focus_in_class: number; focus_out_class: number }[]): number {
   if (records.length === 0) return 0
@@ -22,17 +13,15 @@ function averageFocus(records: readonly { focus_in_class: number; focus_out_clas
   return total / records.length
 }
 
-function pickRecentWindow(
+function previousSameTypeDays(
   ctx: EchoContext,
-  windowDays: number,
-): readonly ReturnType<typeof ctx.records.slice>[number][] {
-  const cursor = dateFromKey(ctx.todayDate)
-  const windowStart = new Date(cursor)
-  windowStart.setDate(cursor.getDate() - windowDays)
-  const startKey = toDateKey(windowStart)
-  return ctx.records.filter(
-    (record) => record.date < ctx.todayDate && record.date >= startKey,
-  )
+  maxCount: number,
+  dayType: GrowthRecord['day_type'],
+): readonly GrowthRecord[] {
+  return ctx.records
+    .filter((record) => record.date < ctx.todayDate && record.day_type === dayType)
+    .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+    .slice(0, maxCount)
 }
 
 function describeDelta(label: string, deltaHours: number, score: number): Observation {
@@ -44,6 +33,10 @@ function describeDelta(label: string, deltaHours: number, score: number): Observ
     tags: ['position', 'focus-delta'],
     source: 'position',
   }
+}
+
+function dayTypeLabel(dayType: GrowthRecord['day_type']): string {
+  return dayType === 'rest_day' ? '休息日' : '学习日'
 }
 
 export function positionGenerator(ctx: EchoContext): Observation[] {
@@ -59,25 +52,38 @@ export function positionGenerator(ctx: EchoContext): Observation[] {
     }
   }
 
-  const lastSevenWindow = pickRecentWindow(ctx, 7)
-  if (lastSevenWindow.length >= 3) {
-    const avg = averageFocus(lastSevenWindow)
+  // 学习日和休息日的投入结构不同，平均值按今天的日型分开计算；
+  // 基准取「此前 N 个同类日」而非「此前 N 天中的同类日」，
+  // 不受两类日在日历上的疏密影响，样本量稳定。
+  const typeLabel = dayTypeLabel(ctx.today.day_type)
+
+  const recentSameType = previousSameTypeDays(ctx, 7, ctx.today.day_type)
+  if (recentSameType.length >= 3) {
+    const avg = averageFocus(recentSameType)
     const delta = todayFocus - avg
     if (Math.abs(delta) >= 0.8) {
       observations.push({
-        ...describeDelta('此前 7 天有记录日的平均值', delta, Math.abs(delta) * 2),
+        ...describeDelta(
+          `此前 ${recentSameType.length} 个${typeLabel}的平均值`,
+          delta,
+          Math.abs(delta) * 2,
+        ),
         tags: ['position', 'focus-delta', 'week'],
       })
     }
   }
 
-  const lastThirtyWindow = pickRecentWindow(ctx, 30)
-  if (lastThirtyWindow.length >= 10) {
-    const avg = averageFocus(lastThirtyWindow)
+  const longSameType = previousSameTypeDays(ctx, 30, ctx.today.day_type)
+  if (longSameType.length >= 10) {
+    const avg = averageFocus(longSameType)
     const delta = todayFocus - avg
     if (Math.abs(delta) >= 1.2) {
       observations.push({
-        ...describeDelta('此前 30 天有记录日的平均值', delta, Math.abs(delta) * 1.8),
+        ...describeDelta(
+          `此前 ${longSameType.length} 个${typeLabel}的平均值`,
+          delta,
+          Math.abs(delta) * 1.8,
+        ),
         tags: ['position', 'focus-delta', 'month'],
       })
     }

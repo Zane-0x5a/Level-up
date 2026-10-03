@@ -155,3 +155,64 @@ test('buildGrowthEcho honors preferences (no progress chip if disabled)', () => 
   assert.equal(labels.includes('主线推进'), false)
   assert.equal(labels.includes('状态标签'), false)
 })
+
+test('weekly average for a study day excludes rest days from the baseline', () => {
+  const today = new Date(2026, 4, 26)
+  const records: GrowthRecord[] = [
+    record({ date: '2026-05-26', focus_in_class: 3 }),
+    record({ date: '2026-05-25', day_type: 'rest_day' }),
+    record({ date: '2026-05-24', focus_in_class: 2 }),
+    record({ date: '2026-05-23', focus_in_class: 2 }),
+    record({ date: '2026-05-22', focus_in_class: 2 }),
+    record({ date: '2026-05-21', day_type: 'rest_day' }),
+  ]
+
+  const output = buildGrowthEcho(records, today, allPrefs, {
+    rng: deterministicRng([0]),
+  })
+  const joined = output.narrative.join('\n')
+
+  // 学习日基准 = 2.0h → 差值 1.0h；若混入休息日，基准会变成 1.2h、差值 1.8h。
+  assert.match(joined, /此前 3 个学习日的平均值多 1\.0 小时/)
+})
+
+test('weekly average for a rest day compares against rest days only', () => {
+  const today = new Date(2026, 4, 26)
+  const records: GrowthRecord[] = [
+    record({ date: '2026-05-26', day_type: 'rest_day', focus_in_class: 2 }),
+    record({ date: '2026-05-25', day_type: 'rest_day', focus_in_class: 0.5 }),
+    record({ date: '2026-05-24', day_type: 'rest_day', focus_in_class: 0.5 }),
+    record({ date: '2026-05-23', day_type: 'rest_day', focus_in_class: 0.5 }),
+    record({ date: '2026-05-22', focus_in_class: 3 }),
+    record({ date: '2026-05-21', focus_in_class: 3 }),
+  ]
+
+  const output = buildGrowthEcho(records, today, allPrefs, {
+    rng: deterministicRng([0]),
+  })
+  const joined = output.narrative.join('\n')
+
+  // 休息日基准 = 0.5h → 差值 1.5h；若与学习日混算，基准 = 1.5h，不会产生这句话。
+  assert.match(joined, /此前 3 个休息日的平均值多 1\.5 小时/)
+})
+
+test('same-type baseline counts days, not a calendar window', () => {
+  const today = new Date(2026, 4, 26)
+  const records: GrowthRecord[] = [
+    record({ date: '2026-05-26', focus_in_class: 5 }),
+    record({ date: '2026-05-25', focus_in_class: 6 }),
+    record({ date: '2026-05-24', focus_in_class: 6 }),
+    record({ date: '2026-05-16', focus_in_class: 2 }),
+    record({ date: '2026-05-15', focus_in_class: 2 }),
+    record({ date: '2026-05-14', focus_in_class: 2 }),
+  ]
+
+  const output = buildGrowthEcho(records, today, allPrefs, {
+    rng: deterministicRng([0]),
+  })
+  const joined = output.narrative.join('\n')
+
+  // 5 个学习日基准 = (6+6+2+2+2)/5 = 3.6h → 差值 1.4h。
+  // 若按「此前 7 天日历窗口」取，窗口内只有 2 个学习日，不会产生这句话。
+  assert.match(joined, /此前 5 个学习日的平均值多 1\.4 小时/)
+})
