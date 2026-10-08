@@ -605,12 +605,14 @@
   color: var(--color-sage);
 }
 
+.history-summary,
+.history-highlight {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .history-summary {
-  display: -webkit-box;
   margin-top: 8px;
-  overflow: hidden;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   font-family: var(--font-body);
   font-size: 13px;
   line-height: 1.65;
